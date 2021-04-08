@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+ofxparse = "*"
+pandas = "*"
+numpy = "*"
+pytz = "*"
+python-dateutil = "*"
+python-magic = "*"
+python-magic-win64 = "*"
+
+[dev-packages]
+ipykernel = "*"
+
+[requires]
+python_version = "3.8"
