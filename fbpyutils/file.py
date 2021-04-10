@@ -1,5 +1,5 @@
 '''
-Functions to read and/or processes files and directories on the operating system
+Functions to read and/or processes files and directories on the operating system.
 '''
 import os
 import platform

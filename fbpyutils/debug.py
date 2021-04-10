@@ -1,5 +1,5 @@
 '''
-Functions support code debuggin
+Functions support code debugging.
 '''
 
 
