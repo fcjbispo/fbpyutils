@@ -7,14 +7,15 @@ Miscelaneous functions for Python development.
 Install the latest code from github
 
 ```
-pipenv install https://github.com/fcjbispo/builds/raw/main/infobr/infobr-1.0.0-py3-none-any.whl
+pipenv install https://github.com/fcjbispo/builds/raw/main/fbpyutils/fbpyutils-1.0.0-py3-none-any.whl
 ```
+
 ## Features
 
 Functional modules:
 
 * calendar
-    * Functions to manipulate calendars.
+    * Functions to manipulate calendars to use in time dimensions.
 * datetime
     * Utility functions to manipulate date and time.
 * debug
@@ -25,7 +26,8 @@ Functional modules:
     * Reads and processes OFX (Open Financial Exchange) files and data.
 * string
     * Several functions to manipulate and processes strings and/or
-produce strings from any kind of data.
+    produce strings from any kind of data.
+
 ## Authors
 
 * **Francisco Bispo** - [fcjbispo](https://github.com/fcjbispo)
@@ -33,6 +35,7 @@ produce strings from any kind of data.
 ## License
 
 TODO
+
 ## Acknowledgments
 
 TODO
