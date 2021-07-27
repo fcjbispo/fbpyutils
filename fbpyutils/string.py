@@ -15,6 +15,19 @@ import uuid as u
 from typing import Dict
 
 
+_ACCENTED_CHARS = ''
+for c in 'áãâäàéèëêíìîïóòõôöúùûüçñ':
+    _ACCENTED_CHARS += c + c.upper()
+
+_NORMALIZED_CHARS = ''
+for c in 'aaaaaeeeeiiiiooooouuuucn':
+    _NORMALIZED_CHARS += c + c.upper()
+
+_TRANSLATION_TAB = {}
+for i in range(len(_ACCENTED_CHARS)):
+    _TRANSLATION_TAB[ord(_ACCENTED_CHARS[i])] = _NORMALIZED_CHARS[i]
+
+
 def uuid() -> str:
     '''
     Generates a standard uuid4 as string
@@ -152,3 +165,16 @@ def normalize_value(
     '''
     vl = str(int(abs(x)*(10**decimal_places)))
     return vl.rjust(size, '0') if len(vl) < size else vl
+
+
+def translate_accented_word(x) -> str:
+    '''
+    Translates accented word in non accented word
+        x
+            The word to be translated
+        Return a new word with all accented chars translated to
+            non-accented ones
+    '''
+    x = x or ''
+
+    return x.translate(_TRANSLATION_TAB)
