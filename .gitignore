@@ -128,5 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .unotes/unotes_meta.json
-Pipfile.lock
-tests/xls.ipynb
+fbpyutils/Pipfile.lock
