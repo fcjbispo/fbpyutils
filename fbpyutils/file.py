@@ -86,12 +86,12 @@ def write_to_json(x: Dict, path_to_file: str, prettify=True):
     with open(path_to_file, 'w') as outputfile:
         if prettify:
             json.dump(
-                x, path_to_file,
+                x, outputfile,
                 indent=4, sort_keys=True,
                 ensure_ascii=False)
         else:
             json.dump(
-                x, path_to_file,
+                x, outputfile,
                 ensure_ascii=False)
 
 
