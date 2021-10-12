@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 .unotes/unotes_meta.json
 fbpyutils/Pipfile.lock
+Pipfile.lock
