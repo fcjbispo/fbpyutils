@@ -15,17 +15,17 @@ import uuid as u
 from typing import Dict
 
 
-_ACCENTED_CHARS = ''
-for c in 'áãâäàéèëêíìîïóòõôöúùûüçñ':
-    _ACCENTED_CHARS += c + c.upper()
+_SPECIAL_CHARS = ''.join([
+    c + c.upper() for c in 'áãâäàéèëêíìîïóòõôöúùûüçñ'
+])
 
-_NORMALIZED_CHARS = ''
-for c in 'aaaaaeeeeiiiiooooouuuucn':
-    _NORMALIZED_CHARS += c + c.upper()
+_NORMALIZED_CHARS = ''.join([
+    c + c.upper() for c in 'aaaaaeeeeiiiiooooouuuucn'
+])
 
 _TRANSLATION_TAB = {}
-for i in range(len(_ACCENTED_CHARS)):
-    _TRANSLATION_TAB[ord(_ACCENTED_CHARS[i])] = _NORMALIZED_CHARS[i]
+for i in range(len(_SPECIAL_CHARS)):
+    _TRANSLATION_TAB[ord(_SPECIAL_CHARS[i])] = _NORMALIZED_CHARS[i]
 
 
 def uuid() -> str:
@@ -167,13 +167,13 @@ def normalize_value(
     return vl.rjust(size, '0') if len(vl) < size else vl
 
 
-def translate_accented_word(x) -> str:
+def translate_special_chars(x) -> str:
     '''
-    Translates accented word in non accented word
+    Translates special (accented) chars in a string on regular chars
         x
-            The word to be translated
-        Return a new word with all accented chars translated to
-            non-accented ones
+            The string to be translated
+        Return a new string with all special chars translated to
+            regular ones
     '''
     x = x or ''
 

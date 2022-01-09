@@ -11,9 +11,14 @@ pytz = "*"
 python-dateutil = "*"
 python-magic = "*"
 python-magic-win64 = "*"
+openpyxl = "*"
+xlrd = "*"
+chardet = "*"
+click = "*"
 
 [dev-packages]
 ipykernel = "*"
+pytest = "*"
 
 [requires]
 python_version = "*"

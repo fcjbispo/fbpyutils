@@ -2,6 +2,7 @@
 Functions to read and/or processes files and directories on the operating system.
 '''
 import os
+import sys
 import platform
 import json
 from datetime import datetime
@@ -130,3 +131,44 @@ def mime_type(x: str) -> str:
             file_path, mime=True)
     except IsADirectoryError as e:
         return 'directory'
+
+
+def _is_windows() -> bool:
+    '''
+    Returns if the code is running on Windows OS.
+
+        True if current os is Windows or False otherwise
+    '''
+    return sys.platform.upper().startswith('WIN')
+
+
+def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
+    '''
+    Build a path for specific file according operatiing system.
+
+        winroot
+            The root path for windows operating systems
+
+        otherroot
+            The root path for other operating systems
+
+        pathparts
+            The elements to build the path. The last element shoud be the file
+
+        Return the path for the file according the operating system
+    '''
+    return os.path.sep.join([(winroot if _is_windows() else otherroot), *pathparts])
+
+
+def absolute_path(x: str):
+    '''
+    Return the absolute path for the file x.
+
+        x
+            The file full name to have the absolute path extracted
+
+
+        Return the absolute path for the given file
+    '''
+    x = x or __file__
+    return os.path.sep.join(os.path.realpath(x).split(os.path.sep)[:-1])
