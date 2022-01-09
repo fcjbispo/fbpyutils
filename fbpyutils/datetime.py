@@ -56,6 +56,7 @@ def apply_timezone(x: datetime, tz: str) -> datetime:
         hour=date_time_obj.hour, minute=date_time_obj.minute, second=date_time_obj.second,
         microsecond=date_time_obj.microsecond, tzinfo=timezone)
 
+
 def elapsed_time(x: datetime, y: datetime) -> tuple:
     '''
     Calculates and return elapsed time as tuple (days, hours, minutes, seconds).

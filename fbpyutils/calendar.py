@@ -12,7 +12,7 @@ from typing import Dict, List
 from fbpyutils import datetime as dutl
 
 
-def calendar(x: date, y: date) -> List:
+def get_calendar(x: date, y: date) -> List:
     '''
     Build a calendar for use as time dimension
 
@@ -31,32 +31,36 @@ def calendar(x: date, y: date) -> List:
     '''
     start_date, end_date = x, y
     if end_date <= start_date:
-        raise Exception("Invalid end date. Must be greater than start date.")
+        raise ValueError("Invalid end date. Must be greater than start date.")
 
-    dates = pd.date_range(start_date, end_date)
-    cal = [
-        {
-            "date": d.date(),
-            "date_time": d,
-            "year": d.year,
-            "half": (d.quarter + 1) // 2,
-            "quarter": d.quarter,
-            "month": d.month,
-            "day": d.day,
-            "week_day": d.weekday(),
-            "week_of_year": int(d.strftime('%W')),
-            "date_iso": d.isoformat(),
-            "date_str": d.strftime('%Y-%m-%d'),
-            "week_day_name": d.strftime('%A'),
-            "week_day_name_short": d.strftime('%a'),
-            "week_month_name": d.strftime('%B'),
-            "week_month_name_short": d.strftime('%b'),
-            "year_str": d.strftime('%Y'),
-            "year_half_str": d.strftime('%Y-H') + str((d.quarter + 1) // 2),
-            "year_quarter_str": d.strftime('%Y-Q') + str(d.quarter),
-            "year_month_str": d.strftime('%Y-%m'),
-        } for d in dates
-    ]
+    cal = None
+    try:
+        dates = pd.date_range(start_date, end_date)
+        cal = [
+            {
+                "date": d.date(),
+                "date_time": d,
+                "year": d.year,
+                "half": (d.quarter + 1) // 2,
+                "quarter": d.quarter,
+                "month": d.month,
+                "day": d.day,
+                "week_day": d.weekday(),
+                "week_of_year": int(d.strftime('%W')),
+                "date_iso": d.isoformat(),
+                "date_str": d.strftime('%Y-%m-%d'),
+                "week_day_name": d.strftime('%A'),
+                "week_day_name_short": d.strftime('%a'),
+                "week_month_name": d.strftime('%B'),
+                "week_month_name_short": d.strftime('%b'),
+                "year_str": d.strftime('%Y'),
+                "year_half_str": d.strftime('%Y-H') + str((d.quarter + 1) // 2),
+                "year_quarter_str": d.strftime('%Y-Q') + str(d.quarter),
+                "year_month_str": d.strftime('%Y-%m'),
+            } for d in dates
+        ]
+    except ValueError as e:
+        raise e
 
     return cal
 
@@ -73,7 +77,7 @@ def add_markers(
         reference_date
             The date used to calculate the markers. Default to current date
 
-        Return the passed calendar with markers added. The markets are flags
+        Add markers to the passed calendar. The markets are flags
         the the number of months past ago from reference date:
             today: True if calendar date and current date are the same
             current_year: True if calendar date's year is the current year
@@ -130,13 +134,11 @@ def add_markers(
             'last_3_months': dutl.delta(today, c['date'], 'months') <= 3,
         })
 
-    return cal
-
 
 def calendarize(
     x: DataFrame,
     date_column: str,
-    add_markers: bool = True,
+    with_markers: bool = False,
     reference_date: date = datetime.now().date()
 ) -> DataFrame:
     '''
@@ -149,38 +151,42 @@ def calendarize(
             The datetime column used to build calendar data.
             Shoud be different from 'calendar_date'
 
-        add_markers
-            Add or not calendar markers to the dataframe. Default True
+        with_markers
+            Add or not calendar markers to the dataframe. Default False
 
         reference_date
             The date used to calculate the markers. Default to current date
 
-        Return the passed dataframe with calendar columns with
-        optional markers added.
+        Return a new dataframe with calendar columns and optional markers added 
+        to the passed dataframe.
     '''
-    df = x
+    if not type(x) == type(pd.DataFrame([])):
+        raise TypeError(f'Invalid object type. Expected Pandas DataFrame.')
+
+    if not type(reference_date) == type(datetime.now().date()):
+        raise TypeError(f'Invalid object type. Expected Date/Datetime object.')
+
+    df = x.copy()
 
     if (
         date_column not in df.columns or
         not np.issubdtype(df[date_column], np.datetime64)
     ):
-        raise Exception(f'DateTime column not found or invalid: {date_column}.')
+        raise NameError(f'DateTime column not found or invalid: {date_column}.')
 
     mind, maxd = min(df[date_column]), max(df[date_column])
 
-    calendar = calendar(mind, maxd)
-    if add_markers:
-        calendar = add_markers(calendar, reference_date)
+    calendar = get_calendar(mind, maxd)
+    if with_markers:
+        add_markers(calendar, reference_date)
 
     calendar = pd.DataFrame.from_dict(calendar)
 
     columns = ['_'.join(['calendar', c]) for c in calendar.columns]
     calendar.columns = columns
-    df['calendar_date'] = df[date_column].dt.date
+    df[date_column] = df[date_column].dt.date
 
-    df = pd.merge(
-        df, calendar,
-        left_on='calendar_date', right_on='calendar_date'
+    return df.merge(
+        calendar,
+        left_on=date_column, right_on='calendar_date'
     )
-
-    return df
