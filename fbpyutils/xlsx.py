@@ -20,7 +20,7 @@ XLS, XLSX = 0, 1
 
 
 class ExcelWorkbook:
-    def __init__(self, xl_file: Union[str, bytes]):
+    def __init__(self, xl_file):
         data = None
         if type(xl_file) == str:
             if os.path.exists(xl_file):
@@ -50,8 +50,6 @@ class ExcelWorkbook:
             self.workbook = xlrd.open_workbook(file_contents=xl_data.read())
             self.sheet_names = self.workbook.sheet_names()
             self.kind = XLS
-        except Exception as e:
-            print(f"Unexpected error: {e}")
 
     def read_sheet(self, sheet_name=None):
         sheet_name = sheet_name or self.sheet_names.get(sheet_name)
@@ -69,5 +67,18 @@ class ExcelWorkbook:
             raise NameError('Invalid/Non existent sheet.')
         return self.read_sheet(self.sheet_names[index])
 
-def get_sheet_names(xl_file: str) -> list:
-    pass
+
+def get_sheet_names(xl_file):
+    xl = ExcelWorkbook(xl_file)
+    return xl.sheet_names
+
+
+def get_sheet_by_name(xl_file, sheet_name):
+    xl = ExcelWorkbook(xl_file)
+    return xl.read_sheet(sheet_name)
+
+
+def get_all_sheets(xl_file):
+    xl = ExcelWorkbook(xl_file)
+    sheet_names = xl.sheet_names
+    return {sheet_name: xl.read_sheet(sheet_name) for sheet_name in sheet_names}

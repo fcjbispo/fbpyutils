@@ -27,14 +27,15 @@ Functional modules:
 * string
     * Several functions to manipulate and processes strings and/or
     produce strings from any kind of data.
+* xlsx
+    * Functions to read and MS Excel Spreadsheet files in xls or xlsx formats.
 
 ## Authors
 
 * **Francisco Bispo** - [fcjbispo](https://github.com/fcjbispo)
 
 ## License
-
-TODO
+* MIT License
 
 ## Acknowledgments
 
