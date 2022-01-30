@@ -144,7 +144,7 @@ def _is_windows() -> bool:
 
 def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
     '''
-    Build a path for specific file according operatiing system.
+    Build a path for specific file according operating system.
 
         winroot
             The root path for windows operating systems
