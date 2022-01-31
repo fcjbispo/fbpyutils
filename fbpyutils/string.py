@@ -178,3 +178,18 @@ def translate_special_chars(x) -> str:
     x = x or ''
 
     return x.translate(_TRANSLATION_TAB)
+
+
+def normalize_names(names, normalize_specials=True):
+    '''
+    Normalize string names to lower case, spaces and slashes converteds to _
+    and special chars translateds.
+        x
+            The list of strings to be normalizeds
+        Return the list of string names normalizeds
+        normalize_specials
+            Translates special characters into their regular ones
+    '''
+    return [
+        str(translate_special_chars(c) if normalize_specials else c).replace(' ', '_').replace('/', '_').lower() for c in names
+    ]

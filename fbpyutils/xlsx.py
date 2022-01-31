@@ -81,4 +81,4 @@ def get_sheet_by_name(xl_file, sheet_name):
 def get_all_sheets(xl_file):
     xl = ExcelWorkbook(xl_file)
     sheet_names = xl.sheet_names
-    return {sheet_name: xl.read_sheet(sheet_name) for sheet_name in sheet_names}
+    return {sheet_name: tuple(xl.read_sheet(sheet_name)) for sheet_name in sheet_names}
