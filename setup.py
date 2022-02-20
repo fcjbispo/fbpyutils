@@ -43,7 +43,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="1.2.1",  # Required
+    version="1.3.0",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -132,10 +132,10 @@ setup(
         "click==8.0.3",
         "et-xmlfile==1.1.0; python_version >= '3.6'",
         "lxml==4.7.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
-        "numpy==1.21.4",
+        "numpy==1.22.1",
         "ofxparse==0.21",
         "openpyxl==3.0.9",
-        "pandas==1.3.5",
+        "pandas==1.4.0",
         "python-dateutil==2.8.2",
         "python-magic==0.4.13",
         "python-magic-win64==0.4.13",
