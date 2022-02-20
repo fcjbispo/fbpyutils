@@ -130,6 +130,7 @@ setup(
         "beautifulsoup4==4.10.0; python_version >= '3.1'",
         "chardet==4.0.0",
         "click==8.0.3",
+        "colorama==0.4.4; platform_system == 'Windows'",
         "et-xmlfile==1.1.0; python_version >= '3.6'",
         "lxml==4.7.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
         "numpy==1.22.1",
