@@ -4,21 +4,21 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ofxparse = "*"
-pandas = "*"
-numpy = "*"
-pytz = "*"
-python-dateutil = "*"
-python-magic = "*"
-python-magic-win64 = "*"
-openpyxl = "*"
-xlrd = "*"
-chardet = "*"
-click = "*"
+ofxparse = "0.21"
+pandas = "1.4.0"
+numpy = "1.22.1"
+pytz = "2021.3"
+python-dateutil = "2.8.2"
+python-magic = "0.4.13"
+python-magic-win64 = "0.4.13"
+openpyxl = "3.0.9"
+xlrd = "2.0.1"
+chardet = "4.0.0"
+click = "8.0.3"
 
 [dev-packages]
 ipykernel = "*"
 pytest = "*"
 
 [requires]
-python_version = "*"
+python_version = "3.9"
