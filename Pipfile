@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ofxparse = "0.21"
+ofxparse = "==0.21"
 pandas = "1.4.0"
 numpy = "1.22.1"
 pytz = "2021.3"
@@ -19,6 +19,7 @@ click = "8.0.3"
 [dev-packages]
 ipykernel = "*"
 pytest = "*"
+pytest-cov = "*"
+pipenv-setup = "*"
 
 [requires]
-python_version = "3.9"
