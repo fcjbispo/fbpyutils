@@ -1,7 +1,7 @@
 include .env
 
 setup:
-	pipenv --python 3.8
+	pipenv --python 3.9
 	pipenv update
 	pipenv install --dev
 
@@ -12,7 +12,10 @@ clean:
 	find . -type d -name __pycache__ -print0 | xargs -0 rm -rf
 
 coverage:
-	pipenv run python -m pytest --cov-report xml
+	pipenv run python -m pytest --cov-report xml --cov=./fbpyutils
+
+test:
+	pipenv run python -m pytest --verbose --color=yes
 
 wheel:
 	pipenv-setup sync
