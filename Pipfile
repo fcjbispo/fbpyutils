@@ -19,5 +19,6 @@ pytest-cov = "*"
 pytest-mock = "*"
 black = "*"
 autopep8 = "*"
+pipenv-setup = "*"
 
 [requires]
