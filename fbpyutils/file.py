@@ -29,8 +29,6 @@ def find(x: str, mask: str = '*.*') -> list:
         Return a list with the full path of files found recursivelly in source
         folder using the specified mask
     '''
-    '''
-    '''
     all_files = [str(filename)
                  for filename in Path(x).rglob(mask)]
 
