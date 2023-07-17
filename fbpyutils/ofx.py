@@ -139,6 +139,26 @@ def read_from_path(
 # ----
 
 def main(argv):
+    '''
+    Main function of the program.
+     Parameters:
+    - argv: A list of command-line arguments passed to the program.
+     Returns:
+    None
+     Functionality:
+    - Parses the command-line arguments using getopt.
+    - If no arguments are provided or an invalid option is used, it prints a helper message and exits.
+    - If the "--print" option is used, it sets the source_path variable to the provided argument.
+    - If the source_path exists, it reads data from the file using the read_from_path function.
+    - It then prints the data as a JSON string.
+    - If an exception occurs during the process, it prints an error message indicating an invalid or corrupted file.
+    - If the source_path does not exist, it prints a "File not found" message.
+     Note:
+    - The read_from_path function is not defined in the provided code snippet and should be implemented separately.
+     Example Usage:
+    $ python ofx.py --print myfile.ofx
+     This will read the data from "myfile.ofx" and print it as a formatted JSON string.
+    '''
     helper_msg = 'Use ofx.py --print <file_path>'
     source_path = ''
 

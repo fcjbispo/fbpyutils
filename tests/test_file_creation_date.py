@@ -1,6 +1,6 @@
-import pytest
 import os
 import platform
+import pytest
 from datetime import datetime
 
 from fbpyutils.file import creation_date
@@ -8,36 +8,39 @@ from fbpyutils.file import creation_date
 
 @pytest.fixture(autouse=True)
 def file_path(resources_path):
-    return os.path.sep.join([resources_path, 'file.txt'])
+    return os.path.sep.join([resources_path, 'file1.txt'])
+
+@pytest.fixture(autouse=True)
+def file_timestamp():
+    return 1689548343.3923748
 
 
-def test_creation_date_windows(file_path):
-    creation_time = 1234567890
-    os.path.getctime = lambda x: creation_time
-    expected_datetime = datetime.fromtimestamp(creation_time)
+@pytest.mark.parametrize('platform', ('Windows', 'Linux'))
+def test_creation_date(mocker, file_path, file_timestamp, platform):
+    mocker.patch('platform.system', return_value=platform)
+
+    if platform == 'Windows':
+        mocker.patch('os.path.getctime', return_value=file_timestamp)
+    elif platform == 'Linux':
+        class stat_result:
+            st_birthtime = file_timestamp
+        stat = stat_result()
+        mocker.patch('os.stat', return_value=stat)
+    
+    expected_datetime = datetime.fromtimestamp(file_timestamp)
     # Act
     result = creation_date(file_path)
     # Assert
     assert result == expected_datetime
 
 
-def test_creation_date_linux(file_path):
-    creation_time = 1234567890
-    modification_time = 9876543210
-    os.path.getctime = lambda x: modification_time
-    os.stat = lambda x: os.stat_result((0, 0, 0, 0, 0, 0, modification_time, 0, 0, creation_time))
-    expected_datetime = datetime.fromtimestamp(modification_time)
-    # Act
-    result = creation_date(file_path)
-    # Assert
-    assert result == expected_datetime
-
-
-def test_creation_date_linux_no_birthtime(file_path):
-    modification_time = 9876543210
-    os.path.getctime = lambda x: modification_time
-    os.stat = lambda x: os.stat_result((0, 0, 0, 0, 0, 0, modification_time, 0, 0, modification_time))
-    expected_datetime = datetime.fromtimestamp(modification_time)
+def test_creation_date_linux_no_birthtime(mocker, file_path, file_timestamp):
+    mocker.patch('platform.system', return_value='Linux')
+    class stat_result:
+        st_mtime = file_timestamp
+    stat = stat_result()
+    mocker.patch('os.stat', return_value=stat)
+    expected_datetime = datetime.fromtimestamp(file_timestamp)
     # Act
     result = creation_date(file_path)
     # Assert

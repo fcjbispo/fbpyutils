@@ -127,8 +127,10 @@ def mime_type(x: str) -> str:
     try:
         return magic.from_file(
             file_path, mime=True)
-    except IsADirectoryError as e:
+    except IsADirectoryError:
         return 'directory'
+    except FileNotFoundError:
+        return 'file_not_found'
 
 
 def _is_windows() -> bool:

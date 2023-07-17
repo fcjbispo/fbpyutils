@@ -16,6 +16,7 @@ xlrd = "*"
 ipykernel = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-mock = "*"
 black = "*"
 autopep8 = "*"
 
