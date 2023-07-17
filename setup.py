@@ -129,7 +129,6 @@ setup(
     install_requires=[
         "beautifulsoup4==4.12.2",
         "et-xmlfile==1.1.0",
-        "fbpyutils==1.3.0",
         "lxml==4.9.3",
         "numpy==1.25.1",
         "ofxparse==0.21",
