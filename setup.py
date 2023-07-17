@@ -75,10 +75,10 @@ setup(
     url="https://github.com/fcjbispo/fbpyutils",  # Optional
     # This should be your name or the name of the organization which owns the
     # project.
-    author="Ackertime Serviços em Informática",  # Optional
+    author="Francisco Bispo",  # Optional
     # This should be a valid email address corresponding to the author listed
     # above.
-    author_email="fcjbispo@ackertime.com",  # Optional
+    author_email="fcjbispo@franciscobispo.net",  # Optional
     # Classifiers help users find your project by categorizing it.
     #
     # For a list of valid classifiers, see https://pypi.org/classifiers/
@@ -97,7 +97,7 @@ setup(
         # that you indicate whether you support Python 2, Python 3 or both.
         # These classifiers are *not* checked by 'pip install'. See instead
         # 'python_requires' below.
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.10",
     ],
     # This field adds keywords for your project which will appear on the
     # project page. What does your project relate to?
@@ -119,7 +119,7 @@ setup(
     # and refuse to install the project if the version does not match. If you
     # do not support Python 2, you can simplify this to '>=3.5' or similar, see
     # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
-    python_requires=">=3.6, <4",
+    python_requires=">=3.10, <4",
     # This field lists other packages that your project depends on to run.
     # Any package you put here will be installed by pip when your project is
     # installed, so they must be valid existing projects.
