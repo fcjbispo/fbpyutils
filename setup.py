@@ -127,22 +127,21 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        "beautifulsoup4==4.10.0; python_version >= '3.1'",
-        "chardet==4.0.0",
-        "click==8.0.3",
-        "colorama==0.4.4; platform_system == 'Windows'",
-        "et-xmlfile==1.1.0; python_version >= '3.6'",
-        "lxml==4.7.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
-        "numpy==1.22.1",
+        "beautifulsoup4==4.12.2",
+        "et-xmlfile==1.1.0",
+        "fbpyutils==1.3.0",
+        "lxml==4.9.3",
+        "numpy==1.25.1",
         "ofxparse==0.21",
-        "openpyxl==3.0.9",
-        "pandas==1.4.0",
+        "openpyxl==3.1.2",
+        "pandas==2.0.3",
         "python-dateutil==2.8.2",
         "python-magic==0.4.13",
         "python-magic-win64==0.4.13",
-        "pytz==2021.3",
-        "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-        "soupsieve==2.3.1; python_version >= '3.6'",
+        "pytz==2023.3",
+        "six==1.16.0",
+        "soupsieve==2.4.1",
+        "tzdata==2023.3",
         "xlrd==2.0.1",
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
