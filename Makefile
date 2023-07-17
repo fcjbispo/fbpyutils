@@ -12,7 +12,7 @@ clean:
 	find . -type d -name __pycache__ -print0 | xargs -0 rm -rf
 
 coverage:
-	pipenv run python -m pytest --cov-report xml --cov=./fbpyutils tests
+	pipenv run python -m pytest --cov-report xml --cov=./fbpyutils --verbose --color=yes tests
 
 test:
 	pipenv run python -m pytest --verbose --color=yes tests
