@@ -86,7 +86,8 @@ def get_all_sheets(xl_file):
 def write_to_sheet(df, workbook_path, sheet_name):
     if not os.path.exists(workbook_path):
         df.to_excel(
-            workbook_path, sheet_name=sheet_name, index=False, freeze_panes=(1,0), header=True)
+            workbook_path, sheet_name=sheet_name, 
+            index=False, freeze_panes=(1,0), header=True)
     else:
         warnings.simplefilter("ignore")
         book = load_workbook(workbook_path)

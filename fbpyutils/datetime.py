@@ -69,6 +69,9 @@ def elapsed_time(x: datetime, y: datetime) -> tuple:
 
         Return the elapsed time formatted as tuple (days, hours, minutes, seconds)  
     '''
+    if x < y:
+        raise ValueError("x parameter must be greater than or equal to y parameter")
+
     delta = x - y
 
     days = delta.days
