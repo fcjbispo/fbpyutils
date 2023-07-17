@@ -7,7 +7,7 @@ Miscelaneous functions for Python development.
 Install the latest code from github
 
 ```
-pipenv install https://github.com/fcjbispo/builds/raw/main/fbpyutils/fbpyutils-1.2.1-py3-none-any.whl
+pipenv install https://github.com/fcjbispo/builds/raw/main/fbpyutils/fbpyutils-1.3.1-py3-none-any.whl
 ```
 
 ## Features
