@@ -10,22 +10,15 @@ from typing import Dict
 
 def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
     '''
-    Gets time delta from two dates
-
-        x
-            Last date
-
-        y
-            First date. Must be greater or equal to the last date
-
-       delta
-            The unit of time to return. Should be either:
-                'months' for number of months between
-                    both dates
-                'years' for number of years between both
-                    dates
-
-        Return the number of months or years between both dates
+    Gets the time delta between two dates.
+     Parameters:
+        x (datetime): The last date.
+        y (datetime): The first date. Must be greater than or equal to the last date.
+        delta (str): The unit of time to return. Should be either 'months' for the number of
+        months between both dates or 'years' for the number of years between both dates.
+        Defaults to 'months'.
+     Returns:
+        int: The number of months or years between both dates.
     '''
     d = relativedelta.relativedelta(x, y)
     if delta == 'months':
@@ -38,14 +31,12 @@ def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
 
 def apply_timezone(x: datetime, tz: str) -> datetime:
     '''
-    Apply the specified timezone to a datetime object
-
-        x
-            The datetime to have TZ applied
-        y
-            The TZ name
-
-        Return the datetime object with TZ information
+    Apply the specified timezone to a datetime object.
+     Parameters:
+        x (datetime): The datetime to have the timezone applied.
+        tz (str): The name of the timezone.
+     Returns:
+        datetime: The datetime object with the timezone information.
     '''
     timezone = pytz.timezone(tz)
 
@@ -59,15 +50,12 @@ def apply_timezone(x: datetime, tz: str) -> datetime:
 
 def elapsed_time(x: datetime, y: datetime) -> tuple:
     '''
-    Calculates and return elapsed time as tuple (days, hours, minutes, seconds).
-
-        x
-            Last date
-
-        y
-            First date. Must be greater or equal to the last date
-
-        Return the elapsed time formatted as tuple (days, hours, minutes, seconds)  
+    Calculates and returns the elapsed time as a tuple (days, hours, minutes, seconds).
+     Parameters:
+        x (datetime): The last date.
+        y (datetime): The first date. Must be greater than or equal to the last date.
+     Returns:
+        tuple: The elapsed time formatted as a tuple (days, hours, minutes, seconds).
     '''
     if x < y:
         raise ValueError("x parameter must be greater than or equal to y parameter")

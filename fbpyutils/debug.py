@@ -5,21 +5,17 @@ Functions support code debugging.
 
 def debug(func):
     '''
-    Decorator function to be used to debug execution of system functions.
+    Decorator function used to debug the execution of system functions.
     Prints all arguments used and the result value of the debugged functions.
-
-    Use:
-
-    @debug
-    def myFunc(x, y, z):
-        pass
-
-        x
-            The function to be decorated
-
-        Return function decorator
+     Usage:
+     @debug
+     def myFunc(x, y, z):
+         pass
+     Parameters:
+        func: The function to be decorated.
+     Returns:
+        The function decorator.
     '''
-
     def _debug(*args, **kwargs):
         result = func(*args, **kwargs)
         print(
