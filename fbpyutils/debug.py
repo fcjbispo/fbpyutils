@@ -1,6 +1,7 @@
 '''
 Functions support code debugging.
 '''
+import traceback
 
 
 def debug(func):
@@ -24,3 +25,15 @@ def debug(func):
         return result
 
     return _debug
+
+
+def debug_info(x: Exception):
+    '''
+    Return extra exception/execution info for debug.
+    '''
+    try:
+        info = f"{x.__str__()}: {traceback.format_exc()}."
+    except Exception as e:
+        info = f"{x.__str__()}: Unable to get debug info: {e}"
+
+    return info
