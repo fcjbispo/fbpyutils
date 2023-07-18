@@ -14,11 +14,9 @@ xlrd = "*"
 
 [dev-packages]
 ipykernel = "*"
-pytest = "*"
-pytest-cov = "*"
-pytest-mock = "*"
 black = "*"
 autopep8 = "*"
+vistir = "==0.6.1"
 pipenv-setup = "*"
 
 [requires]
