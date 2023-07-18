@@ -14,20 +14,31 @@ from fbpyutils import datetime as dutl
 
 def get_calendar(x: date, y: date) -> List:
     '''
-    Build a calendar for use as time dimension
-
-        x
-            Intial date for the calendar
-
-        y
-            Final date for the calendar. Must be greater than initial date
-
-        Return a calendar for use as time dimension with the following
-        attributes:
-            date, date_time, year, half, quarter, month, day,
-            week_day, week_of_year, date_iso, date_str, week_day_name,
-            week_day_name_short, week_month_name, week_month_name_short,
-            year_str, year_half_str, year_quarter_str, year_month_str
+    Build a calendar to be used as a time dimension.
+     Parameters:
+        x (date): The initial date for the calendar.
+        y (date): The final date for the calendar. Must be greater than the initial date.
+     Returns:
+        List: A calendar to be used as a time dimension with the following attributes:
+            - date (date): The date.
+            - date_time (datetime): The date and time.
+            - year (int): The year.
+            - half (int): The half of the year.
+            - quarter (int): The quarter of the year.
+            - month (int): The month.
+            - day (int): The day.
+            - week_day (int): The day of the week (Monday is 0 and Sunday is 6).
+            - week_of_year (int): The week of the year.
+            - date_iso (str): The date in ISO format.
+            - date_str (str): The date in string format.
+            - week_day_name (str): The name of the day of the week.
+            - week_day_name_short (str): The short name of the day of the week.
+            - week_month_name (str): The name of the month.
+            - week_month_name_short (str): The short name of the month.
+            - year_str (str): The year in string format.
+            - year_half_str (str): The year and half of the year in string format.
+            - year_quarter_str (str): The year and quarter of the year in string format.
+            - year_month_str (str): The year and month in string format.
     '''
     start_date, end_date = x, y
     if end_date <= start_date:
@@ -69,34 +80,22 @@ def add_markers(
     x: List, reference_date: date = datetime.now().date()
 ) -> List:
     '''
-    Adds markers to past months from reference date
-
-        x
-            The calendar dict used to add markers
-
-        reference_date
-            The date used to calculate the markers. Default to current date
-
-        Add markers to the passed calendar. The markets are flags
-        the the number of months past ago from reference date:
-            today: True if calendar date and current date are the same
-            current_year: True if calendar date's year is the current year
-            last_day_of_month: True if calendar date is the last date of
-                the date's month
-            last_day_of_quarter: True if calendar date is the last date of
-                the date's quarter
-            last_day_of_half: True if calendar date is the last date of
-                the date's half
-            last_day_of_year: True if calendar date is the last date of
-                the date's year
-            last_24_months: True if calendar date is in the last 24 months
-                from current date
-            last_12_months: True if calendar date is in the last 12 months
-                from current date
-            last_6_months: True if calendar date is in the last 6 months
-                from current date
-            last_3_months: True if calendar date is in the last 3 months
-                from current date
+    Adds markers to past months from the reference date.
+     Parameters:
+        x (List): The calendar dict used to add markers.
+        reference_date (date): The date used to calculate the markers. Defaults to the current date.
+     Returns:
+        List: The calendar with added markers. The markers indicate the number of months past from the reference date:
+            - today (bool): True if the calendar date and the current date are the same.
+            - current_year (bool): True if the calendar date's year is the current year.
+            - last_day_of_month (bool): True if the calendar date is the last date of its month.
+            - last_day_of_quarter (bool): True if the calendar date is the last date of its quarter.
+            - last_day_of_half (bool): True if the calendar date is the last date of its half.
+            - last_day_of_year (bool): True if the calendar date is the last date of its year.
+            - last_24_months (bool): True if the calendar date is within the last 24 months from the current date.
+            - last_12_months (bool): True if the calendar date is within the last 12 months from the current date.
+            - last_6_months (bool): True if the calendar date is within the last 6 months from the current date.
+            - last_3_months (bool): True if the calendar date is within the last 3 months from the current date.
     '''
     cal = x
 
@@ -142,23 +141,14 @@ def calendarize(
     reference_date: date = datetime.now().date()
 ) -> DataFrame:
     '''
-    Adds calendar columns to a dataframe
-
-        x
-            The dataframe used to add calendar data
-
-        date_column
-            The datetime column used to build calendar data.
-            Shoud be different from 'calendar_date'
-
-        with_markers
-            Add or not calendar markers to the dataframe. Default False
-
-        reference_date
-            The date used to calculate the markers. Default to current date
-
-        Return a new dataframe with calendar columns and optional markers added 
-        to the passed dataframe.
+    Adds calendar columns to a dataframe.
+     Parameters:
+        x (DataFrame): The dataframe used to add calendar data.
+        date_column (str): The datetime column used to build calendar data. Should be different from 'calendar_date'.
+        with_markers (bool): Indicates whether to add calendar markers to the dataframe. Default is False.
+        reference_date (date): The date used to calculate the markers. Defaults to the current date.
+     Returns:
+        DataFrame: A new dataframe with calendar columns and optional markers added to the passed dataframe.
     '''
     if not type(x) == type(pd.DataFrame([])):
         raise TypeError(f'Invalid object type. Expected Pandas DataFrame.')

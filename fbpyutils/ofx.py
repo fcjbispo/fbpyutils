@@ -22,41 +22,33 @@ from datetime import datetime
 account_types = ['UNKNOWN', 'BANK', 'CREDIT_CARD', 'INVESTMENT']
 
 
-def format_date(
-    x: datetime, native: bool = True
-) -> Union[datetime, str]:
-    '''
-    Formats a datetime for use in ofx data
-
-        x
-            The datetime to be used
-        native
-            if True use native (datetime) format to be used in dicts.
-            Else uses datetime string iso format. Default = True
-
-        Return the datetime formatted to be used in dict or string iso format
-            Ex.: "2020-03-10T03:00:00"
-    '''
+def format_date(x: datetime, native: bool = True) -> Union[datetime, str]:
+    """
+    Formats a datetime for use in ofx data.
+     Args:
+        x (datetime): The datetime to be used.
+        native (bool, optional): If True, use native (datetime) format to be used in dicts.
+            Otherwise, uses datetime string iso format. Default is True.
+     Returns:
+        Union[datetime, str]: The datetime formatted to be used in dict or string iso format.
+            Example: "2020-03-10T03:00:00"
+    """
     if native:
         return x
     else:
         return x.isoformat()
 
 
-def read(
-    x: str, native_date: bool = True
-) -> Dict:
-    '''
-    Reads ofx data into a dict
-
-        x
-            The ofx data
-        native
-            if True use native (datetime) format to be used in dicts.
-            Else uses datetime string iso format. Default = True
-
-        Return a dict with the ofx data
-    '''
+def read(x: str, native_date: bool = True) -> Dict:
+    """
+    Reads ofx data into a dictionary.
+     Args:
+        x (str): The ofx data.
+        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
+            Otherwise, uses datetime string iso format. Default is True.
+     Returns:
+        Dict: A dictionary with the ofx data.
+    """
     ofx = OfxParser.parse(x)
     acct = ofx.account
 
@@ -113,20 +105,16 @@ def read(
     return ofx_data
 
 
-def read_from_path(
-    x: str, native_date: bool = True
-) -> Dict:
-    '''
-    Reads ofx data from file into a dict
-
-        x
-            The ofx file path to be readed
-        native
-            if True use native (datetime) format to be used in dicts.
-            Else uses datetime string iso format. Default = True
-
-        Return a dict with the ofx data
-    '''
+def read_from_path(x: str, native_date: bool = True) -> Dict:
+    """
+    Reads ofx data from a file into a dictionary.
+     Args:
+        x (str): The ofx file path to be read.
+        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
+            Otherwise, uses datetime string iso format. Default is True.
+     Returns:
+        Dict: A dictionary with the ofx data.
+    """
     try:
         f = open(x, 'rb')
     except OSError:
@@ -139,10 +127,10 @@ def read_from_path(
 # ----
 
 def main(argv):
-    '''
+    """
     Main function of the program.
      Parameters:
-    - argv: A list of command-line arguments passed to the program.
+    - argv (list): A list of command-line arguments passed to the program.
      Returns:
     None
      Functionality:
@@ -158,7 +146,7 @@ def main(argv):
      Example Usage:
     $ python ofx.py --print myfile.ofx
      This will read the data from "myfile.ofx" and print it as a formatted JSON string.
-    '''
+    """
     helper_msg = 'Use ofx.py --print <file_path>'
     source_path = ''
 

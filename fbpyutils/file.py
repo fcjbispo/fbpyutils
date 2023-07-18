@@ -16,19 +16,19 @@ else:
 
 
 def find(x: str, mask: str = '*.*') -> list:
-    '''
-    Finds recursively for files in a source folder using specific mask
-    Based on the code:
-        https://stackoverflow.com/questions/2186525/how-to-use-glob-to-find-files-recursively
-
-        x
-            The source folder to find and list out
-        mask
-            The mask to be used when find files. Default = *.*
-
-        Return a list with the full path of files found recursivelly in source
-        folder using the specified mask
-    '''
+    """
+    Finds files recursively in a source folder using a specific mask.
+     Parameters:
+        x (str): The source folder to find and list files from.
+        mask (str): The mask to be used when finding files. Default is '*.*'.
+     Returns:
+        list: A list containing the full paths of files found recursively in the source folder using the specified mask.
+     Examples:
+        >>> find('/path/to/folder', '*.txt')
+        ['/path/to/folder/file1.txt', '/path/to/folder/subfolder/file2.txt']
+        >>> find('/path/to/another/folder')
+        ['/path/to/another/folder/file3.txt', '/path/to/another/folder/file4.jpg']
+    """
     all_files = [str(filename)
                  for filename in Path(x).rglob(mask)]
 
@@ -36,16 +36,17 @@ def find(x: str, mask: str = '*.*') -> list:
 
 
 def creation_date(x: str) -> datetime:
-    '''
-    Try to get the datetime that a file was created, falling back to when it
-    was last modified if that isn't possible.
-    See http://stackoverflow.com/a/39501288/1709587 for explanation.
-
-        x
-            The path for the file which creation date is desired
-
-        Return the creation datetime for the file
-    '''
+    """
+    Tries to retrieve the datetime when a file was created, falling back to when it was last modified if that information is not available.
+    See http://stackoverflow.com/a/39501288/1709587 for more details.
+     Parameters:
+        x (str): The path of the file for which the creation date is desired.
+     Returns:
+        datetime: The creation datetime for the file.
+     Example:
+        >>> creation_date('/path/to/file.txt')
+        datetime.datetime(2022, 1, 1, 10, 30, 15)
+    """
     if platform.system() == 'Windows':
         t = os.path.getctime(x)
     else:
@@ -61,27 +62,33 @@ def creation_date(x: str) -> datetime:
 
 
 def load_from_json(x: str, encoding='utf-8') -> Dict:
-    '''
-    Load data from JSON file and return a dict.
-
-        x
-            The path for the file which will be read
-
-        Return a dictionary with data from JSON file
-    '''
+    """
+    Loads data from a JSON file and returns it as a dictionary.
+     Parameters:
+        x (str): The path of the file to be read.
+        encoding (str): The encoding of the file. Default is 'utf-8'.
+     Returns:
+        Dict: A dictionary containing the data from the JSON file.
+     Example:
+        >>> load_from_json('/path/to/file.json')
+        {'key1': 'value1', 'key2': 'value2'}
+    """
     return json.load(open(x, 'r', encoding=encoding))
 
 
 def write_to_json(x: Dict, path_to_file: str, prettify=True):
-    '''
-    Write data from dictionary to JSON.
-
-        x
-            The dict to be written to file
-        path_to_file
-            The path for the file which will be written
-
-    '''
+    """
+    Writes data from a dictionary to a JSON file.
+     Parameters:
+        x (Dict): The dictionary to be written to the file.
+        path_to_file (str): The path of the file to be written.
+        prettify (bool): Flag indicating whether the JSON output should be prettified. Default is True.
+     Returns:
+        None
+     Example:
+        >>> data = {'key1': 'value1', 'key2': 'value2'}
+        >>> write_to_json(data, '/path/to/file.json', prettify=True)
+    """
     with open(path_to_file, 'w') as outputfile:
         if prettify:
             json.dump(
@@ -95,14 +102,16 @@ def write_to_json(x: Dict, path_to_file: str, prettify=True):
 
 
 def contents(x: str) -> bytearray:
-    '''
+    """
     Reads a file and returns its contents as an array of bytes.
-
-        x
-            The path for the file to be read
-
-        Return the file contets as an array of bytes
-    '''
+     Parameters:
+        x (str): The path of the file to be read.
+     Returns:
+        bytearray: The contents of the file as an array of bytes.
+     Example:
+        >>> contents('/path/to/file.txt')
+        bytearray(b'This is the file contents.')
+    """
     fileName = x
     fileContent = None
 
@@ -114,14 +123,16 @@ def contents(x: str) -> bytearray:
 
 
 def mime_type(x: str) -> str:
-    '''
+    """
     Returns the mime type of a file.
-
-        x
-            The path for the file to get its mime type
-
-        Return the mime type of the file passed
-    '''
+     Parameters:
+        x (str): The path of the file to get its mime type.
+     Returns:
+        str: The mime type of the file passed.
+     Example:
+        >>> mime_type('/path/to/file.txt')
+        'text/plain'
+    """
     file_path = x
 
     try:
@@ -134,41 +145,43 @@ def mime_type(x: str) -> str:
 
 
 def _is_windows() -> bool:
-    '''
-    Returns if the code is running on Windows OS.
-
-        True if current os is Windows or False otherwise
-    '''
+    """
+    Returns whether the code is running on the Windows operating system.
+     Returns:
+        bool: True if the current operating system is Windows, False otherwise.
+     Example:
+        >>> _is_windows()
+        True
+    """
     return sys.platform.upper().startswith('WIN')
 
 
 def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
-    '''
-    Build a path for specific file according operating system.
-
-        winroot
-            The root path for windows operating systems
-
-        otherroot
-            The root path for other operating systems
-
-        pathparts
-            The elements to build the path. The last element shoud be the file
-
-        Return the path for the file according the operating system
-    '''
+    """
+    Builds a path for a specific file according to the operating system.
+     Parameters:
+        winroot (str): The root path for Windows operating systems.
+        otherroot (str): The root path for other operating systems.
+        pathparts (list): The elements to build the path. The last element should be the file.
+     Returns:
+        str: The path for the file according to the operating system.
+     Example:
+        >>> build_platform_path('C:\\', '/root/', ['folder', 'subfolder', 'file.txt'])
+        'C:\\folder\\subfolder\\file.txt'
+    """
     return os.path.sep.join([(winroot if _is_windows() else otherroot), *pathparts])
 
 
 def absolute_path(x: str):
-    '''
-    Return the absolute path for the file x.
-
-        x
-            The file full name to have the absolute path extracted
-
-
-        Return the absolute path for the given file
-    '''
+    """
+    Returns the absolute path for the file x.
+     Parameters:
+        x (str): The full name of the file to extract the absolute path from.
+     Returns:
+        str: The absolute path for the given file.
+     Example:
+        >>> absolute_path('file.txt')
+        '/path/to/file.txt'
+    """
     x = x or __file__
     return os.path.sep.join(os.path.realpath(x).split(os.path.sep)[:-1])
