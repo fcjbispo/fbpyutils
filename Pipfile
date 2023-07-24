@@ -11,6 +11,7 @@ python-magic = "*"
 python-magic-win64 = "*"
 openpyxl = "*"
 xlrd = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 ipykernel = "*"
@@ -18,5 +19,6 @@ black = "*"
 autopep8 = "*"
 vistir = "==0.6.1"
 pipenv-setup = "*"
+psycopg2 = "*"
 
 [requires]
