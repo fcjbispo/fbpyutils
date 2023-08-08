@@ -44,7 +44,38 @@ def isolate(df, group_columns, unique_columns):
     return df.loc[rows_ids]
 
 
-def add_hash_index(df, index_name='id'):
+_create_hash_column = lambda x, y=12: x.apply(lambda x: hashlib.md5(str(x).encode()).hexdigest()[:y], axis=1)
+
+
+def add_hash_column(df, column_name, length=12):
+    """
+    Adds a hash column to the given DataFrame.
+
+    Args:
+        df (pandas.DataFrame): The input DataFrame.
+        column_name (str): The name of the column to be created.
+        length (int): The length of the column to be created. Defaults to 12.
+
+    Returns:
+        pandas.DataFrame: A new DataFrame with the hash column added as the first column.
+                          The order of other columns remains the same.
+    """
+    # Parameter checks
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("The 'df' parameter should be of type pandas.DataFrame.")
+    if not isinstance(column_name, str):
+        raise TypeError("The 'index_name' parameter should be a string.")
+    if not isinstance(length, int):
+        raise TypeError("The 'length' parameter should be an integer.")
+    if length <= 0:
+        raise ValueError("The 'length' parameter should be greater than 0.")
+    # Creates the hash column
+    df[column_name] = _create_hash_column(df, length)
+    xcolumns = [column_name, *[c for c in df.columns if c != column_name]]
+    return df[xcolumns].copy()
+
+
+def add_hash_index(df, index_name='id', length=12):
     """
     Replaces the dataframe index with a hash string with length of 12 characters
     calculated using all columns values for each row and renames the dataframe index
@@ -55,6 +86,8 @@ def add_hash_index(df, index_name='id'):
         A pandas dataframe.
     index_name : str
         The name to be given to the new index. Defaults to 'id'
+    length : int
+        The length of the column to be created. Defaults to 12.
     Returns:
     --------
     pd.DataFrame
@@ -69,8 +102,17 @@ def add_hash_index(df, index_name='id'):
     3d4c4f4f4d1f   2   b
     5b5d8c7a2a4c   3   c
     """
-    # Calculate the hash string for each row
-    hash_df = df.apply(lambda x: hashlib.md5(str(x).encode()).hexdigest()[:12], axis=1)
+    # Parameter checks
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("The 'df' parameter should be of type pandas.DataFrame.")
+    if not isinstance(index_name, str):
+        raise TypeError("The 'index_name' parameter should be a string.")
+    if not isinstance(length, int):
+        raise TypeError("The 'length' parameter should be an integer.")
+    if length <= 0:
+        raise ValueError("The 'length' parameter should be greater than 0.")
+    # Creates the hash column
+    hash_df = _create_hash_column(df, length)
     # Set the hash string as the new index
     df.index = hash_df
     # Rename the index
@@ -78,26 +120,29 @@ def add_hash_index(df, index_name='id'):
     return df
 
 
-def table_operation(operation, dataframe, engine, table_name, schema=None, keys=None, index=None):
+def table_operation(operation, dataframe, engine, table_name, schema=None, keys=None, index=None, commit_at=50):
     """
     Perform upsert or replace operation on a table based on the provided dataframe.
 
     Args:
-        dataframe (pd.DataFrame): The pandas DataFrame containing the data to be inserted or updated.
-        table_name (str): The name of the table to operate on.
-        engine (sqlalchemy.engine.Engine): The SQLAlchemy engine engine.
         operation (str, optional): The operation to be performed ('upsert' or 'replace').
+        dataframe (pd.DataFrame): The pandas DataFrame containing the data to be inserted or updated.
+        engine (sqlalchemy.engine.Engine): The SQLAlchemy engine engine.
+        table_name (str): The name of the table to operate on.
+        schema (str, optional): the schena name to preffix the table objects.
         keys (list of str, optional for operation=replace): List of column names to use as keys for upsert operation.
         index (str, optional): Whether to create an index and what kind using the keys. Default is None (not create index).
             If an index must be created, index be in 'standard' or 'unique'.
+        commit_at (int, optional): Number of rows to commit in the database at once. Defaults to 50. 
+            Must be > 1 and < total rows of the dataframe.
 
     Returns:
         dict: A dictionary containing information about the performed operation.
 
     """
     # Check parameters
-    if operation not in ('upsert', 'replace'):
-        raise ValueError("Invalid operation. Valid values: upsert|replace.")
+    if operation not in ('append', 'upsert', 'replace'):
+        raise ValueError("Invalid operation. Valid values: append| upsert|replace.")
     
     if not type(dataframe) == pd.DataFrame:
         raise ValueError("Dataframe must be a Pandas DataFrame.")
@@ -110,6 +155,10 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
     
     if (keys and index) and index not in ('standard', 'unique'):
         raise ValueError("If an index will be created, it must be any of standard|unique.")
+    
+    commit_at = commit_at or 50
+    if not type(commit_at) == int or (commit_at < 1 and commit_at > len(dataframe)):
+        raise ValueError('Commit At must be > 1 and < total rows of DataFrame.')
 
     # Check if the table exists in the database, if not create it
     if not inspect(engine).has_table(table_name, schema=schema):
@@ -125,11 +174,13 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
     failures = []
 
     try:
-        with engine.begin() as conn:
+        with engine.connect() as conn:
             step = 'drop table'
             if operation == 'replace':
                 conn.execute(table.delete())
+                conn.commit()
 
+            rows = 0
             for i, row in dataframe.iterrows():
                 try:
                     step = 'check existence'
@@ -144,40 +195,46 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
                         )
                     ).params(**values)
                     if conn.execute(exists_query).fetchone():
-                        # Perform update
-                        step = 'replace with update'
-                        update_filter = {
-                            k: values[k]
-                            for k in keys
-                        }
+                        if  operation == 'upsert':
+                            # Perform update
+                            step = 'replace with update'
+                            update_values = {
+                                k: values[k]
+                                for k in values.keys() if k not in keys
+                            }
 
-                        update_values = {
-                            k: values[k]
-                            for k in values.keys() if k not in keys
-                        }
+                            update_stmt = table.update().where(
+                                text(' AND '.join([f"{col}=:{col}" for col in keys]))
+                            ).values(**update_values)
 
-                        update_stmt = table.update().where(
-                            text(' AND '.join([f"{col}=:{col}" for col in keys]))
-                        ).values(**update_values)
-
-                        update_stmt = text(str(update_stmt))
-                        conn.execute(update_stmt, values)
-                        updates += 1
+                            update_stmt = text(str(update_stmt))
+                            conn.execute(update_stmt, values)
+                            updates += 1
                     else:
                         # Perform insert
                         step = 'replace with insert'
                         insert_stmt = table.insert().values(**values)
                         conn.execute(insert_stmt)
                         inserts += 1
+
+                    rows += 1
+                    if rows >= commit_at:
+                        conn.commit()
+                        rows = 0
                 except Exception as e:
                         failures .append({
                             'step': step,
-                            'row': (i, values),
+                            'row': (
+                                i, ', '.join([
+                                    f"{k}='{str(v)}'" for k, v in values.items()
+                            ])),
                             'error': str(e)
                         })
+                        conn.rollback()
                         continue    
             conn.commit()
     except Exception as e:
+        conn.rollback()
         failures.append({
             'step': step,
             'row': None,
@@ -223,8 +280,9 @@ def create_table(dataframe, engine, table_name, schema=None, keys=None, index=No
     # Create the index if required
     if index:
         unique = (index == 'unique')
+        idx_suffix = 'uk' if unique else 'ik'
         table.indexes.add(
-            create_index(f"{table_name}_idx", table, keys, unique)
+            create_index(f"{table_name}_i001_{idx_suffix}", table, keys, unique)
         )
 
     return metadata.create_all(engine)
