@@ -142,7 +142,7 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
     """
     # Check parameters
     if operation not in ('append', 'upsert', 'replace'):
-        raise ValueError("Invalid operation. Valid values: append| upsert|replace.")
+        raise ValueError("Invalid operation. Valid values: append|upsert|replace.")
     
     if not type(dataframe) == pd.DataFrame:
         raise ValueError("Dataframe must be a Pandas DataFrame.")
