@@ -270,15 +270,20 @@ def create_table(dataframe, engine, table_name, schema=None, keys=None, index=No
     if keys and not type(keys) == list:
         raise ValueError("Parameters 'keys' must be a list of str.")
     
-    if keys and index and index not in ('standard', 'unique'):
-        raise ValueError("If an index will be created, it must be any of standard|unique.")
+    if keys and index and index not in ('standard', 'unique', 'primary'):
+        raise ValueError("If an index will be created, it must be any of standard|unique|primary.")
 
     metadata = MetaData(schema)
-    columns = get_columns_types(dataframe)
+
+    if keys and index == 'primary':
+        columns = get_columns_types(dataframe, primary_keys=keys)
+    else:
+        columns = get_columns_types(dataframe, primary_keys=[])
+
     table = Table(table_name, metadata, *columns)
 
     # Create the index if required
-    if index:
+    if keys and index in ('standard', 'unique'):
         unique = (index == 'unique')
         idx_suffix = 'uk' if unique else 'ik'
         table.indexes.add(
@@ -295,11 +300,12 @@ def create_index(name, table, keys, unique=True):
     return index_obj
 
 
-def get_columns_types(dataframe):
+def get_columns_types(dataframe, primary_keys=[]):
     """
     Returns a list of Column objects representing the columns of the given dataframe.
      Args:
         dataframe (pandas.DataFrame): The input dataframe for which column types are to be determined.
+        primary_keys (List[str]): Optional list of primary key column names. 
      Returns:
         list: A list of Column objects, where each object represents a column in the dataframe.
      Raises:
@@ -321,8 +327,9 @@ def get_columns_types(dataframe):
             'int64'
     """
     return [
-        Column(col, get_column_type(dataframe.dtypes[col])) for 
-        col in dataframe.columns
+        Column(
+            col, get_column_type(dataframe.dtypes[col]), primary_key=(col in primary_keys)
+        ) for col in dataframe.columns
     ]
 
 
