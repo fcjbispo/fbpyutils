@@ -153,8 +153,8 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
     if keys and not type(keys) == list:
         raise ValueError("Parameters 'keys' must be a list of str.")
     
-    if (keys and index) and index not in ('standard', 'unique'):
-        raise ValueError("If an index will be created, it must be any of standard|unique.")
+    if (keys and index) and index not in ('standard', 'unique', 'primary'):
+        raise ValueError("If an index will be created, it must be any of standard|unique|primary.")
     
     commit_at = commit_at or 50
     if not type(commit_at) == int or (commit_at < 1 and commit_at > len(dataframe)):
