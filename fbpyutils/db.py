@@ -184,11 +184,11 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
             rows = 0
             for i, row in dataframe.iterrows():
                 try:
+                    values = {col: row[col] for col in dataframe.columns}
+
                     exists = False
                     step = 'check existence'
                     if keys:
-                        values = {col: row[col] for col in dataframe.columns}
-
                         # Check if row exists in the table based on keys
                         exists_query = table.select().where(
                             exists(
