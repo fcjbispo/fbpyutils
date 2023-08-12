@@ -171,6 +171,7 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
     # Initialize reports for insertions, updates, and failures
     inserts = 0
     updates = 0
+    skips   = 0
     failures = []
 
     try:
@@ -183,18 +184,22 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
             rows = 0
             for i, row in dataframe.iterrows():
                 try:
+                    exists = False
                     step = 'check existence'
-                    values = {col: row[col] for col in dataframe.columns}
+                    if keys:
+                        values = {col: row[col] for col in dataframe.columns}
 
-                    # Check if row exists in the table based on keys
-                    exists_query = table.select().where(
-                        exists(
-                            table.select().where(
-                                text(' AND '.join([f"{col} = :{col}" for col in keys]))
+                        # Check if row exists in the table based on keys
+                        exists_query = table.select().where(
+                            exists(
+                                table.select().where(
+                                    text(' AND '.join([f"{col} = :{col}" for col in keys]))
+                                )
                             )
-                        )
-                    ).params(**values)
-                    if conn.execute(exists_query).fetchone():
+                        ).params(**values)
+                        if conn.execute(exists_query).fetchone():
+                            exists = True 
+                    if exists:
                         if  operation == 'upsert':
                             # Perform update
                             step = 'replace with update'
@@ -210,9 +215,11 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
                             update_stmt = text(str(update_stmt))
                             conn.execute(update_stmt, values)
                             updates += 1
+                        else:
+                            skips += 1
                     else:
                         # Perform insert
-                        step = 'replace with insert'
+                        step = 'perform insert'
                         insert_stmt = table.insert().values(**values)
                         conn.execute(insert_stmt)
                         inserts += 1
@@ -246,6 +253,7 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
         'table_name': '.'.join([schema, table_name]),
         'insertions': inserts,
         'updates': updates,
+        'skips': skips,
         'failures': failures,
     }
 
