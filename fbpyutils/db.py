@@ -186,7 +186,7 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
                 try:
                     values = {col: row[col] for col in dataframe.columns}
 
-                    exists = False
+                    row_exists = False
                     step = 'check existence'
                     if keys:
                         # Check if row exists in the table based on keys
@@ -198,8 +198,8 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
                             )
                         ).params(**values)
                         if conn.execute(exists_query).fetchone():
-                            exists = True 
-                    if exists:
+                            row_exists = True 
+                    if row_exists:
                         if  operation == 'upsert':
                             # Perform update
                             step = 'replace with update'
