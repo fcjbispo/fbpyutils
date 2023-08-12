@@ -183,3 +183,31 @@ def normalize_names(names, normalize_specials=True):
     return [
         str(translate_special_chars(c) if normalize_specials else c).replace(' ', '_').replace('/', '_').lower() for c in names
     ]
+
+
+def split_by_lengths(string, lengths):
+    """
+    Splits a given string into multiple substrings based on the provided lengths.
+
+    Args:
+        string (str): The input string to be split.
+        lengths (list): A list of integers representing the desired lengths of the substrings.
+
+    Returns:
+        list: A list of substrings obtained by splitting the input string based on the provided lengths.
+
+    Raises:
+        None
+
+    Example:
+        >>> split_by_lengths("HelloWorld", [5, 5])
+        ['Hello', 'World']
+    """
+    if len(lengths) == 0:
+        return [string]
+    else:
+        return [
+            string[:lengths[0]]
+        ] + split_by_lengths(
+            string[lengths[0]:], lengths[1:]
+        )

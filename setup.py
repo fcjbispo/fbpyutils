@@ -126,26 +126,26 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=["beautifulsoup4==4.12.2; python_full_version >= '3.6.0'", "et-xmlfile==1.1.0; python_version >= '3.6'", "greenlet==2.0.2; platform_machine == 'aarch64' or (platform_machine == 'ppc64le' or (platform_machine == 'x86_64' or (platform_machine == 'amd64' or (platform_machine == 'AMD64' or (platform_machine == 'win32' or platform_machine == 'WIN32')))))", "lxml==4.9.3; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'", "numpy==1.25.1; python_version >= '3.10'", 'ofxparse==0.21', 'openpyxl==3.1.2', 'pandas==2.0.3', "python-dateutil==2.8.2; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'", 'python-magic==0.4.13', 'python-magic-win64==0.4.13', 'pytz==2023.3', "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'", "soupsieve==2.4.1; python_version >= '3.7'", 'sqlalchemy==2.0.19', "typing-extensions==4.7.1; python_version >= '3.7'", "tzdata==2023.3; python_version >= '2'", 'xlrd==2.0.1'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-],  # Optional
+    install_requires=[
+        "beautifulsoup4==4.12.2; python_full_version >= '3.6.0'",
+        "et-xmlfile==1.1.0; python_version >= '3.6'",
+        "greenlet==2.0.2; platform_machine == 'aarch64' or (platform_machine == 'ppc64le' or (platform_machine == 'x86_64' or (platform_machine == 'amd64' or (platform_machine == 'AMD64' or (platform_machine == 'win32' or platform_machine == 'WIN32')))))",
+        "lxml==4.9.3; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
+        "numpy==1.25.1; python_version >= '3.10'",
+        "ofxparse==0.21",
+        "openpyxl==3.1.2",
+        "pandas==2.0.3",
+        "python-dateutil==2.8.2; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+        "python-magic==0.4.13",
+        "python-magic-win64==0.4.13",
+        "pytz==2023.3",
+        "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+        "soupsieve==2.4.1; python_version >= '3.7'",
+        "sqlalchemy==2.0.19",
+        "typing-extensions==4.7.1; python_version >= '3.7'",
+        "tzdata==2023.3; python_version >= '2'",
+        "xlrd==2.0.1",
+    ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
     # syntax, for example:
