@@ -2,12 +2,29 @@
 Utility functions to manipulate data, tables and dataframes.
 '''
 import pandas as pd
+import numpy as np
 from sqlalchemy import inspect, MetaData, Table, Column, Integer, String, Float, DateTime, Boolean, text, Index
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import exists
+from datetime import datetime, date
 import hashlib
 import re
+
+
+def _deal_with_nans(x):
+    if pd.isna(x) or isinstance(x, type(None)) or isinstance(x, str) and not x:
+        return None
+    elif isinstance(x, (float, np.float64)):
+        if np.isnan(x):
+            return None
+    elif isinstance(x, (datetime, pd.Timestamp)):
+        if pd.isna(x):
+            return None
+    elif isinstance(x, date):
+        if pd.isna(pd.Timestamp(x)):
+            return None
+    return x
 
 
 def isolate(df, group_columns, unique_columns):
@@ -184,7 +201,7 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
             rows = 0
             for i, row in dataframe.iterrows():
                 try:
-                    values = {col: row[col] for col in dataframe.columns}
+                    values = {col: _deal_with_nans(row[col]) for col in dataframe.columns}
 
                     row_exists = False
                     step = 'check existence'

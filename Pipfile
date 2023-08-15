@@ -4,13 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pandas = "==2.0.3"
 ofxparse = "*"
-pandas = "*"
 pytz = "*"
 python-magic = "*"
 python-magic-win64 = "*"
 openpyxl = "*"
 xlrd = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 ipykernel = "*"
@@ -18,5 +19,6 @@ black = "*"
 autopep8 = "*"
 vistir = "==0.6.1"
 pipenv-setup = "*"
+jupytext = "*"
 
 [requires]
