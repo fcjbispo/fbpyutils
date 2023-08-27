@@ -20,5 +20,6 @@ autopep8 = "*"
 vistir = "==0.6.1"
 pipenv-setup = "*"
 jupytext = "*"
+ipython = "*"
 
 [requires]
