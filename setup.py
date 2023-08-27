@@ -43,7 +43,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="1.4.1",  # Required
+    version="1.4.2",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -133,18 +133,18 @@ setup(
         "lxml==4.9.3; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
         "numpy==1.25.2; python_version >= '3.10'",
         "ofxparse==0.21",
-        "openpyxl==3.1.2; python_version >= '3.6'",
-        "pandas==2.0.3; python_version >= '3.8'",
+        "openpyxl==3.1.2",
+        "pandas==2.0.3",
         "python-dateutil==2.8.2; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "python-magic==0.4.13",
         "python-magic-win64==0.4.13",
         "pytz==2023.3",
         "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "soupsieve==2.4.1; python_version >= '3.7'",
-        "sqlalchemy==2.0.20; python_version >= '3.7'",
+        "sqlalchemy==2.0.20",
         "typing-extensions==4.7.1; python_version >= '3.7'",
         "tzdata==2023.3; python_version >= '2'",
-        "xlrd==2.0.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
+        "xlrd==2.0.1",
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
