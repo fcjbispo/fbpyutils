@@ -416,7 +416,7 @@ def get_data_from_pandas(df, include_index=False):
     return data, columns
 
 
-def ascii_table(data, columns=[], alignment='left'):
+def ascii_table(data, columns=[], alignment='left', numrows=None):
     """
     Creates an ASCII table representation of the given data.
 
@@ -492,6 +492,12 @@ def ascii_table(data, columns=[], alignment='left'):
         )
     )
 
+    col_sizes = [len(str(c)) for c in columns]
+    new_max_sizes = []
+    for i, _ in enumerate(max_sizes):
+        new_max_sizes.append(max(max_sizes[i], col_sizes[i]))
+    max_sizes = new_max_sizes
+
     line_sep = ''.join(['+'+'-'*i for i in max_sizes])+'+'
 
     table = []
@@ -530,6 +536,9 @@ def print_ascii_table(data, columns=[], alignment='left'):
         +-------+-----+---------+
 
     """
+    if data is None:
+        return None
+
     table = ascii_table(data, columns=columns, alignment=alignment)
 
     for line in table:

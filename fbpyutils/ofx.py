@@ -18,6 +18,8 @@ from typing import Dict, Union
 
 from datetime import datetime
 
+import codecs
+
 
 account_types = ['UNKNOWN', 'BANK', 'CREDIT_CARD', 'INVESTMENT']
 
@@ -116,7 +118,7 @@ def read_from_path(x: str, native_date: bool = True) -> Dict:
         Dict: A dictionary with the ofx data.
     """
     try:
-        f = open(x, 'rb')
+        f = codecs.open(x)
     except OSError:
         return {}
     else:
