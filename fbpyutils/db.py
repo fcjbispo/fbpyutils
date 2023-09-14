@@ -61,18 +61,24 @@ def isolate(df, group_columns, unique_columns):
     return df.loc[rows_ids]
 
 
-_create_hash_column = lambda x, y=12: x.apply(lambda x: hashlib.md5(str(x).encode()).hexdigest()[:y], axis=1)
+_create_hash_column = lambda x, y=12: x.apply(
+    lambda x: hashlib.md5(str(x).encode()).hexdigest()[:y], axis=1
+)
 
 
-def add_hash_column(df, column_name, length=12):
+_check_columns = lambda x, y: all([c in x.columns for c in y])
+
+
+def add_hash_column(df, column_name, length=12, columns=[]):
     """
     Adds a hash column to the given DataFrame.
 
     Args:
         df (pandas.DataFrame): The input DataFrame.
         column_name (str): The name of the column to be created.
-        length (int): The length of the column to be created. Defaults to 12.
-
+        length (int) optional: The length of the column to be created. Defaults to 12.
+        columns (list) optional: The columns names to be used as part of the hash column.
+            If None or empty list (default) all columns will be used.
     Returns:
         pandas.DataFrame: A new DataFrame with the hash column added as the first column.
                           The order of other columns remains the same.
@@ -86,13 +92,21 @@ def add_hash_column(df, column_name, length=12):
         raise TypeError("The 'length' parameter should be an integer.")
     if length <= 0:
         raise ValueError("The 'length' parameter should be greater than 0.")
+    if columns and type(columns) != list:
+        raise ValueError("When given, columns must be a list of column names")
+    if columns and not _check_columns(df, columns):
+        raise ValueError('When given, all column names should exist in the dataframe.')
     # Creates the hash column
-    df[column_name] = _create_hash_column(df, length)
+    if columns:
+        xdf = df[columns].copy()
+    else:
+        xdf = df.copy()
+    df[column_name] = _create_hash_column(xdf, length)
     xcolumns = [column_name, *[c for c in df.columns if c != column_name]]
     return df[xcolumns].copy()
 
 
-def add_hash_index(df, index_name='id', length=12):
+def add_hash_index(df, index_name='id', length=12, columns=[]):
     """
     Replaces the dataframe index with a hash string with length of 12 characters
     calculated using all columns values for each row and renames the dataframe index
@@ -105,6 +119,9 @@ def add_hash_index(df, index_name='id', length=12):
         The name to be given to the new index. Defaults to 'id'
     length : int
         The length of the column to be created. Defaults to 12.
+    columns : list optional
+        The columns names to be used as part of the hash column.
+        If None or empty list (default) all columns will be used.
     Returns:
     --------
     pd.DataFrame
@@ -128,8 +145,16 @@ def add_hash_index(df, index_name='id', length=12):
         raise TypeError("The 'length' parameter should be an integer.")
     if length <= 0:
         raise ValueError("The 'length' parameter should be greater than 0.")
+    if columns and type(columns) != list:
+        raise ValueError("When given, columns must be a list of column names")
+    if columns and not _check_columns(df, columns):
+        raise ValueError('When given, all column names should exist in the dataframe.')
     # Creates the hash column
-    hash_df = _create_hash_column(df, length)
+    if columns:
+        xdf = df[columns].copy()
+    else:
+        xdf = df.copy()
+    hash_df = _create_hash_column(xdf, length)
     # Set the hash string as the new index
     df.index = hash_df
     # Rename the index
@@ -367,6 +392,7 @@ def get_column_type(dtype):
 
     Returns:
         sqlalchemy.sql.sqltypes.TypeEngine: The corresponding SQLAlchemy data type.
+        For string columns, a default 4000 chars lenght column is created.
 
     """
     if dtype in ('int64', 'int32', 'int'):
@@ -380,7 +406,7 @@ def get_column_type(dtype):
     elif dtype == 'datetime64[ns]':
         return DateTime()
     else:
-        return String()
+        return String(4000)
 
 
 def get_data_from_pandas(df, include_index=False):
