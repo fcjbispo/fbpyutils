@@ -21,8 +21,8 @@ from urllib import request
 from multiprocessing import Pool
 from typing import Union, Dict, Optional
 
-import fbpyutils_finance as FI
-from fbpyutils_finance.cvm.converters import *
+import fbpyutils.finance as FI
+from fbpyutils.finance.cvm.converters import *
 from fbpyutils import string as SU, file as FU
 
 from fbpyutils.debug import debug, debug_info

@@ -6,7 +6,7 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
-import fbpyutils_finance as FI
+import fbpyutils.finance as FI
 from fbpyutils import file as F, xlsx as XL
 
 

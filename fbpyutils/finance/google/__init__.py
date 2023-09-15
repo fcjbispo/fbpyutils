@@ -10,7 +10,7 @@ import requests
 import datetime
 from bs4 import BeautifulSoup
 
-from fbpyutils_finance import MARKET_INFO, first_or_none, numberize
+from fbpyutils.finance import MARKET_INFO, first_or_none, numberize
 
 _market_info = MARKET_INFO
 

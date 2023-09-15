@@ -10,7 +10,7 @@ import warnings
 
 from fbpyutils import file as FU, xlsx as XL
 
-from fbpyutils_finance.cei.schemas import \
+from fbpyutils.finance.cei.schemas import \
     process_schema_movimentacao, process_schema_eventos_provisionados, process_schema_negociacao, \
     process_schema_posicao_acoes, process_schema_posicao_emprestimo_ativos, process_schema_posicao_etf, \
     process_schema_posicao_fundos_investimento, process_schema_posicao_tesouro_direto, \
