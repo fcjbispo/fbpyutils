@@ -25,7 +25,7 @@ import requests
 import datetime
 from bs4 import BeautifulSoup
 
-from fbpyutils_finance import MARKET_INFO, first_or_none, numberize, random_header
+from fbpyutils.finance import MARKET_INFO, first_or_none, numberize, random_header
 
 
 # -
