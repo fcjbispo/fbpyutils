@@ -1160,8 +1160,8 @@ class CVM():
                     NULL last_updated,
                     1 process,
                     1 active
-                from catalog_journal c
-                full outer join if_remote_files r 
+                from if_remote_files r
+                left join catalog_journal c
                 using (href, name, kind)
                 where c.sequence is null
                 union
@@ -1178,7 +1178,7 @@ class CVM():
                     0 process,
                     0 active
                 from catalog_journal c
-                full outer join if_remote_files r 
+                left join if_remote_files r 
                 using (href, name, kind)
                 where r.sequence is null
                 union
@@ -1199,8 +1199,8 @@ class CVM():
                         else 0 
                     end process,
                     c.active
-                from catalog_journal c
-                full outer join if_remote_files r 
+                from if_remote_files r
+                left join catalog_journal c 
                 using (href, name, kind)
                 where r.sequence is not null
             """, con=STAGE)
@@ -1368,3 +1368,5 @@ class CVM():
         except Exception as E:
             info = debug_info(E)
             raise ValueError('Fail to UPDATE CVM CATALOG on step {}: {} ({})'.format(step, E, info))
+
+
