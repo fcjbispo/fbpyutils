@@ -94,6 +94,31 @@ def _timelapse(x):
     return round((datetime.now() - x).seconds / 60, 4)
 
 
+
+def _make_str_datetime(x, format='%Y-%m-%d %H:%M:%S'):
+    """
+    Convert a given date and time into a formatted string.
+
+    Args:
+        x (datetime): The date and time value to be formatted.
+        format (str, optional): The format or pattern to be used for formatting.
+            Defaults to '%Y-%m-%d %H:%M:%S'.
+    Returns:
+        str: The formatted date and time string.
+    Raises:
+        None.
+    Example:
+        >>> import datetime
+        >>> date_time = datetime.datetime(2022, 1, 1, 12, 30, 0)
+        >>> _maketime(date_time, '%Y/%m/%d %I:%M %p')
+        '2022/01/01 12:30 PM'
+    """
+    try:
+        return datetime.strftime(x, format)
+    except Exception:
+        return None
+
+
 def _replace_all(x: str, old: str, new: str) -> str:
     """
     Replace all occurrences of `old` with `new` in `x`.
@@ -195,7 +220,7 @@ def _get_url_paths(url: str, params: Optional[Dict] = {}) -> pd.DataFrame:
             i,
             href,
             name,
-            last_modified,
+            _make_str_datetime(last_modified),
             size
         ))
 
@@ -280,35 +305,38 @@ def _update_cvm_history_file(if_metadata):
 
         response = request.urlopen(if_metadata['url'])
 
-        data = response.read()
+        try:
+            data = response.read()
 
-        download_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            download_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        mime_type = FU.magic.from_buffer(data)
-        mime_type = mime_type.split(';')[0]
+            mime_type = FU.magic.from_buffer(data)
+            mime_type = mime_type.split(';')[0]
 
-        text_mime_types = ('Non-ISO extended-ASCII text', 'ISO-8859 text', )
-        zip_mime_types = ('Zip archive data, at least v2.0 to extract', )
+            text_mime_types = ('Non-ISO extended-ASCII text', 'ISO-8859 text', )
+            zip_mime_types = ('Zip archive data, at least v2.0 to extract', )
 
-        if any([a for a in zip_mime_types if a in mime_type]):
-            zip_file = ZipFile(io.BytesIO(data))
-            for k, v in enumerate(zip_file.namelist()):
-                response_data = zip_file.open(v).read().decode(SOURCE_ENCODING)
-                r = _write_target_file(
-                    response_data, if_metadata, if_metadata['history_folder'], index=k, file=v, encoding=TARGET_ENCODING)
+            if any([a for a in zip_mime_types if a in mime_type]):
+                zip_file = ZipFile(io.BytesIO(data))
+                for k, v in enumerate(zip_file.namelist()):
+                    response_data = zip_file.open(v).read().decode(SOURCE_ENCODING)
+                    r = _write_target_file(
+                        response_data, if_metadata, if_metadata['history_folder'], index=k, file=v, encoding=TARGET_ENCODING)
+                    if_metadata['last_download'] = download_time
+                    if_metadata['history_file'] = r.split(os.path.sep)[-1]
+                    result.append(['SUCCESS',if_metadata,f'{r} written from {if_metadata["url"]}'])
+            elif any([a for a in text_mime_types if a in mime_type]):
+                response_data = data.decode(SOURCE_ENCODING)
+
+                r = _write_target_file(response_data, if_metadata, if_metadata['history_folder'], encoding=TARGET_ENCODING)
                 if_metadata['last_download'] = download_time
                 if_metadata['history_file'] = r.split(os.path.sep)[-1]
-                result.append(['SUCCESS',if_metadata,f'{r} written from {if_metadata["url"]}'])
-        elif any([a for a in text_mime_types if a in mime_type]):
-            response_data = data.decode(SOURCE_ENCODING)
 
-            r = _write_target_file(response_data, if_metadata, if_metadata['history_folder'], encoding=TARGET_ENCODING)
-            if_metadata['last_download'] = download_time
-            if_metadata['history_file'] = r.split(os.path.sep)[-1]
-
-            result.append(['SUCCESS',if_metadata, f'{r} written from {if_metadata["url"]}'])
-        else:
-            result.append(['ERROR',if_metadata,'Unknown mime type:{} for url:{}'.format(mime_type, if_metadata['url'])])
+                result.append(['SUCCESS',if_metadata, f'{r} written from {if_metadata["url"]}'])
+            else:
+                result.append(['ERROR',if_metadata,'Unknown mime type:{} for url:{}'.format(mime_type, if_metadata['url'])])
+        except Exception as e:
+            result.append(['ERROR',if_metadata,'Failure reading remote data:{} for url:{}'.format(e, if_metadata['url'])])
     else:
         result.append(['SKIP','Already updated data for url:{}'.format(if_metadata['url'])])
     
@@ -422,7 +450,7 @@ def _apply_expressions(data, expressions):
         database. It stores the DataFrame in the database, executes an SQL query to select the specified expressions, and 
         returns the resulting DataFrame.
     """
-    STAGE=sqlite3.connect(':memory:')
+    STAGE = sqlite3.connect(':memory:')
     try:
         data.to_sql('if_data', con=STAGE, if_exists='replace')
 
@@ -479,7 +507,7 @@ def _get_cvm_updated_headers(cvm_files: list) -> list[dict]:
     updated_headers = _get_cvm_updated_headers(cvm_files)
     """
     step = 'SETTING UP COMPONENTS'
-    STAGE=sqlite3.connect(':memory:')
+    STAGE = sqlite3.connect(':memory:')
     try:
         step = 'READING HEADERS MAPPINGS INFO'
         if not os.path.exists(HEADER_MAPPINGS_FILE):
@@ -532,7 +560,7 @@ def _get_cvm_updated_headers(cvm_files: list) -> list[dict]:
 
         step = 'READING CURRENT HEADERS INFO'
         if os.path.exists(HEADERS_FILE):
-            mappings = pd.read_excel(HEADERS_FILE, sheet_name='IF_HEADERS').to_dict('records')
+            mappings = HEADERS.to_dict('records')
         else:
             mappings = []
 
@@ -639,7 +667,7 @@ def _check_cvm_headers_changed(cvm_files) -> bool:
     try:
         step = 'READING CURRENT HEADERS INFO'
         if os.path.exists(HEADERS_FILE):
-            mappings = pd.read_excel(HEADERS_FILE, sheet_name='IF_HEADERS').to_dict('records')
+            mappings = HEADERS.to_dict('records')
         else:
             mappings = []
 
@@ -675,7 +703,7 @@ def _write_cvm_headers_mappings(mappings, file_path) -> bool:
     successfully written, and False otherwise.
     """
     step = 'SETTING UP COMPONENTS'
-    STAGE=sqlite3.connect(':memory:')
+    STAGE = sqlite3.connect(':memory:')
     try:
         step = 'WRITING NEW HEADERS MAPPINGS INFO'
         if mappings:
@@ -815,186 +843,6 @@ def _read_cvm_history_file(source_file, apply_converters=True, check_header=Fals
         raise ValueError('Fail to get CVM IF HISTORY Data on step {}: {} ({})'.format(step, E, info))
 
 
-# @debug
-# def _process_cvm_history_file(cvm_file_info):
-#     """
-#     Process the CVM history file.
-#     Args:
-#         cvm_file_info (tuple): A tuple containing three elements - name (str), cvm_file (str), and update_time (datetime).
-#     Returns:
-#         list: A list of lists, where each inner list contains the following elements:
-#             - name (str): The name of the file.
-#             - kind (str): The kind of file.
-#             - sub_kind (str): The sub-kind of file.
-#             - cvm_file (str): The file path.
-#             - update_time (datetime): The update time.
-#             - len(cvm_if_data) (int): The length of cvm_if_data.
-#             - partition_cols (str): The partition columns.
-#             - _timelapse(start_time) (str): The time taken for the process.
-#             - step (str): The current step in the process.
-#             - 'SUCCESS' or 'ERROR' (str): Indicates whether the process was successful or encountered an error.
-#             - Error message (str): Provides additional information in case of an error.
-#     Overview:
-#     This function processes a CVM history file. It initializes parameters and variables, reads the metadata of the CVM file,
-#     connects to an in-memory SQLite database, writes the CVM data to a staging table in the database, appends the result to the result list,
-#     closes the database connection, and finally returns the result list.
-#     Note: If any exception occurs during the process, the code handles it by appending an error message to the result list.
-#     """
-#     result = []
-#     start_time = datetime.now()
-
-#     step = 'SETTING UP COMPONENTS'
-#     STAGE=sqlite3.connect(':memory:')
-#     try:
-#         step = 'INITIALIZING PARAMETERS'
-#         name, cvm_file, update_time = cvm_file_info
-
-#         step = 'READING CVM FILE METADATA'
-#         kind, sub_kind, cvm_if_data, partition_cols = _read_cvm_history_file(
-#             source_file=cvm_file, 
-#             apply_converters=True,
-#             check_header=False
-#         )
-#         try:
-#             target_table = f'cvm_{kind}_{sub_kind}_history_stg'.lower()
-
-#             cvm_if_data['source'] = '.'.join(cvm_file.split(os.path.sep)[-1].split('.')[0:-1])
-#             cvm_if_data['timestamp'] = update_time.strftime('%Y-%m-%d %H:%M:%S')
-
-#             step = 'WRITING CVM DATA STAGE'
-#             cvm_if_data.to_sql(target_table, index=False, if_exists='append', con=STAGE)
-
-#             result.append([
-#                 name, kind, sub_kind, cvm_file, update_time, len(cvm_if_data), partition_cols, 
-#                 _timelapse(start_time), step, 'SUCCESS', None
-#             ])
-#         except Exception as E:
-#             result.append([
-#                 name, kind, sub_kind, cvm_file, update_time, len(cvm_if_data), partition_cols, 
-#                 _timelapse(start_time), step, 'ERROR', f'ERROR: {E}'
-#             ])
-#     except Exception as E:
-#         info = debug_info(E)
-#         if len(cvm_file_info) == 3:
-#             name, cvm_file, update_time = cvm_file_info
-#         else:
-#             name, cvm_file, update_time = None, None, None
-#         result.append([
-#             name, None, None, cvm_file, update_time, None, None, 
-#             _timelapse(start_time), step, 'ERROR', f'ERROR {E} ({info}): WITH info={cvm_file_info}'
-#         ])
-#     finally:
-#         STAGE = None
-
-#     return result
-
-# @debug
-# def update_cvm_history_data(parallelize=True):
-#     """
-#     Updates the history data of Comissão de Valores Mobiliários (CVM) files.
-#     Parameters:
-#     - parallelize (bool, optional): A boolean flag to indicate if the function should be parallelized. Defaults to True.
-#     - history_folder (str, optional): The path to the folder that contains the history data. Defaults to None.
-#     Returns:
-#     - results (list): A list of dictionaries containing the result data of the CVM files processing.
-#     Code Overview:
-#     The code updates the history data of CVM files. It checks the validity of the history_folder and the possibility
-#     of parallel execution. It then connects to an in-memory SQLite database and tries to execute several steps to
-#     update the history data. If an error occurs during the execution of the steps, it raises a ValueError with an
-#     appropriate error message. Finally, it closes the connection to the SQLite database.
-#     """
-#     PARALLELIZE = parallelize and os.cpu_count()>1
-
-#     # disabling parallel processing due to errors with sqlite3
-#     PARALLELIZE = False
-
-#     step = 'SETUP COMPONENTS'
-#     STAGE = sqlite3.connect(':memory:')
-#     try:
-#         step = 'LOAD CATALOG UPDATES'
-#         catalog_updates = pd.read_sql(f'''
-#             select * 
-#             from {self.CATALOG_JOURNAL} 
-#             where active 
-#             and last_updated is null 
-#                 or last_download > last_updated
-#             order by kind, name
-#         ''', con=self.CATALOG).to_dict(orient='records')
-
-#         results = []
-#         if len(catalog_updates) > 0:
-#             step = 'SELECTING FILES TO UPDATE'
-#             cvm_files = []
-#             for name, mask in [
-#                 (u['name'], f"{u['kind'].lower()}.{u['name'].split('.')[0]}.*") for u in catalog_updates
-#             ]:
-#                 for cvm_file in FU.find(self.HISTORY_FOLDER, mask):
-#                     cvm_files += [[name, cvm_file]]
-
-#             if len(cvm_files) == 0:
-#                 return []
-
-#             step = 'CHECKING HEADERS'
-#             if self._check_cvm_headers_changed(cvm_files=[f[1] for f in cvm_files]):
-#                 raise ValueError('Headers Changed! Update not possible.')
-
-#             step = 'UPDATE CVM HISTORY DATA'
-#             update_time = datetime.now()
-
-#             cvm_files = [[f[0], f[1], update_time] for f in cvm_files]
-
-#             if PARALLELIZE:
-#                 with Pool(os.cpu_count()) as p:
-#                     results = p.map(_process_cvm_history_file, cvm_files)
-#             else:
-#                 for cvm_file in cvm_files:
-#                     result = _process_cvm_history_file(cvm_file)
-#                     results.append(result)
-
-#             step = 'UPDATE CVM CATALOG JOURNAL: CONSOLIDATING INFO'
-#             result_cols = [
-#                 'name', 'kind', 'sub_kind', 'cvm_file', 'update_time', 'records', 
-#                 'partition_cols', 'timelapse', 'last_step', 'status', 'message'
-#             ]
-#             result_data = pd.DataFrame(
-#                 [r for r in [r[0] for r in results]], columns=result_cols
-#             )
-#             result_table = 'cvm_update_history_results_stg'
-#             result_data.to_sql(result_table, con=STAGE, index=False, if_exists='replace')
-
-#             step = 'UPDATE CVM CATALOG JOURNAL: UPDATING DATA'
-#             for name, kind, update_time in pd.read_sql(f'''
-#                 with t as (
-#                     select name, kind,
-#                         sum(case when status='ERROR' then 1 else 0 end) errors, 
-#                         sum(case when status='SUCCESS' then 1 else 0 end) successes,
-#                         max(update_time) update_time
-#                     from {result_table}
-#                     group by name, kind
-#                 )
-#                 select name, kind, update_time
-#                 from t
-#                 where errors = 0
-#                 and successes > 0
-#             ''', con=STAGE).to_records(index=False):
-#                 _ = self.CATALOG.execute(f'''
-#                     update {self.CATALOG_JOURNAL}
-#                     set last_updated = '{update_time}',
-#                         process = FALSE
-#                     where name = '{name}'
-#                     and kind = '{kind}';
-#                 ''')
-#                 sleep(0.5)
-
-#         return results
-#     except Exception as E:
-#         info = debug_info(E)
-#         raise ValueError('Fail to get CVM UPDATE HISTORY DATA Data on step {}: {} ({}) (name={}, file={})'.format(
-#             step, E, info, name, cvm_file))
-#     finally:
-#         STAGE = None
-
-
 class CVM():
     @staticmethod
     def check_history_folder(history_folder=None):
@@ -1041,6 +889,7 @@ class CVM():
         self.HISTORY_FOLDER = CVM.check_history_folder(history_folder)
         
         self.CATALOG_JOURNAL = 'cvm_if_catalog_journal'
+        self.CVM_REMOTE_FILES = 'cvm_if_remote_files'
 
 
     def __del__(self):
@@ -1120,13 +969,13 @@ class CVM():
             )
 
             if_remote_files.to_sql(
-                'if_remote_files', index=False, con=STAGE, if_exists='replace'
+                'cvm_if_remote_files', index=False, con=self.CATALOG, if_exists='replace'
             )
 
             catalog_journal_df = self.get_cvm_catalog()
 
             if type(catalog_journal_df) != pd.DataFrame:
-                catalog_journal_df = pd.read_sql('''
+                catalog_journal_df = pd.read_sql(f'''
                         select 
                             sequence, 
                             href, 
@@ -1140,14 +989,14 @@ class CVM():
                             NULL last_updated,
                             1 process,
                             1 active
-                        from if_remote_files
+                        from {self.CVM_REMOTE_FILES}
                         where 1 = 0
-                    ''', con=STAGE)
+                    ''', con=self.CATALOG)
 
-            catalog_journal_df.to_sql(
-                'catalog_journal', index=False, con=STAGE, if_exists='replace')
+                catalog_journal_df.to_sql(
+                    self.CATALOG_JOURNAL, index=False, con=self.CATALOG, if_exists='replace')
 
-            catalog_journal_df = pd.read_sql("""
+            catalog_journal_df = pd.read_sql(f"""
                 select r.sequence, 
                     r.href, 
                     r.name, 
@@ -1160,10 +1009,11 @@ class CVM():
                     NULL last_updated,
                     1 process,
                     1 active
-                from if_remote_files r
-                left join catalog_journal c
+                from {self.CVM_REMOTE_FILES} r
+                left join {self.CATALOG_JOURNAL} c
                 using (href, name, kind)
                 where c.sequence is null
+
                 union
                 select c.sequence, 
                     c.href, 
@@ -1175,12 +1025,13 @@ class CVM():
                     c.kind,
                     c.last_download,
                     c.last_updated,
-                    0 process,
-                    0 active
-                from catalog_journal c
-                left join if_remote_files r 
+                    c.process,
+                    c.active
+                from {self.CATALOG_JOURNAL} c
+                left join {self.CVM_REMOTE_FILES} r 
                 using (href, name, kind)
                 where r.sequence is null
+
                 union
                 select r.sequence, 
                     r.href, 
@@ -1199,11 +1050,14 @@ class CVM():
                         else 0 
                     end process,
                     c.active
-                from if_remote_files r
-                left join catalog_journal c 
+                from {self.CVM_REMOTE_FILES} r
+                join {self.CATALOG_JOURNAL} c 
                 using (href, name, kind)
-                where r.sequence is not null
-            """, con=STAGE)
+            """, con=self.CATALOG)
+
+            # for c in ['last_modified', 'last_download', 'last_updated']:
+            #     catalog_journal_df[c] = pd.to_datetime(catalog_journal_df[c], errors='coerce')
+            #     catalog_journal_df[c] = catalog_journal_df[c].apply(lambda x: _make_str_datetime(x))
 
             catalog_journal_df.to_sql(self.CATALOG_JOURNAL, con=self.CATALOG, if_exists='replace', index=False)
 
