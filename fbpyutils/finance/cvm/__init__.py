@@ -1112,6 +1112,7 @@ class CVM():
                     '''
                     _ = self.CATALOG.execute(_sql)
                     ops.append((_sql, _))
+            self.CATALOG.commit()
 
             return update_results.to_dict(orient='records'), metadata_to_process, ops
         except Exception as E:
@@ -1217,6 +1218,7 @@ class CVM():
                     and name = '{name}'
                 """
                 _ = self.CATALOG.execute(_sql)
+            self.CATALOG.commit()
 
             return True
         except Exception as E:
