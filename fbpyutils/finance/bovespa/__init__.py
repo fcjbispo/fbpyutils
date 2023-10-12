@@ -196,11 +196,41 @@ class StockHistory():
 
 
     @staticmethod
-    def validate_period_date(period_date):
+    def get_original_columns():
+        return StockHistory._original_col_names
+
+
+    @staticmethod
+    def get_compact_original_columns():
+        return StockHistory._original_data_columns
+
+
+    @staticmethod
+    def get_data_columns():
+        return StockHistory._original_col_names
+    
+    @staticmethod
+    def get_compact_data_columns():
+        return StockHistory._data_columns
+
+
+    @staticmethod
+    def get_converters():
+        return StockHistory._converters
+
+
+    @staticmethod
+    def get_column_widths():
+        return StockHistory._col_widths  
+
+
+    @staticmethod
+    def validate_period_date(period_date, period='A'):
         """
         Validates the given period date against supported formats.
         Args:
             period_date (str): The period date to be validated.
+            period (str): The period that the date refers. A, M or D. Defaults to A
         Returns:
             bool: Returns True if the date is valid, False otherwise.
         Raises:
@@ -209,7 +239,7 @@ class StockHistory():
             - '%Y%m': Year and month format (e.g., '202201')
             - '%Y%m%d': Year, month, and day format (e.g., '20220101')
         """
-        formats = ['%Y%m', '%Y%m%d']  # Supported date formats
+        formats = ['%Y', '%Y%m', '%Y%m%d']  # Supported date formats
 
         for date_format in formats:
             try:
@@ -334,7 +364,7 @@ class StockHistory():
             raise ValueError('Invalid period. User A, M or D.')
         
         if period_date:
-            self.validate_period_date(period_date=period_date)
+            self.validate_period_date(period_date=period_date, period=period)
 
         if period == 'A':
             period_date = period_date or datetime.today().strftime('%Y')

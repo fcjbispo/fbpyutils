@@ -43,7 +43,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="1.5.1",  # Required
+    version="1.5.2",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -130,28 +130,28 @@ setup(
         "beautifulsoup4==4.12.2; python_full_version >= '3.6.0'",
         "cachetools==5.3.1; python_version >= '3.7'",
         "certifi==2023.7.22; python_version >= '3.6'",
-        "charset-normalizer==3.2.0; python_full_version >= '3.7.0'",
+        "charset-normalizer==3.3.0; python_full_version >= '3.7.0'",
         "et-xmlfile==1.1.0; python_version >= '3.6'",
-        "google-api-core==2.11.1; python_version >= '3.7'",
-        "google-api-python-client==2.99.0; python_version >= '3.7'",
-        "google-auth==2.23.0; python_version >= '3.7'",
+        "google-api-core==2.12.0; python_version >= '3.7'",
+        "google-api-python-client==2.103.0; python_version >= '3.7'",
+        "google-auth==2.23.3; python_version >= '3.7'",
         "google-auth-httplib2==0.1.1",
         "google-auth-oauthlib==1.1.0; python_version >= '3.6'",
-        "googleapis-common-protos==1.60.0; python_version >= '3.7'",
-        "greenlet==2.0.2; platform_machine == 'aarch64' or (platform_machine == 'ppc64le' or (platform_machine == 'x86_64' or (platform_machine == 'amd64' or (platform_machine == 'AMD64' or (platform_machine == 'win32' or platform_machine == 'WIN32')))))",
+        "googleapis-common-protos==1.61.0; python_version >= '3.7'",
+        "greenlet==3.0.0; platform_machine == 'aarch64' or (platform_machine == 'ppc64le' or (platform_machine == 'x86_64' or (platform_machine == 'amd64' or (platform_machine == 'AMD64' or (platform_machine == 'win32' or platform_machine == 'WIN32')))))",
         "httplib2==0.22.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "idna==3.4; python_version >= '3.5'",
         "lxml==4.9.3; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
-        "numpy==1.25.2; python_version < '3.11'",
+        "numpy==1.26.0; python_version < '3.11'",
         "oauthlib==3.2.2; python_version >= '3.6'",
         "ofxparse==0.21",
         "openpyxl==3.1.2; python_version >= '3.6'",
-        "pandas==2.1.0; python_version >= '3.9'",
-        "protobuf==4.24.3; python_version >= '3.7'",
+        "pandas==2.1.1; python_version >= '3.9'",
+        "protobuf==4.24.4; python_version >= '3.7'",
         "pyasn1==0.5.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
         "pyasn1-modules==0.3.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
-        "pyparsing==3.1.1; python_version > '3.0'",
-        "python-dateutil==2.8.2; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+        "pyparsing==3.1.1; python_version >= '3.1'",
+        "python-dateutil==2.8.2; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "python-dotenv==1.0.0; python_version >= '3.8'",
         "python-magic==0.4.13",
         "python-magic-win64==0.4.13",
@@ -159,13 +159,13 @@ setup(
         "requests==2.28.2; python_version >= '3.7' and python_version < '4'",
         "requests-oauthlib==1.3.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "rsa==4.9; python_version >= '3.6' and python_version < '4'",
-        "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+        "six==1.16.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "soupsieve==2.5; python_version >= '3.8'",
-        "sqlalchemy==2.0.20; python_version >= '3.7'",
-        "typing-extensions==4.7.1; python_version >= '3.7'",
+        "sqlalchemy==2.0.22; python_version >= '3.7'",
+        "typing-extensions==4.8.0; python_version >= '3.8'",
         "tzdata==2023.3; python_version >= '2'",
         "uritemplate==4.1.1; python_version >= '3.6'",
-        "urllib3==1.26.16; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
+        "urllib3==1.26.17; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
         "xlrd==2.0.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
