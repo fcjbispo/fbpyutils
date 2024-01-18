@@ -24,6 +24,8 @@ def _deal_with_nans(x):
     elif isinstance(x, date):
         if pd.isna(pd.Timestamp(x)):
             return None
+    elif isinstance(x, str) and x == 'None':
+        return None
     return x
 
 
@@ -61,9 +63,11 @@ def isolate(df, group_columns, unique_columns):
     return df.loc[rows_ids]
 
 
-_create_hash_column = lambda x, y=12: x.apply(
-    lambda x: hashlib.md5(str(x).encode()).hexdigest()[:y], axis=1
-)
+def _create_hash_column(x, y=12):
+    return pd.Series([
+        hashlib.md5('~'.join([str(x) for x in row]).encode()).hexdigest()[:y]
+        for row in x.to_records(index=False)
+    ])
 
 
 _check_columns = lambda x, y: all([c in x.columns for c in y])
@@ -292,7 +296,7 @@ def table_operation(operation, dataframe, engine, table_name, schema=None, keys=
 
     return {
         'operation': operation,
-        'table_name': '.'.join([schema, table_name]),
+        'table_name': '.'.join([schema, table_name]) if schema else table_name,
         'insertions': inserts,
         'updates': updates,
         'skips': skips,
@@ -395,15 +399,16 @@ def get_column_type(dtype):
         For string columns, a default 4000 chars lenght column is created.
 
     """
-    if dtype in ('int64', 'int32', 'int'):
+    type_name = dtype.name.lower()
+    if type_name in ('int64', 'int32', 'int'):
         return Integer()
-    elif dtype in ('float64', 'float32', 'float'):
+    elif type_name in ('float64', 'float32', 'float'):
         return Float()
-    elif dtype == 'bool':
+    elif type_name == 'bool':
         return Boolean()
-    elif dtype == 'object':
-        return String()
-    elif dtype == 'datetime64[ns]':
+    elif type_name == 'object':
+        return String(4000)
+    elif type_name == 'datetime64[ns]':
         return DateTime()
     else:
         return String(4000)

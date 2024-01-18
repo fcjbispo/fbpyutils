@@ -418,43 +418,44 @@ def process_schema_posicao_etf(input_files):
         'data_referencia'
     ]
 
-    xl_sheet = 'ETF'
+    xl_sheets = ['ETF', 'BDR']
     
     for schema_file in input_files:
         schema_file_name, schema_file_date = _extract_file_info(schema_file)
 
         xl_obj = XL.ExcelWorkbook(schema_file)
-        if xl_sheet in xl_obj.sheet_names:
-            xl_table = _tuple_as_str(tuple(xl_obj.read_sheet(xl_sheet)))
-            xl_dataframe = pd.DataFrame(xl_table[1:], columns=xl_table[0])
+        for xl_sheet in xl_sheets:
+            if xl_sheet in xl_obj.sheet_names:
+                xl_table = _tuple_as_str(tuple(xl_obj.read_sheet(xl_sheet)))
+                xl_dataframe = pd.DataFrame(xl_table[1:], columns=xl_table[0])
 
-            xl_dataframe = xl_dataframe[xl_dataframe['Produto'] != ''].copy()
+                xl_dataframe = xl_dataframe[xl_dataframe['Produto'] != ''].copy()
 
-            xl_dataframe['codigo_produto'] = xl_dataframe['Código de Negociação'].apply(_deal_double_spaces)
-            xl_dataframe['nome_produto'] = xl_dataframe['Produto'].apply(_deal_double_spaces)
-            xl_dataframe['instituicao'] = xl_dataframe['Instituição'].apply(_deal_double_spaces)
+                xl_dataframe['codigo_produto'] = xl_dataframe['Código de Negociação'].apply(_deal_double_spaces)
+                xl_dataframe['nome_produto'] = xl_dataframe['Produto'].apply(_deal_double_spaces)
+                xl_dataframe['instituicao'] = xl_dataframe['Instituição'].apply(_deal_double_spaces)
 
-            if 'Conta' in xl_dataframe.columns:
-                xl_dataframe['conta'] = xl_dataframe['Conta'].apply(_deal_double_spaces)
-            else:
-                xl_dataframe['conta'] = '000000000'
+                if 'Conta' in xl_dataframe.columns:
+                    xl_dataframe['conta'] = xl_dataframe['Conta'].apply(_deal_double_spaces)
+                else:
+                    xl_dataframe['conta'] = '000000000'
 
-            xl_dataframe['codigo_isin'] = xl_dataframe['Código ISIN / Distribuição']
-            xl_dataframe['tipo_produto'] = xl_dataframe['Tipo']
-            xl_dataframe['quantidade'] = pd.to_numeric(xl_dataframe['Quantidade'], errors='coerce')
-            xl_dataframe['quantidade_disponivel'] = pd.to_numeric(xl_dataframe['Quantidade Disponível'], errors='coerce')
-            xl_dataframe['quantidade_indisponivel'] = pd.to_numeric(xl_dataframe['Quantidade Indisponível'], errors='coerce')
-            xl_dataframe['motivo'] = xl_dataframe['Motivo']
-            xl_dataframe['preco_unitario'] = pd.to_numeric(xl_dataframe['Preço de Fechamento'], errors='coerce')
-            xl_dataframe['valor_operacao'] = pd.to_numeric(xl_dataframe['Valor Atualizado'], errors='coerce')
+                xl_dataframe['codigo_isin'] = xl_dataframe['Código ISIN / Distribuição']
+                xl_dataframe['tipo_produto'] = xl_dataframe['Tipo']
+                xl_dataframe['quantidade'] = pd.to_numeric(xl_dataframe['Quantidade'], errors='coerce')
+                xl_dataframe['quantidade_disponivel'] = pd.to_numeric(xl_dataframe['Quantidade Disponível'], errors='coerce')
+                xl_dataframe['quantidade_indisponivel'] = pd.to_numeric(xl_dataframe['Quantidade Indisponível'], errors='coerce')
+                xl_dataframe['motivo'] = xl_dataframe['Motivo']
+                xl_dataframe['preco_unitario'] = pd.to_numeric(xl_dataframe['Preço de Fechamento'], errors='coerce')
+                xl_dataframe['valor_operacao'] = pd.to_numeric(xl_dataframe['Valor Atualizado'], errors='coerce')
 
-            xl_dataframe['arquivo_origem'] = SU.normalize_names([f'{schema_file_name}_{xl_sheet}'])[0]
+                xl_dataframe['arquivo_origem'] = SU.normalize_names([f'{schema_file_name}_{xl_sheet}'])[0]
 
-            xl_dataframe['data_referencia'] = schema_file_date
+                xl_dataframe['data_referencia'] = schema_file_date
 
-            xl_dataframe = xl_dataframe[fields].copy()
+                xl_dataframe = xl_dataframe[fields].copy()
 
-            xl_dataframes.append(xl_dataframe)
+                xl_dataframes.append(xl_dataframe)
 
     return pd.concat(xl_dataframes) if xl_dataframes else None
 
