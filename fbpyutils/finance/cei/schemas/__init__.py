@@ -285,7 +285,7 @@ def process_schema_posicao_acoes(input_files):
         'data_referencia'
     ]
 
-    xl_sheets = ['Ações', 'Acoes']
+    xl_sheets = ['Ações', 'Acoes', 'BDR']
     
     for schema_file in input_files:
         schema_file_name, schema_file_date = _extract_file_info(schema_file)
