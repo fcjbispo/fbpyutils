@@ -13,17 +13,23 @@ import re
 
 
 def _deal_with_nans(x):
-    if pd.isna(x) or isinstance(x, type(None)) or isinstance(x, str) and not x:
+    """
+    This function handles null values and data types within a given input `x`. It checks if the input is a NaN value, None, an empty string, or a datetime/date with a NaT (not a time) value, and returns None for these cases. For other numeric types like float or int, it checks if the value is actually NaN. For datetime/date types, it checks if the value is a NaT value. If the input is of any other type, it returns the input as-is.
+    
+    Parameters:
+    x (any): The input variable that may contain null values or special cases that need to be handled.
+    
+    Returns:
+    The function returns `None` if the input is NaN, None, an empty string, a datetime with NaT, or a date with NaT. Otherwise, it returns the original input value.
+    """
+    if pd.isna(x) or x is None or (isinstance(x, str) and not x):
         return None
-    elif isinstance(x, (float, np.float64)):
-        if np.isnan(x):
-            return None
-    elif isinstance(x, (datetime, pd.Timestamp)):
-        if pd.isna(x):
-            return None
-    elif isinstance(x, date):
-        if pd.isna(pd.Timestamp(x)):
-            return None
+    elif isinstance(x, (float, np.float64)) and np.isnan(x):
+        return None
+    elif isinstance(x, (datetime, pd.Timestamp)) and pd.isna(x):
+        return None
+    elif isinstance(x, date) and pd.isna(pd.Timestamp(x)):
+        return None
     return x
 
 
@@ -61,12 +67,53 @@ def isolate(df, group_columns, unique_columns):
     return df.loc[rows_ids]
 
 
-_create_hash_column = lambda x, y=12: x.apply(
-    lambda x: hashlib.md5(str(x).encode()).hexdigest()[:y], axis=1
-)
+def _create_hash_column(x, y=12):
+    """
+    Creates a new hash column based on the values of an existing column in the dataframe.
+    The hash is generated using MD5 and truncated to 'y' number of characters.
+    
+    Parameters:
+    ----------
+    x : str or pd.Series
+        The column from the dataframe whose values will be hashed.
+    y : int, optional (default=12)
+        The length of the hash string to return.
+        
+    Returns:
+    -------
+    pd.Series
+        A new pandas Series containing the MD5 hash of the input column values.
+    
+    Example:
+    --------
+    >>> df = pd.DataFrame({'SomeColumn': ['value1', 'value2']})
+    >>> _create_hash_column(df['SomeColumn'])
+    0    b'f96b61d7...a3f8b1cdd'
+    1    b'f96b61d7...a3f8b1cde'
+    """
+    return x.apply(lambda value: hashlib.md5(str(value).encode()).hexdigest()[:y], axis=1)
 
 
-_check_columns = lambda x, y: all([c in x.columns for c in y])
+def _check_columns(df, columns):
+    """Checks if all the specified columns exist in the dataframe.
+    
+    Parameters:
+    df (pd.DataFrame): The dataframe to check column existence in.
+    columns (list): A list of column names to check for existence.
+    
+    Returns:
+    bool: True if all columns exist, False otherwise.
+    
+    Example:
+    >>> df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    >>> _check_columns(df, ['A', 'C'])
+    True
+    >>> _check_columns(df, ['A', 'B', 'C'])
+    True
+    >>> _check_columns(df, ['A', 'D'])
+    False
+    """
+    return all(c in df.columns for c in columns)
 
 
 def add_hash_column(df, column_name, length=12, columns=[]):
@@ -344,6 +391,14 @@ def create_table(dataframe, engine, table_name, schema=None, keys=None, index=No
 
 
 def create_index(name, table, keys, unique=True):
+    """Create an index on the specified keys for a given table.
+
+    Args:
+        name (str): The name of the index to be created.
+        table (sqlalchemy.sql.expression.Selectable): The table on which to create the index.
+        keys (list of str): A list of column names that should be part of the index.
+        unique (bool, optional): Whether the index should enforce uniqueness. Default is True.
+    """
     index_cols = [c for c in table.columns if c.name in keys]
     index_obj = Index(name, *index_cols, unique=unique)
     

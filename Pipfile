@@ -4,19 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
+pandas = "==2.2.2"
 ofxparse = "*"
 pytz = "*"
 python-magic = "*"
 python-magic-win64 = "*"
 openpyxl = "*"
 xlrd = "*"
-sqlalchemy = "*"
+sqlalchemy = "==2.0.32"
 google-api-python-client = "*"
 google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
-python-dotenv = "*"
-requests = "==2.28.2"
+python-dotenv = "==1.0.1"
+requests = "==2.32.3"
 
 [dev-packages]
 ipykernel = "*"
@@ -26,5 +26,7 @@ vistir = "==0.6.1"
 pipenv-setup = "*"
 jupytext = "*"
 ipython = "*"
+pytest = "*"
+pytest-mock = "*"
 
 [requires]
