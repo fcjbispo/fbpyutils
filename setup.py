@@ -142,7 +142,7 @@ setup(
         "httplib2==0.22.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "idna==3.8; python_version >= '3.6'",
         "lxml==5.3.0; python_version >= '3.6'",
-        "numpy==2.1.0; python_version == '3.11'",
+        "numpy==2.1.1; python_version == '3.11'",
         "oauthlib==3.2.2; python_version >= '3.6'",
         "ofxparse==0.21",
         "openpyxl==3.1.5; python_version >= '3.8'",
