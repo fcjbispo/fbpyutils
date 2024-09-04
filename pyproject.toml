@@ -1,2 +1,32 @@
-// entire file content ...
-// ... goes in between
+[tool.poetry]
+name = "your_project_name"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python_version = "^3.9"
+
+[tool.poetry.dev-dependencies]
+ipykernel = "^5.4.0"
+black = "^20.8b1"
+autopep8 = "^1.5"
+vistir = "^0.6.1"
+pipenv-setup = "^0.2.7"
+jupytext = "^1.11.3"
+ipython = "^8.0.0"
+pytest = "^6.2.4"
+pytest-mock = "^3.3.0"
+
+[tool.poetry.dependencies]
+pandas = "2.2.2"
+ofxparse = "*"
+pytz = "*"
+python-magic = "*"
+python-magic-win64 = "*"
+openpyxl = "*"
+xlrd = "*"
+sqlalchemy = "2.0.32"
+google-api-python-client = "*"
+google-auth-httplib2 = "*"
+google-auth-oauthlib = "*"
+python-dotenv = "1.0.1"
+requests = "2.32.3"
