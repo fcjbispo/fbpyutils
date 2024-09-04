@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "your_project_name"
+name = "fbpyutils"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
@@ -30,3 +30,6 @@ google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
 python-dotenv = "1.0.1"
 requests = "2.32.3"
+
+[tool.poetry.scripts]
+sample = "fbpyutils:main"
