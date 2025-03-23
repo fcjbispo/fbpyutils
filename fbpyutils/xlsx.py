@@ -5,36 +5,36 @@ import os
 import io
 import openpyxl, xlrd
 from openpyxl import load_workbook
+from datetime import datetime
 
 import pandas as pd
 
-from typing import Union
-
+from typing import Union, Dict
+    
 import warnings
 
 XLS, XLSX = 0, 1
 
 
 class ExcelWorkbook:
-    """
-    Represents an Excel workbook.
-     Args:
-        xl_file (str or bytes): The file path or array of bytes representing the Excel file.
-     Attributes:
-        workbook: The Excel workbook object.
-        sheet_names: A list of sheet names in the workbook.
-        kind: The type of Excel file (XLSX or XLS).
-     Raises:
-        FileNotFoundError: If the file path does not exist.
-        TypeError: If the file reference is invalid.
-     """
+    """Represents an Excel workbook."""
 
-    def __init__(self, xl_file):
+    def __init__(self, xl_file: Union[str, bytes]):
         """
-        Initializes a new instance of the ExcelWorkbook class.
-         Args:
-            xl_file (str or bytes): The file path or array of bytes representing the Excel file.
-         """
+        Initializes an ExcelWorkbook object.
+
+        Args:
+            xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
+
+        Attributes:
+            workbook: The underlying openpyxl or xlrd workbook object.
+            sheet_names (list): List of sheet names in the workbook.
+            kind (int): Type of Excel file (XLSX or XLS).
+
+        Raises:
+            FileNotFoundError: If the file path does not exist.
+            TypeError: If the file reference is invalid.
+        """
         data = None
 
         if type(xl_file) == str:
@@ -69,42 +69,51 @@ class ExcelWorkbook:
         finally:
             warnings.simplefilter("default")
 
-    def read_sheet(self, sheet_name=None):
+    def read_sheet(self, sheet_name: str = None) -> tuple[tuple[Union[str, float, int, bool, str, None], ...], ...]:
         """
         Reads the contents of a sheet in the workbook.
-         Args:
-            sheet_name (str, optional): The name of the sheet to read. If not provided, reads the first sheet.
-         Returns:
-            tuple of tuples: A tuple of tuples representing the rows and columns of the sheet.
-         Raises:
+
+        Args:
+            sheet_name (str, optional): The name of the sheet to read.
+                Defaults to None, which reads the first sheet.
+
+        Returns:
+            tuple[tuple[Union[str, float, int, bool, str, None], ...], ...]:
+                A tuple of tuples representing the rows and columns of the sheet.
+
+        Raises:
             NameError: If the sheet name is invalid or does not exist.
-         """
-        sheet_name = sheet_name or self.sheet_names.get(sheet_name)
+        """
+        sheet_name = sheet_name or self.sheet_names[0]
 
         if sheet_name not in self.sheet_names:
             raise NameError('Invalid/Nonexistent sheet.')
 
         sh = self.workbook[sheet_name]
 
-        return (
+        return tuple(
             tuple(c.value for c in r)
             for r in (sh.iter_rows() if self.kind == XLSX else sh.get_rows())
         )
 
-    def read_sheet_by_index(self, index=None):
+    def read_sheet_by_index(self, index: int = None) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
         """
         Reads the contents of a sheet in the workbook by index.
-         Args:
-            index (int, optional): The index of the sheet to read. If not provided, reads the first sheet.
-         Returns:
-            tuple of tuples: A tuple of tuples representing the rows and columns of the sheet.
-         Raises:
-            NameError: If the sheet index is invalid or does not exist.
-         """
 
+        Args:
+            index (int, optional): The index of the sheet to read (0-based).
+                Defaults to None, which reads the first sheet (index 0).
+
+        Returns:
+            tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
+                A tuple of tuples representing the rows and columns of the sheet.
+
+        Raises:
+            NameError: If the sheet index is invalid or does not exist.
+        """
         index = index or 0
 
-        if index < 0 or index >= len(self.sheet_names):
+        if not 0 <= index < len(self.sheet_names):
             raise NameError('Invalid/Nonexistent sheet.')
 
         return self.read_sheet(self.sheet_names[index])
@@ -114,95 +123,84 @@ The ExcelWorkbook class represents an Excel workbook and provides methods to rea
 """
 
 
-def get_sheet_names(xl_file):
+def get_sheet_names(xl_file: Union[str, bytes]) -> list[str]:
     """
-    Get the names of all sheets in an Excel file.
-     Args:
-        xl_file (str): File path of the Excel file.
-     Returns:
-        list: List of sheet names in the Excel file.
-     Functionality:
-        - Create an ExcelWorkbook object using the xl_file.
-        - Retrieve the sheet names from the ExcelWorkbook object.
-     Overview:
-        This function allows you to obtain the names of all sheets in an Excel file.
+    Retrieves sheet names from an Excel file.
+
+    Args:
+        xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
+
+    Returns:
+        list[str]: List of sheet names.
     """
     xl = ExcelWorkbook(xl_file)
-
     return xl.sheet_names
 
 
-def get_sheet_by_name(xl_file, sheet_name):
+def get_sheet_by_name(
+    xl_file: Union[str, bytes], sheet_name: str
+) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
     """
-    Get the contents of a specific sheet in an Excel file.
-     Args:
-        xl_file (str): File path of the Excel file.
-        sheet_name (str): Name of the sheet to retrieve.
-     Returns:
-        list: Contents of the specified sheet as a list of tuples.
-     Functionality:
-        - Create an ExcelWorkbook object using the xl_file.
-        - Read the contents of the specified sheet using the sheet_name.
-     Overview:
-        This function allows you to retrieve the contents of a specific sheet in an Excel file.
+    Reads a specific sheet from an Excel file by name.
+
+    Args:
+        xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
+        sheet_name (str): Name of the sheet to read.
+
+    Returns:
+        tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
+            Contents of the sheet as a tuple of tuples.
     """
     xl = ExcelWorkbook(xl_file)
-
     return xl.read_sheet(sheet_name)
 
 
-def get_all_sheets(xl_file):
+def get_all_sheets(
+    xl_file: Union[str, bytes]
+) -> Dict[str, tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]]:
     """
-    Get the contents of all sheets in an Excel file.
-     Args:
-        xl_file (str): File path of the Excel file.
-     Returns:
-        dict: Dictionary where keys are sheet names and values are the contents of each sheet as a list of tuples.
-     Functionality:
-        - Create an ExcelWorkbook object using the xl_file.
-        - Retrieve the sheet names from the ExcelWorkbook object.
-        - Read the contents of each sheet and store them in a dictionary.
-     Overview:
-        This function allows you to retrieve the contents of all sheets in an Excel file and store them in a dictionary.
+    Reads all sheets from an Excel file.
+
+    Args:
+        xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
+
+    Returns:
+        dict[str, tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]]:
+            Dictionary where keys are sheet names and values are sheet contents.
     """
     xl = ExcelWorkbook(xl_file)
-
     sheet_names = xl.sheet_names
+    return {
+        sheet_name: tuple(xl.read_sheet(sheet_name)) for sheet_name in sheet_names
+    }
 
-    return {sheet_name: tuple(xl.read_sheet(sheet_name)) for sheet_name in sheet_names}
 
-
-def write_to_sheet(df, workbook_path, sheet_name):
+def write_to_sheet(
+    df: pd.DataFrame, workbook_path: str, sheet_name: str
+) -> None:
     """
-    Write a pandas DataFrame to a specified sheet in an Excel file.
-     Args:
-        df (pandas.DataFrame): DataFrame to be written to the Excel file.
-        workbook_path (str): File path of the Excel file.
-        sheet_name (str): Name of the sheet to write the DataFrame to.
-     Returns:
+    Writes a pandas DataFrame to an Excel file.
+
+    Args:
+        df (pd.DataFrame): DataFrame to write.
+        workbook_path (str): Path to the Excel file.
+        sheet_name (str): Name of the sheet to write to.
+
+    Returns:
         None
-     Functionality:
-        - Checks if the Excel file specified by workbook_path exists.
-        - If the file does not exist, writes the DataFrame to a new Excel file with the specified sheet_name.
-        - If the file exists, opens the file using the load_workbook function from the openpyxl library.
-        - Creates a writer object using pd.ExcelWriter with the existing workbook.
-        - Checks if the sheet_name already exists in the workbook, if it does, appends a number to the sheet_name to make it unique.
-        - Writes the DataFrame to the specified sheet_name in the workbook.
-        - Saves and closes the writer and workbook objects.
-        - Ignores warnings during the process.
-     Overview:
-        This function provides a convenient way to write a pandas DataFrame to a specified sheet in an Excel file. 
-        It checks if the file already exists and handles the case where the sheet_name already exists in the file by appending a number to make it unique. 
-        The function uses the openpyxl library to load and manipulate the Excel file, and the pd.ExcelWriter class to write the DataFrame to the file.
     """
     if not os.path.exists(workbook_path):
         df.to_excel(
-            workbook_path, sheet_name=sheet_name, 
-            index=False, freeze_panes=(1,0), header=True)
+            workbook_path,
+            sheet_name=sheet_name,
+            index=False,
+            freeze_panes=(1, 0),
+            header=True,
+        )
     else:
         warnings.simplefilter("ignore")
         book = load_workbook(workbook_path)
-        writer = pd.ExcelWriter(workbook_path, engine='openpyxl') 
+        writer = pd.ExcelWriter(workbook_path, engine='openpyxl')
         writer.book = book
 
         writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
@@ -213,7 +211,12 @@ def write_to_sheet(df, workbook_path, sheet_name):
             sheet_name = sheet_name + str(index)
 
         df.to_excel(
-            writer, sheet_name=sheet_name, index=False, freeze_panes=(1,0), header=True)
+            writer,
+            sheet_name=sheet_name,
+            index=False,
+            freeze_panes=(1, 0),
+            header=True,
+        )
 
         writer.save()
         writer.close()

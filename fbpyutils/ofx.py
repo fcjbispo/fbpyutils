@@ -51,60 +51,64 @@ def read(x: str, native_date: bool = True) -> Dict:
      Returns:
         Dict: A dictionary with the ofx data.
     """
-    ofx = OfxParser.parse(x)
-    acct = ofx.account
+    try:
+        ofx = OfxParser.parse(x)
+    except Exception:
+        return {}
+    else:
+        acct = ofx.account
 
-    ofx_data = {
-        'id': acct.account_id,
-        'routing_number': acct.routing_number,
-        'branch_id': acct.branch_id,
-        'type': account_types[acct.type],
-        'institution': {},
-        'statement': {}
-    }
-
-    if acct.institution is not None:
-        inst = acct.institution
-        ofx_data['institution'] = {
-            'fid': inst.fid,
-            'organization': inst.organization.upper()
+        ofx_data = {
+            'id': acct.account_id,
+            'routing_number': acct.routing_number,
+            'branch_id': acct.branch_id,
+            'type': account_types[acct.type],
+            'institution': {},
+            'statement': {}
         }
 
-    if acct.statement is not None:
-        stmt = acct.statement
-        ofx_data['statement'] = {
-            'start_date': format_date(stmt.start_date, native_date),
-            'end_date': format_date(stmt.end_date, native_date),
-            'balance_date': format_date(stmt.balance_date, native_date),
-            'balance': float(stmt.balance),
-            'currency': stmt.currency.upper(),
-            'transactions': []
-        }
+        if acct.institution is not None:
+            inst = acct.institution
+            ofx_data['institution'] = {
+                'fid': inst.fid,
+                'organization': inst.organization.upper()
+            }
 
-        if len(stmt.transactions) > 0:
-            if acct.type in (1, 2):
-                i = 0
-                for transaction in stmt.transactions:
-                    trn = {
-                        'payee': transaction.payee,
-                        'type': transaction.type.upper(),
-                        'date': format_date(transaction.date, native_date),
-                        'amount': float(transaction.amount),
-                        'id': strt.hash_string('~'.join([
-                            acct.account_id,
-                            acct.routing_number,
-                            format_date(stmt.start_date, False),
-                            format_date(stmt.end_date, False),
-                            str(i)])),
-                        'memo': transaction.memo.upper(),
-                        'sic': transaction.sic,
-                        'mcc': transaction.mcc,
-                        'checknum': transaction.checknum
-                    }
-                    ofx_data['statement']['transactions'].append(trn)
-                    i = i + 1
+        if acct.statement is not None:
+            stmt = acct.statement
+            ofx_data['statement'] = {
+                'start_date': format_date(stmt.start_date, native_date),
+                'end_date': format_date(stmt.end_date, native_date),
+                'balance_date': format_date(stmt.balance_date, native_date),
+                'balance': float(stmt.balance),
+                'currency': stmt.currency.upper(),
+                'transactions': []
+            }
 
-    return ofx_data
+            if len(stmt.transactions) > 0:
+                if acct.type in (1, 2):
+                    i = 0
+                    for transaction in stmt.transactions:
+                        trn = {
+                            'payee': transaction.payee,
+                            'type': transaction.type.upper(),
+                            'date': format_date(transaction.date, native_date),
+                            'amount': float(transaction.amount),
+                            'id': strt.hash_string('~'.join([
+                                acct.account_id,
+                                acct.routing_number,
+                                format_date(stmt.start_date, False),
+                                format_date(stmt.end_date, False),
+                                str(i)])),
+                            'memo': transaction.memo.upper(),
+                            'sic': transaction.sic,
+                            'mcc': transaction.mcc,
+                            'checknum': transaction.checknum
+                        }
+                        ofx_data['statement']['transactions'].append(trn)
+                        i = i + 1
+
+        return ofx_data
 
 
 def read_from_path(x: str, native_date: bool = True) -> Dict:

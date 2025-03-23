@@ -118,11 +118,14 @@ def add_markers(
             ) for m in set(c['year_month_str'] for c in cal)})
 
     today = datetime.now().date()
+    print(f"markers = {markers}")
     for c in cal:
+        last_day_month = c['date'] == markers[c['year_month_str']]
+        print(f"c['date'] = {c['date']}, markers[c['year_month_str']] = {markers[c['year_month_str']]}, last_day_month = {last_day_month}")
         c.update({
             'today': today == c['date'],
             'current_year': today.year == c['date'].year,
-            'last_day_of_month': c['date'] == markers[c['year_month_str']],
+            'last_day_of_month': last_day_month,
             'last_day_of_quarter': c['date'] == markers[
                 c['year_quarter_str']],
             'last_day_of_half': c['date'] == markers[c['year_half_str']],
@@ -133,6 +136,7 @@ def add_markers(
             'last_3_months': dutl.delta(today, c['date'], 'months') <= 3,
         })
 
+    return cal
 
 def calendarize(
     x: DataFrame,

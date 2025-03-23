@@ -9,10 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-if platform.system() == 'Windows':
-    from winmagic import magic
-else:
-    import magic
+import magic
 
 
 def find(x: str, mask: str = '*.*') -> list:
@@ -136,8 +133,9 @@ def mime_type(x: str) -> str:
     file_path = x
 
     try:
-        return magic.from_file(
-            file_path, mime=True)
+        mime_type_detected = magic.from_file(file_path, mime=True)
+        print(f"magic.from_file('{file_path}', mime=True) returned: {mime_type_detected}")
+        return mime_type_detected
     except IsADirectoryError:
         return 'directory'
     except FileNotFoundError:
@@ -169,7 +167,8 @@ def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
         >>> build_platform_path('C:\\', '/root/', ['folder', 'subfolder', 'file.txt'])
         'C:\\folder\\subfolder\\file.txt'
     """
-    return os.path.sep.join([(winroot if _is_windows() else otherroot), *pathparts])
+    winroot = winroot.rstrip(os.path.sep) # Remove trailing separator from winroot
+    return os.path.sep.join([(winroot.rstrip(os.path.sep) if _is_windows() else otherroot), *pathparts])
 
 
 def absolute_path(x: str):

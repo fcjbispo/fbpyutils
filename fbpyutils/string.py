@@ -152,8 +152,9 @@ def normalize_value(
          normalize_value(12.3)
         will produce '1230'
     """
-    vl = str(int(abs(x)*(10**decimal_places)))
-    return vl.rjust(size, '0') if len(vl) < size else vl
+    format_string = "{:0" + str(size) + "." + str(decimal_places) + "f}"
+    normalized_string = format_string.format(abs(x)).replace('.', '')
+    return normalized_string
 
 
 def translate_special_chars(x) -> str:
@@ -169,7 +170,10 @@ def translate_special_chars(x) -> str:
     return x.translate(_TRANSLATION_TAB)
 
 
-def normalize_names(names, normalize_specials=True):
+from typing import List
+
+
+def normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]:
     """
     Normalize string names to lower case, with spaces and slashes converted to underscores,
     and special characters translated.
@@ -185,7 +189,7 @@ def normalize_names(names, normalize_specials=True):
     ]
 
 
-def split_by_lengths(string, lengths):
+def split_by_lengths(string: str, lengths: List[int]) -> List[str]:
     """
     Splits a given string into multiple substrings based on the provided lengths.
 
@@ -203,11 +207,12 @@ def split_by_lengths(string, lengths):
         >>> split_by_lengths("HelloWorld", [5, 5])
         ['Hello', 'World']
     """
-    if len(lengths) == 0:
-        return [string]
-    else:
-        return [
-            string[:lengths[0]]
-        ] + split_by_lengths(
-            string[lengths[0]:], lengths[1:]
-        )
+    substrings = []
+    start_index = 0
+    for length in lengths:
+        end_index = start_index + length
+        substring = string[start_index:end_index]
+        if substring:  # Adiciona apenas se não for vazio
+            substrings.append(substring)
+        start_index = end_index
+    return substrings
