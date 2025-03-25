@@ -1,14 +1,17 @@
 """
-Module for parallel or serial file processing with execution control.
+Module for parallel or serial process execution with control mechanisms.
 
-This module provides classes to execute processing functions on multiple files,
-with support for parallel or serial execution, and optional timestamp-based control
-to avoid unnecessary reprocessing.
+This module provides classes to execute processing functions, supporting both
+parallel and serial execution modes. It includes control mechanisms such as
+timestamp-based control for file processing and session-based control for
+resumable processes.
 
 Classes:
-    Process: Base class for parallel/serial processing
-    ProcessFiles: Class for file processing with timestamp control
-    SessionProcess: Class for session-based processing with resume capability
+    Process: Base class for executing functions in parallel or serial.
+    ProcessFiles: Extends Process to add timestamp-based control for file processing,
+                  preventing reprocessing of unmodified files.
+    SessionProcess: Extends Process to provide session-based control, allowing
+                    resumption of processing sessions after interruptions or failures.
 """
 
 import os
@@ -19,22 +22,59 @@ import multiprocessing
 import uuid
 import concurrent.futures
 
-from typing import Any, Callable, List, Tuple, Dict, Optional, TypeVar, Protocol
+from typing import Any, Callable, List, Tuple, Dict, Optional, TypeVar, Protocol, Union
+from datetime import datetime
 
 from fbpyutils import Env, Logger
 from fbpyutils.file import creation_date
 from fbpyutils.string import hash_string
 
 
-# Type variable para função de processamento genérica
+# Type variable for generic processing function
 T = TypeVar('T')
 
 class ProcessingFunction(Protocol):
+    """
+    Defines the protocol for a generic processing function.
+
+    A processing function should accept a tuple of parameters and return a tuple
+    containing a boolean indicating success, an optional error message (string),
+    and a result of any type.
+    """
     def __call__(self, params: Tuple[Any, ...]) -> Tuple[bool, Optional[str], Any]:
+        """
+        Executes the processing function.
+
+        Args:
+            params (Tuple[Any, ...]): A tuple containing the parameters for the processing function.
+
+        Returns:
+            Tuple[bool, Optional[str], Any]: A tuple containing the success status (bool),
+                                             an optional error message (str or None), and
+                                             the processing result (Any).
+        """
         ...
 
 class ProcessingFilesFunction(Protocol):
+    """
+    Defines the protocol for a file processing function.
+
+    A file processing function should accept a tuple of parameters, process a file,
+    and return a tuple containing the file path (string), a boolean indicating success,
+    an optional error message (string), and a result of any type.
+    """
     def __call__(self, params: Tuple[Any, ...]) -> Tuple[str, bool, Optional[str], Any]:
+        """
+        Executes the file processing function.
+
+        Args:
+            params (Tuple[Any, ...]): A tuple containing the parameters for the file processing function.
+
+        Returns:
+            Tuple[str, bool, Optional[str], Any]: A tuple containing the processed file path (str),
+                                             the success status (bool), an optional error message (str or None),
+                                             and the processing result (Any).
+        """
         ...
 
 
@@ -58,17 +98,11 @@ class Process:
             error message, and a result.
         _parallelize (bool): A flag that indicates whether to run the processing in parallel.
             Set to True for parallel execution, False for serial.
-        _workers (Optional[int]): The number of worker processes or threads to use in parallel execution.
+        _workers (int): The number of worker processes or threads to use in parallel execution.
             If None, defaults to _MAX_WORKERS.
         sleeptime (float): The wait time in seconds between successive executions in serial mode.
             Useful to throttle processing and reduce system load.
         _parallel_type (str): Type of parallelization to use, either 'threads' (default) or 'processes'.
-
-    Methods:
-        get_available_cpu_count: Returns the number of available CPU cores.
-        is_parallelizable: Checks if parallel processing is supported on the current system.
-        run: Executes the processing function for each parameter set, either in parallel or serial.
-        get_function_info: Provides detailed information about a given function, such as module and name.
     """
 
     _MAX_WORKERS = os.cpu_count() if os.name == 'nt' else 1
@@ -107,7 +141,8 @@ class Process:
         for Windows systems where true multiprocessing may not be available.
 
         Args:
-            parallel_type (str): Type of parallelization to check ('threads' or 'processes'). Default is 'threads'.
+            parallel_type (str): Type of parallelization to check ('threads' or 'processes').
+                                 Defaults to 'threads'.
 
         Returns:
             bool: True if parallel processing is supported for the specified type, False otherwise.
@@ -117,7 +152,7 @@ class Process:
         """
         if parallel_type == 'processes':
             try:
-                import multiprocessing
+                import multiprocessing  # Import here to avoid global namespace pollution
                 Logger.log(Logger.INFO, "Multiprocessing parallelization available")
                 return True
             except ImportError:
@@ -143,11 +178,11 @@ class Process:
 
         Returns:
             Dict[str, str]: Dictionary containing:
-                - id: Memory address of the function
-                - module: Module path where the function is defined
-                - name: Qualified name of the function
-                - full_ref: Full reference combining module and name
-                - unique_ref: Absolute unique reference including memory address
+                - 'id': Memory address of the function
+                - 'module': Module path where the function is defined
+                - 'name': Qualified name of the function
+                - 'full_ref': Full reference combining module and name
+                - 'unique_ref': Absolute unique reference including memory address
 
         Example:
             >>> def my_func(): pass
@@ -156,7 +191,7 @@ class Process:
             'mymodule.my_func'
 
         Note:
-            The unique_ref can be used to distinguish between different instances
+            The 'unique_ref' can be used to distinguish between different instances
             of the same function in memory.
         """
         return {
@@ -169,48 +204,58 @@ class Process:
 
     def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
                  workers: Optional[int] = _MAX_WORKERS, sleeptime: float = 0,
-                 parallel_type: str = 'threads'):
+                 parallel_type: str = 'threads') -> None:
         """
         Initializes a new Process instance.
 
         Args:
-            process (Callable): Function to be executed for each parameter set
-            parallelize (bool): If True, runs in parallel. If False, runs serially
-            workers (Optional[int]): Number of workers for parallel execution. Defaults to CPU count.
-            sleeptime (float): Wait time between executions in serial mode
-            parallel_type (str): Type of parallelization ('threads' or 'processes'). Default is 'threads'.
+            process (Callable): The processing function to be executed.
+                                 It must conform to the ProcessingFunction protocol.
+            parallelize (bool): If True, runs processing in parallel using threads or processes.
+                                 If False, runs processing serially in the main thread. Defaults to True.
+            workers (Optional[int]): The number of worker processes or threads to use for parallel execution.
+                                     If None, it defaults to the number of CPU cores available (Process._MAX_WORKERS).
+            sleeptime (float): Wait time in seconds between successive executions in serial mode.
+                               Useful for throttling processing to reduce system load. Defaults to 0.
+            parallel_type (str): Type of parallelization to use, either 'threads' or 'processes'.
+                                 Defaults to 'threads'. 'threads' uses ThreadPoolExecutor, 'processes' uses ProcessPoolExecutor.
 
         Raises:
             ValueError: If an invalid parallel_type is provided.
         """
         parallel_type = parallel_type or 'threads'
-        if parallel_type not in ('threads', 'process'):
-            raise ValueError(f'Invalid parallel processing type: {parallel_type}. Valid types are: threads or process.')
-        self._process = process
-        self._parallel_type = parallel_type
-        self._parallelize = parallelize and Process.is_parallelizable(parallel_type=self._parallel_type)
-        self._workers = workers or Process._MAX_WORKERS
-        self.sleeptime = 0 if sleeptime < 0 else sleeptime
+        if parallel_type not in ('threads', 'processes'): # Corrected typo 'process' to 'processes'
+            raise ValueError(f'Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.')
+        self._process: Callable = process
+        self._parallel_type: str = parallel_type
+        self._parallelize: bool = parallelize and Process.is_parallelizable(parallel_type=self._parallel_type)
+        self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
+        self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
         Logger.log(Logger.INFO, f"Process initialized: parallel={self._parallelize}, type={self._parallel_type}, workers={self._workers}")
 
     def run(self, params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]:
         """
-        Executes processing for multiple parameter sets.
+        Executes the processing function for each parameter set in the given list.
+
+        Processes can be executed in parallel or serial mode based on the class configuration.
 
         Args:
-            params (List[Tuple[Any, ...]]): List of parameter tuples for processing
+            params (List[Tuple[Any, ...]]): List of parameter tuples. Each tuple contains the arguments
+                                             to be passed to the processing function.
 
         Returns:
-            List[Tuple[bool, Optional[str], Any]]: List of processing results where each tuple contains:
-                - success: True if processing succeeded, False otherwise
-                - error_message: Error message if processing failed, None otherwise
-                - result: Processing result if successful, None otherwise
+            List[Tuple[bool, Optional[str], Any]]: List of processing results. Each tuple in the list
+                                             corresponds to a parameter set and contains:
+                - success (bool): True if processing was successful, False otherwise.
+                - error_message (Optional[str]): An error message if processing failed, None otherwise.
+                - result (Any): The result of the processing function if successful, None otherwise.
 
         Raises:
-            Exception: Any exception that may occur during processing
+            Exception: Any exception raised during the execution of the processing function.
 
         Note:
-            When running in parallel mode, the order of results may not match the order of input parameters.
+            When running in parallel mode, the order of results may not match the order of input parameters
+            due to the nature of concurrent execution.
         """
         try:
             Logger.log(Logger.INFO, f"Starting execution with parameters: {params}")
@@ -244,57 +289,63 @@ class Process:
 
 class ProcessFiles(Process):
     """
-    Class for file processing with timestamp-based control.
+    Class for file processing with timestamp-based control to prevent reprocessing.
 
     This class extends Process by adding the ability to control execution
-    based on file timestamps, avoiding unnecessary reprocessing
-    of unmodified files.
+    based on file modification timestamps. It avoids unnecessary reprocessing
+    of files that have not been modified since the last successful processing.
+
+    It uses a control file to track the last processing timestamp for each file,
+    stored in a dedicated folder within the application's user data directory.
 
     Methods:
-        _controlled_run: Executes processing with timestamp control
-        run: Executes processing for multiple files
+        _controlled_run: Executes processing with timestamp control logic.
+        run: Executes processing for multiple files, with optional timestamp control.
 
     Inherits from:
-        Process: Base class providing parallel/serial processing capabilities
+        Process: Base class providing parallel/serial processing capabilities.
     """
 
     def _controlled_run(self, *args: Any) -> Tuple[str, bool, Optional[str], Any]:
         """Execute a function with file timestamp-based control.
 
         This function checks if a file needs to be processed based on its creation
-        timestamp compared to the last recorded processing. Control is maintained
-        through a pickle file that stores the timestamp of the last execution.
+        timestamp compared to the last recorded processing timestamp. Control is maintained
+        through a pickle file that stores the timestamp of the last successful execution.
 
         Args:
-            *args: Unpacked arguments where the first is the file path
+            *args: Variable length argument list. Expects the first argument to be the
+                   processing function and the second to be the file path, followed by
+                   any other arguments required by the processing function.
 
         Returns:
             Tuple[str, bool, Optional[str], Any]: A tuple containing:
-                - file_path: Path of the processed file
-                - success: True if processed successfully, False otherwise
-                - error_message: Error message if processing failed, None otherwise
-                - result: Function result if successful, None otherwise
+                - file_path (str): Path of the processed file.
+                - success (bool): True if processed successfully, False otherwise.
+                - error_message (Optional[str]): Error message if processing failed, None otherwise.
+                - result (Any): Function result if successful, None otherwise.
 
         Raises:
-            ValueError: If no arguments are provided
-            FileNotFoundError: If the file to be processed does not exist
+            ValueError: If not enough arguments are provided (at least processing function and file path).
+            FileNotFoundError: If the file to be processed does not exist.
 
         Note:
             The control file is stored in a dedicated folder under the application's
-            data directory, using a hash of the function reference as the folder name.
+            data directory, using a hash of the function's full reference as the folder name
+            and a hash of the file path as the control file name.
         """
         try:
             if len(args) < 2:
                 raise ValueError('No enough arguments to run')
-            
-            process = args[0]
 
-            process_file = args[1]
+            process: Callable = args[0] # Added type hint
+            process_file: str = args[1] # Added type hint
+
             if not os.path.exists(process_file):
                 raise FileNotFoundError(f"Process file {process_file} does not exist")
-            
-            # Cria pasta de controle
-            control_folder = os.path.sep.join([Env.MM_USER_APP_FOLDER, 
+
+            # Create control folder
+            control_folder: str = os.path.sep.join([Env.MM_USER_APP_FOLDER,
                                              f"p_{hash_string(Process.get_function_info(process)['full_ref'])}.control"])
             if not os.path.exists(control_folder):
                 Logger.log(Logger.INFO, f"Creating control folder: {control_folder}")
@@ -303,101 +354,108 @@ class ProcessFiles(Process):
                 except FileExistsError:
                     Logger.log(Logger.WARNING, f"{control_folder} already exists, probaly created by concurrent process. Skipping.")
 
-            # Define arquivo de controle
-            control_file = os.path.sep.join([control_folder, f"f_{hash_string(process_file)}.reg"])
-            
-            # Obtém timestamp atual do arquivo
-            current_timestamp = creation_date(process_file).timestamp()
-            
-            # Verifica se arquivo de controle existe e lê timestamp
-            control_exists = os.path.exists(control_file)
+            # Define control file path
+            control_file: str = os.path.sep.join([control_folder, f"f_{hash_string(process_file)}.reg"])
+
+            # Get current file timestamp
+            current_timestamp: float = creation_date(process_file).timestamp()
+
+            # Check if control file exists and read last timestamp
+            control_exists: bool = os.path.exists(control_file)
             Logger.log(Logger.INFO, f"Control file exists: {control_exists}")
             if control_exists:
                 with open(control_file, 'rb') as cf:
-                    last_timestamp = pickle.load(cf)
-                    
-                # Se arquivo não foi modificado, ignora processamento
+                    last_timestamp: float = pickle.load(cf) # Added type hint
+
+                # If file has not been modified since last processing, skip processing
                 if last_timestamp >= current_timestamp:
                     Logger.log(Logger.INFO, f"Skipping unmodified file: {process_file}")
                     return (process_file, True, "Skipped", None)
-            
+
             Logger.log(Logger.INFO, f"Processing file: {process_file}")
-            # Executa função de processamento
-            _args = args[1:]
-            result = process(_args)
+            # Execute processing function
+            _args: Tuple[Any, ...] = args[1:] # Added type hint
+            result: Tuple[bool, Optional[str], Any] = process(_args) # Added type hint
 
             if len(result) < 2:
                 Logger.log(Logger.ERROR, f"Unexpected result length: {len(result)}. Result: {result}")
                 return (process_file, False, "Unexpected result length", None)
-            
-            # Atualiza arquivo de controle se processamento teve sucesso
-            if result[1]:  # sucesso
+
+            # Update control file if processing was successful
+            if result[1]:  # success
                 with open(control_file, 'wb') as cf:
                     pickle.dump(current_timestamp, cf)
                 Logger.log(Logger.INFO, f"Updated control file: {control_file}")
-            # Remove arquivo de controle se foi criado mas houve erro
+            # Remove control file if it was created but an error occurred
             elif not control_exists and os.path.exists(control_file):
                 os.remove(control_file)
                 Logger.log(Logger.INFO, f"Removed control file due to error: {control_file}")
-            
-            return result
+
+            return (process_file, result[1], result[2], result[3]) # type: ignore # file_path, success, message, result
         except Exception as e:
             Logger.log(Logger.ERROR, f"Error in controlled run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
-    def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True, 
-                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0):
+    def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
+                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0) -> None:
         """
-        Inicializa uma nova instância de ProcessFiles.
+        Initializes a new instance of ProcessFiles.
 
         Args:
-            process: Função a ser executada para cada conjunto de parâmetros
-            parallelize: Se True, executa em paralelo. Se False, executa em série
-            workers: Número de workers para execução paralela
-            sleeptime: Tempo de espera entre execuções em modo serial
+            process (Callable): The file processing function to be executed.
+                                 It must conform to the ProcessingFilesFunction protocol.
+            parallelize (bool): If True, runs processing in parallel. If False, runs serially.
+                                 Defaults to True.
+            workers (Optional[int]): Number of workers for parallel execution.
+                                     Defaults to Process._MAX_WORKERS (CPU count).
+            sleeptime (float): Wait time in seconds between executions in serial mode. Defaults to 0.
         """
-        self._process = process
-        self._parallelize = parallelize and Process.is_parallelizable()
-        self._workers = workers or Process._MAX_WORKERS
-        self.sleeptime = 0 if sleeptime < 0 else sleeptime
+        super().__init__(process, parallelize, workers, sleeptime) # Pass process to super().__init__
+        self._process: Callable = process # Added type hint
+        self._parallelize: bool = parallelize and Process.is_parallelizable()
+        self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
+        self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
         Logger.log(Logger.INFO, f"ProcessFiles initialized: parallel={self._parallelize}, workers={self._workers}")
-        
+
     def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
         """
-        Executa o processamento para múltiplos arquivos, opcionalmente com controle de timestamp.
+        Executes file processing for multiple files, optionally with timestamp control.
 
-        Esta função estende o método run da classe Process adicionando a capacidade de
-        controlar a execução baseada em timestamps dos arquivos.
+        This function extends the run method of the Process class by adding the capability to
+        control execution based on file timestamps, avoiding reprocessing of unmodified files.
 
         Args:
-            params: Lista de tuplas de parâmetros para processamento
-            controlled: Se True, usa controle de execução baseado em timestamp
+            params (List[Tuple[Any, ...]]): List of parameter tuples for processing.
+                                             Each tuple should contain at least the file path as the first element,
+                                             followed by any other arguments required by the processing function.
+            controlled (bool): If True, uses timestamp-based execution control to prevent reprocessing
+                               of unmodified files. Defaults to False.
 
         Returns:
-            Lista de tuplas contendo resultados do processamento:
-                - caminho_arquivo: Caminho do arquivo processado
-                - sucesso: True se processado com sucesso, False caso contrário
-                - mensagem_erro: Mensagem de erro ou None se sucesso
-                - resultado: Resultado da função ou None se erro
+            List[Tuple[str, bool, Optional[str], Any]]: List of processing results. Each tuple contains:
+                - file_path (str): Path of the processed file.
+                - success (bool): True if processed successfully, False otherwise.
+                - error_message (Optional[str]): Error message if processing failed, None otherwise.
+                - result (Any): Function result if successful, None otherwise.
         """
         try:
             if controlled:
                 Logger.log(Logger.INFO, "Starting controlled execution")
                 # Guarda a função original
-                original_process = self._process
+                original_process: Callable = self._process # Added type hint
                 # Substitui temporariamente por _controlled_run
                 self._process = self._controlled_run
                 try:
-                    # Executa usando a infraestrutura modificada para controle de execução
-                    _params = [(original_process,) + p for p in params]
-                    # Executa usando a infraestrutura da classe mãe
+                    # Execute using the modified infrastructure for execution control
+                    _params: List[Tuple[Any, ...]] = [(original_process,) + p for p in params] # Added type hint
+                    # Execute using the base class infrastructure
                     return super().run(_params)
                 finally:
-                    # Restaura a função original
+                    # Restore the original function
                     self._process = original_process
             else:
                 Logger.log(Logger.INFO, "Starting normal execution")
-                # Se controlled=False, usa o comportamento padrão da classe mãe
+                # If controlled=False, use the default behavior of the base class
                 return super().run(params)
         except Exception as e:
             Logger.log(Logger.ERROR, f"Error in process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
@@ -406,67 +464,81 @@ class ProcessFiles(Process):
 
 class SessionProcess(Process):
     """
-    Classe para processamento em sessão com controle de retomada baseado em sessão.
+    Class for session-based process execution with resume capability.
 
-    Esta classe estende Process adicionando a capacidade de controlar a execução
-    baseada em sessão, permitindo retomar processamentos a partir de falhas ou interrupções.
+    This class extends Process by adding session-based control, allowing
+    processing to be resumed from the point of interruption or failure.
+    It is useful for long-running processes where it's important to avoid
+    re-executing already completed tasks in case of interruptions.
+
+    It uses session and task control files to track the execution status,
+    stored in a dedicated folder within the application's user data directory.
     """
 
     @staticmethod
     def generate_session_id() -> str:
         """
-        Gera um ID de sessão único com o prefixo 'session_'.
+        Generates a unique session ID with the prefix 'session_'.
+
+        Session IDs are used to group tasks within a processing session,
+        allowing for session-level control and tracking.
 
         Returns:
-            str: ID de sessão único.
+            str: Unique session ID.
         """
         return f"session_{uuid.uuid4()}"
 
     @staticmethod
     def generate_task_id(params: Tuple[Any, ...]) -> str:
         """
-        Gera um ID de tarefa único com base no hash dos parâmetros do processo.
+        Generates a unique task ID based on the hash of the process parameters.
+
+        Task IDs are used to uniquely identify each processing task within a session,
+        allowing for task-level control and tracking of execution status.
 
         Args:
-            params: Tupla de parâmetros do processo.
+            params (Tuple[Any, ...]): Tuple of process parameters. The parameters that define the task.
 
         Returns:
-            str: ID de tarefa único.
+            str: Unique task ID.
         """
-        params_hash = hash_string(str(params))
+        params_hash: str = hash_string(str(params)) # Added type hint
         return f"task_{params_hash}"
 
     def _controlled_run(self, *args: Any) -> Tuple[str, bool, Optional[str], Any]:
         """
-        Executa uma função com controle baseado em sessão.
+        Executes a function with session-based control.
 
-        Verifica se uma tarefa precisa ser processada baseado no controle de sessão.
+        Checks if a task needs to be processed based on the session control mechanism.
+        It determines if a task has already been successfully processed within the current session
+        by checking for the existence of a task control file.
 
         Args:
-            *args: Argumentos desempacotados onde o primeiro é o ID da sessão, o segundo é a função
-                   de processamento e os seguintes são os parâmetros para a função.
+            *args: Variable length argument list. Expects the first argument to be the session ID,
+                   the second to be the processing function, and the following arguments
+                   are the parameters for the processing function.
 
         Returns:
-            Tuple contendo:
-                - task_id: ID da tarefa processada
-                - sucesso: True se processado com sucesso, False caso contrário
-                - mensagem_erro: Mensagem de erro ou None se sucesso
-                - resultado: Resultado da função ou None se erro
+            Tuple[str, bool, Optional[str], Any]: A tuple containing:
+                - task_id (str): ID of the processed task.
+                - success (bool): True if processed successfully, False otherwise.
+                - error_message (Optional[str]): Error message if processing failed, None otherwise.
+                - result (Any): Function result if successful, None otherwise.
 
         Raises:
-            ValueError: Se argumentos insuficientes forem fornecidos.
+            ValueError: If insufficient arguments are provided (less than session ID, process function, and parameters).
         """
         try:
             if len(args) < 3:
                 raise ValueError('Not enough arguments to run session controlled process')
 
-            session_id = args[0]
-            process = args[1]
-            params = args[2:]
-            task_id = SessionProcess.generate_task_id(params)
+            session_id: str = args[0] # Added type hint
+            process: Callable = args[1] # Added type hint
+            params: Tuple[Any, ...] = args[2:] # Added type hint
+            task_id: str = SessionProcess.generate_task_id(params) # Added type hint
 
-            # Cria pasta de controle da sessão
-            session_control_folder = os.path.sep.join([Env.MM_USER_APP_FOLDER,
+            # Create session control folder
+            session_control_folder: str = os.path.sep.join([Env.MM_USER_APP_FOLDER,
                                                      f"session_control",
                                                      f"s_{hash_string(session_id)}"])
             if not os.path.exists(session_control_folder):
@@ -476,91 +548,106 @@ class SessionProcess(Process):
                 except FileExistsError:
                     Logger.log(Logger.WARNING, f"{session_control_folder} already exists, probably created by concurrent process. Skipping.")
 
-            # Define arquivo de controle da tarefa
-            task_control_file = os.path.sep.join([session_control_folder, f"t_{hash_string(task_id)}.reg"])
+            # Define task control file path
+            task_control_file: str = os.path.sep.join([session_control_folder, f"t_{hash_string(task_id)}.reg"])
 
-            # Verifica se arquivo de controle da tarefa existe
-            task_control_exists = os.path.exists(task_control_file)
+            # Check if task control file exists
+            task_control_exists: bool = os.path.exists(task_control_file)
             Logger.log(Logger.INFO, f"Task control file exists: {task_control_exists} for task_id: {task_id}")
             if task_control_exists:
                 Logger.log(Logger.INFO, f"Skipping already processed task: {task_id}")
                 return (task_id, True, "Skipped", None)
 
             Logger.log(Logger.INFO, f"Processing task: {task_id} in session: {session_id}")
-            # Executa função de processamento
-            result = process(*params)
+            # Execute processing function
+            result: Tuple[bool, Optional[str], Any] = process(*params) # Added type hint
 
             if len(result) < 2:
                 Logger.log(Logger.ERROR, f"Unexpected result length: {len(result)}. Result: {result}")
                 return (task_id, False, "Unexpected result length", None)
 
-            # Atualiza arquivo de controle se processamento teve sucesso
-            if result[1]:  # sucesso
+            # Update task control file if processing was successful
+            if result[1]:  # success
                 with open(task_control_file, 'wb') as cf:
-                    pickle.dump(True, cf) # apenas marca que a task foi executada com sucesso
+                    pickle.dump(True, cf) # just mark that the task was successfully executed
                 Logger.log(Logger.INFO, f"Updated task control file: {task_control_file}")
-            # Remove arquivo de controle se foi criado mas houve erro
+            # Remove task control file if it was created but an error occurred
             elif not task_control_exists and os.path.exists(task_control_file):
                 os.remove(task_control_file)
                 Logger.log(Logger.INFO, f"Removed task control file due to error: {task_control_file}")
 
-            return (task_id, result[1], result[2], result[3]) # task_id, success, message, result
+            return (task_id, result[1], result[2], result[3]) # task_id, success, message, result # type: ignore
         except Exception as e:
             Logger.log(Logger.ERROR, f"Error in session controlled run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
     def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
                  workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0,
-                 parallel_type: str = 'threads'):
+                 parallel_type: str = 'threads') -> None:
         """
-        Inicializa uma nova instância de SessionProcess.
+        Initializes a new instance of SessionProcess.
 
         Args:
-            process: Função a ser executada para cada conjunto de parâmetros
-            parallelize: Se True, executa em paralelo. Se False, executa em série
-            workers: Número de workers para execução paralela
-            sleeptime: Tempo de espera entre execuções em modo serial
-            parallel_type (str): Tipo de paralelização ('threads' ou 'processes'). Padrão é 'threads'.
+            process (Callable): The processing function to be executed within a session.
+                                 It must conform to the ProcessingFunction protocol.
+            parallelize (bool): If True, runs processing in parallel. If False, runs serially.
+                                 Defaults to True.
+            workers (Optional[int]): Number of workers for parallel execution.
+                                     Defaults to Process._MAX_WORKERS (CPU count).
+            sleeptime (float): Wait time in seconds between executions in serial mode. Defaults to 0.
+            parallel_type (str): Type of parallelization ('threads' or 'processes'). Defaults to 'threads'.
         """
         super().__init__(process, parallelize, workers, sleeptime, parallel_type)
+        self._process: Callable = process # Added type hint
+        self._parallelize: bool = parallelize and Process.is_parallelizable(parallel_type=self._parallel_type)
+        self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
+        self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
         Logger.log(Logger.INFO, f"SessionProcess initialized: parallel={self._parallelize}, workers={self._workers}, type={self._parallel_type}")
 
-    def run(self, params: List[Tuple[Any, ...]], session_id: str = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
+    def run(self, params: List[Tuple[Any, ...]], session_id: Optional[str] = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
         """
-        Executa o processamento para múltiplos conjuntos de parâmetros, opcionalmente com controle de sessão.
+        Executes processing for multiple parameter sets, optionally with session control.
+
+        This function extends the run method of the Process class by adding session-based execution control.
+        It allows for resuming processing sessions by skipping tasks that have already been successfully completed.
 
         Args:
-            params: Lista de tuplas de parâmetros para processamento
-            session_id: ID da sessão para controle de retomada. Se None, um novo ID será gerado.
-            controlled: Se True, usa controle de execução baseado em sessão.
+            params (List[Tuple[Any, ...]]): List of parameter tuples for processing.
+                                             Each tuple contains the arguments for a single task
+                                             to be processed within the session.
+            session_id (Optional[str]): Session ID for resume control. If provided, the process will attempt
+                                         to resume the session. If None, a new session ID will be generated.
+                                         Defaults to None, which starts a new session.
+            controlled (bool): If True, uses session-based execution control to enable session resume
+                               capabilities. Defaults to False.
 
         Returns:
-            Lista de tuplas contendo resultados do processamento:
-                - task_id: ID da tarefa processada
-                - sucesso: True se processado com sucesso, False caso contrário
-                - mensagem_erro: Mensagem de erro ou None se sucesso
-                - resultado: Resultado da função ou None se erro
+            List[Tuple[str, bool, Optional[str], Any]]: List of processing results. Each tuple contains:
+                - task_id (str): ID of the processed task.
+                - success (bool): True if processed successfully, False otherwise.
+                - error_message (Optional[str]): Error message if processing failed, None otherwise.
+                - result (Any): Function result if successful, None otherwise.
         """
         try:
             if controlled:
                 Logger.log(Logger.INFO, "Starting session controlled execution")
-                _session_id = session_id or SessionProcess.generate_session_id()
+                _session_id: str = session_id or SessionProcess.generate_session_id() # Added type hint
                 Logger.log(Logger.INFO, f"Session ID: {_session_id}")
                 # Guarda a função original
-                original_process = self._process
+                original_process: Callable = self._process # Added type hint
                 # Substitui temporariamente por _controlled_run
                 self._process = self._controlled_run
                 try:
-                    # Executa usando a infraestrutura modificada para controle de sessão
-                    _params = [(_session_id, original_process) + p for p in params]
-                    # Executa usando a infraestrutura da classe mãe
+                    # Execute using the modified infrastructure for session control
+                    _params: List[Tuple[Any, ...]] = [(_session_id, original_process) + p for p in params] # Added type hint
+                    # Execute using the base class infrastructure
                     return super().run(_params)
                 finally:
-                    # Restaura a função original
+                    # Restore the original function
                     self._process = original_process
             else:
                 Logger.log(Logger.INFO, "Starting normal execution")
-                # Se controlled=False, usa o comportamento padrão da classe mãe
+                # If controlled=False, use the default behavior of the base class
                 return super().run(params)
         except Exception as e:
             Logger.log(Logger.ERROR, f"Error in session process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
