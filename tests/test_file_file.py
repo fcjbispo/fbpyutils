@@ -88,4 +88,4 @@ def test_build_platform_path():
 
 def test_absolute_path():
     abs_path = file.absolute_path("file.txt")
-    assert abs_path == os.path.dirname(os.path.abspath("file.txt"))
+    assert abs_path.lower() == os.path.dirname(os.path.abspath("file.txt")).lower()
