@@ -12,6 +12,7 @@ This project provides a collection of Python utility functions for various tasks
 - File handling
 - Excel file processing
 - OFX parsing
+- Process management with parallel execution and control mechanisms
 
 ## License
 
@@ -46,3 +47,4 @@ uv pip install .
 
 ```bash
 pytest tests
+```
