@@ -48,6 +48,9 @@ def test_get_available_cpu_count():
 
 
 def test_is_parallelizable(caplog):
+    import logging
+    caplog.set_level(logging.INFO)
+
     assert process.Process.is_parallelizable(parallel_type='threads') is True
     assert "Default multi-threads parallelization available" in caplog.text
 
