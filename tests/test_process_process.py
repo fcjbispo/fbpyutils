@@ -49,6 +49,12 @@ def test_get_available_cpu_count():
 
 def test_is_parallelizable(caplog):
     import logging
+    # Configure root logger to capture messages
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)  # Set root logger level to DEBUG or INFO
+    root_logger.addHandler(logging.StreamHandler()) # Add a basic handler
+
+    import logging
     caplog.set_level(logging.INFO)
 
     assert process.Process.is_parallelizable(parallel_type='threads') is True
