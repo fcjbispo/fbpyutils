@@ -81,29 +81,34 @@ class ProcessingFilesFunction(Protocol):
 class Process:
     """
     Base class for parallel or serial function processing.
-
+    
     This class provides the basic infrastructure to execute a processing function
     with a list of parameter sets. It supports both parallel execution using
     multiple threads or processes and serial execution in a single thread.
-
+    
     It is designed to be subclassed for specific processing needs, offering
     flexibility in how functions are executed and managed.
-
+    
     Attributes:
-        _MAX_WORKERS (int): Maximum number of worker processes or threads for parallel processing.
-            Defaults to the number of CPU cores available if not explicitly defined,
-            otherwise, it is set to 1 on systems where CPU count detection is not supported.
-        _process (Callable): The processing function to be executed. This function should
-            accept a tuple of parameters and return a tuple indicating success, an optional
-            error message, and a result.
-        _parallelize (bool): A flag that indicates whether to run the processing in parallel.
-            Set to True for parallel execution, False for serial.
-        _workers (int): The number of worker processes or threads to use in parallel execution.
-            If None, defaults to _MAX_WORKERS.
-        sleeptime (float): The wait time in seconds between successive executions in serial mode.
-            Useful to throttle processing and reduce system load.
-        _parallel_type (str): Type of parallelization to use, either 'threads' (default) or 'processes'.
+        _MAX_WORKERS: int
+        _process: Callable
+        _parallelize: bool
+        _workers: int
+        sleeptime: float
+        _parallel_type: str
     """
+
+    _MAX_WORKERS: int
+    _process: Callable
+    _parallelize: bool
+    _workers: int
+    sleeptime: float
+    _parallel_type: str
+
+    @staticmethod
+    def _process_wrapper(func_and_params):
+        func, params = func_and_params
+        return func(*params)
 
     _MAX_WORKERS = os.cpu_count() if os.name == 'nt' else 1
 
@@ -273,11 +278,11 @@ class Process:
                 max_workers = Process.get_available_cpu_count()
 
             Logger.log(Logger.INFO, f"Starting parallel execution with {max_workers} workers using {self._parallel_type}")
-            if self._parallel_type == 'processes':
-                with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-                    responses = list(executor.map(lambda x: self._process(*x), params))
-            else:  # Default to threads
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            executor_class = concurrent.futures.ProcessPoolExecutor if self._parallel_type == 'processes' else concurrent.futures.ThreadPoolExecutor
+            with executor_class(max_workers=max_workers) as executor:
+                if self._parallel_type == 'processes':
+                    responses = list(executor.map(Process._process_wrapper, [(self._process, p) for p in params]))
+                else:
                     responses = list(executor.map(lambda x: self._process(*x), params))
 
             Logger.log(Logger.INFO, f"Processed {len(responses)} items successfully")
@@ -345,7 +350,7 @@ class ProcessFiles(Process):
                 raise FileNotFoundError(f"Process file {process_file} does not exist")
 
             # Create control folder
-            control_folder: str = os.path.sep.join([Env.MM_USER_APP_FOLDER,
+            control_folder: str = os.path.sep.join([Env.USER_APP_FOLDER,
                                              f"p_{hash_string(Process.get_function_info(process)['full_ref'])}.control"])
             if not os.path.exists(control_folder):
                 Logger.log(Logger.INFO, f"Creating control folder: {control_folder}")
@@ -538,7 +543,7 @@ class SessionProcess(Process):
             task_id: str = SessionProcess.generate_task_id(params) # Added type hint
 
             # Create session control folder
-            session_control_folder: str = os.path.sep.join([Env.MM_USER_APP_FOLDER,
+            session_control_folder: str = os.path.sep.join([Env.USER_APP_FOLDER,
                                                      f"session_control",
                                                      f"s_{hash_string(session_id)}"])
             if not os.path.exists(session_control_folder):

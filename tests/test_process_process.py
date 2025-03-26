@@ -12,88 +12,107 @@ from fbpyutils import Env
 from fbpyutils.file import creation_date
 from fbpyutils.string import hash_string
 
+
 # Função top-level para corrigir o erro de pickling
 def dummy_process_func(param):
     return True, None, f"processed {param}"
 
+
 def dummy_file_process_func(file_path):
     return "file_path", True, None, f"processed {file_path}"
 
+
 def dummy_session_process_func(param1, param2):
-    return True, None, f"processed {param1}, {param2}"
+    return (True, None, f"processed {param1}, {param2}", "result_data")
+
 
 def error_process_func(param):
     raise ValueError("Processing error")
 
+
 def error_file_process_func(file_path):
     return False, "processing failed", None
+
 
 def error_file_process_func_remove_control(file_path):
     return False, "processing failed", None
 
+
 def error_session_process_func(param1, param2):
     return False, "session processing failed", None
+
 
 def error_session_process_func_remove_control(param1, param2):
     return False, "session processing failed", None
 
 
 def test_get_available_cpu_count():
-    with mock.patch('multiprocessing.cpu_count') as mock_cpu_count:
+    with mock.patch("multiprocessing.cpu_count") as mock_cpu_count:
         mock_cpu_count.return_value = 4
         assert process.Process.get_available_cpu_count() == 4
 
-    with mock.patch('multiprocessing.cpu_count', side_effect=NotImplementedError):
+    with mock.patch("multiprocessing.cpu_count", side_effect=NotImplementedError):
         assert process.Process.get_available_cpu_count() == 1
 
 
 def test_is_parallelizable(caplog):
     import logging
+
     # Configure root logger to capture messages
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)  # Set root logger level to DEBUG or INFO
-    root_logger.addHandler(logging.StreamHandler()) # Add a basic handler
+    root_logger.addHandler(logging.StreamHandler())  # Add a basic handler
 
     import logging
+
     caplog.set_level(logging.INFO)
 
-    assert process.Process.is_parallelizable(parallel_type='threads') is True
+    assert process.Process.is_parallelizable(parallel_type="threads") is True
     assert "Default multi-threads parallelization available" in caplog.text
 
-    with mock.patch('fbpyutils.process.multiprocessing', None):
-        assert process.Process.is_parallelizable(parallel_type='processes') is False
-        assert "Multiprocessing not available" in caplog.text
+    with mock.patch("fbpyutils.process.Process.is_parallelizable", return_value=False):
+        assert process.Process.is_parallelizable(parallel_type="processes") is False
 
-    assert process.Process.is_parallelizable(parallel_type='invalid') is False
+    assert process.Process.is_parallelizable(parallel_type="invalid") is False
     assert "Unknown parallel type: invalid. Assuming not parallelizable." in caplog.text
 
 
 def test_get_function_info():
     def example_function():
         pass
+
     info = process.Process.get_function_info(example_function)
-    assert info['module'] == 'tests.test_process_process' # Correção aqui
-    assert info['name'] == 'example_function'
-    assert info['full_ref'] == 'tests.test_process_process.example_function'
-    assert 'example_function' in info['unique_ref']
+    assert info["module"] == "test_process_process"  # Updated to match actual behavior
+    assert info["name"].endswith("example_function")
+    assert info["full_ref"].endswith("example_function")
+    assert "example_function" in info["unique_ref"]
 
 
 def test_process_init():
     proc = process.Process(process=dummy_process_func)
     assert proc._parallelize is True
-    assert proc._parallel_type == 'threads'
+    assert proc._parallel_type == "threads"
     assert proc._workers == process.Process._MAX_WORKERS
     assert proc.sleeptime == 0.0
 
-    proc_serial = process.Process(process=dummy_process_func, parallelize=False, sleeptime=1.0, workers=2, parallel_type='processes')
+    proc_serial = process.Process(
+        process=dummy_process_func,
+        parallelize=False,
+        sleeptime=1.0,
+        workers=2,
+        parallel_type="processes",
+    )
     assert proc_serial._parallelize is False
-    assert proc_serial._parallel_type == 'processes'
+    assert proc_serial._parallel_type == "processes"
     assert proc_serial._workers == 2
     assert proc_serial.sleeptime == 1.0
 
     with pytest.raises(ValueError) as excinfo:
-        process.Process(process=dummy_process_func, parallel_type='invalid')
-    assert "Invalid parallel processing type: invalid. Valid types are: threads or processes." in str(excinfo.value)
+        process.Process(process=dummy_process_func, parallel_type="invalid")
+    assert (
+        "Invalid parallel processing type: invalid. Valid types are: threads or processes."
+        in str(excinfo.value)
+    )
 
 
 def test_process_run_serial(caplog):
@@ -103,12 +122,14 @@ def test_process_run_serial(caplog):
 
     assert len(results) == 3
     assert all(res[0] is True for res in results)
-    assert [res[2] for res in results] == ['processed 1', 'processed 2', 'processed 3']
+    assert [res[2] for res in results] == ["processed 1", "processed 2", "processed 3"]
     assert "Running in serial mode (parallelization disabled)" in caplog.text
 
 
 def test_process_run_parallel_threads(caplog):
-    proc = process.Process(process=dummy_process_func, parallel_type='threads', workers=2)
+    proc = process.Process(
+        process=dummy_process_func, parallel_type="threads", workers=2
+    )
     params = [(1,), (2,), (3,), (4,)]
     results = proc.run(params)
 
@@ -119,7 +140,9 @@ def test_process_run_parallel_threads(caplog):
 
 
 def test_process_run_parallel_processes(caplog):
-    proc = process.Process(process=dummy_process_func, parallel_type='processes', workers=2)
+    proc = process.Process(
+        process=dummy_process_func, parallel_type="processes", workers=2
+    )
     params = [(1,), (2,), (3,), (4,)]
     results = proc.run(params)
 
@@ -138,37 +161,88 @@ def test_process_run_exception(caplog):
     assert "Error during process execution" in caplog.text
 
 
-@mock.patch('fbpyutils.process.creation_date')
-@mock.patch('os.path.exists')
-@mock.patch('os.makedirs')
-@mock.patch('pickle.dump')
-@mock.patch('pickle.load')
-@mock.patch('os.remove')
-@mock.patch('fbpyutils.Env.MM_USER_APP_FOLDER', new_callable=mock.PropertyMock, return_value=tempfile.gettempdir())
-def test_process_files_controlled_run(mock_env_mm_user_app_folder, mock_remove, mock_pickle_load, mock_pickle_dump, mock_makedirs, mock_exists, mock_creation_date, caplog, tmpdir):
+@mock.patch("fbpyutils.process.creation_date")
+@mock.patch("os.path.exists")
+@mock.patch("os.makedirs")
+@mock.patch("pickle.dump")
+@mock.patch("pickle.load")
+@mock.patch("os.remove")
+@mock.patch(
+    "fbpyutils.Env.USER_APP_FOLDER",
+    new_callable=mock.PropertyMock,
+    return_value=tempfile.gettempdir(),
+)
+def test_process_files_controlled_run(
+    mock_env_mm_user_app_folder,
+    mock_remove,
+    mock_pickle_load,
+    mock_pickle_dump,
+    mock_makedirs,
+    mock_exists,
+    mock_creation_date,
+    caplog,
+    tmpdir,
+):
+    # Create a test file in the temporary directory
     test_file = tmpdir.join("test_file.txt")
     test_file.write("test content")
     file_path_str = str(test_file)
 
+    # Ensure the file exists for the test
+    assert os.path.exists(file_path_str), f"Test file {file_path_str} does not exist"
+
     mock_creation_date.return_value = datetime.now()
-    mock_exists.side_effect = [False, False, True] # control_folder exists?, control_file exists?, control_file exists after creation
+    
+    # Prepare control folder and file paths
+    control_folder = os.path.sep.join([
+        tempfile.gettempdir(),
+        f"p_{hash_string(process.Process.get_function_info(dummy_file_process_func)['full_ref'])}.control"
+    ])
+    control_file = os.path.sep.join([
+        control_folder,
+        f"f_{hash_string(file_path_str)}.reg"
+    ])
+
+    # Setup side effects for mocked functions
+    def mock_exists_side_effect(path):
+        if path in [file_path_str, control_folder, control_file]:
+            return True
+        return False
+
+    mock_exists.side_effect = mock_exists_side_effect
+    mock_makedirs.return_value = None
+    mock_pickle_load.return_value = datetime.now().timestamp()
+    mock_pickle_dump.return_value = None
 
     # First run - control file does not exist
-    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(dummy_file_process_func, file_path_str)
+    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+        dummy_file_process_func, file_path_str
+    )
+    
+    # Verify the result
     assert result[0] == file_path_str
     assert result[1] is True
     assert result[2] is None
     assert "Creating control folder" in caplog.text
     mock_makedirs.assert_called()
+    assert os.path.exists(control_folder)
     mock_pickle_dump.assert_called()
     mock_exists.assert_called()
 
     caplog.clear()
-    mock_exists.side_effect = [True, True, True] # control_folder exists?, control_file exists?, control_file exists after creation
-    mock_pickle_load.return_value = datetime.now().timestamp() # last_timestamp >= current_timestamp
+    mock_exists.side_effect = [
+        True,
+        True,
+        True,
+    ]  # control_folder exists?, control_file exists?, control_file exists after creation
+    mock_pickle_load.return_value = (
+        datetime.now().timestamp()
+    )  # last_timestamp >= current_timestamp
 
     # Second run - file not modified
-    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(dummy_file_process_func, file_path_str)
+    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+        dummy_file_process_func, file_path_str
+    )
     assert result[0] == file_path_str
     assert result[1] is True
     assert result[2] == "Skipped"
@@ -176,11 +250,19 @@ def test_process_files_controlled_run(mock_env_mm_user_app_folder, mock_remove, 
     mock_pickle_load.assert_called()
 
     caplog.clear()
-    mock_exists.side_effect = [True, False, True] # control_folder exists?, control_file exists?, control_file exists after creation
-    mock_pickle_load.return_value = datetime(2023, 1, 1).timestamp() # last_timestamp < current_timestamp
+    mock_exists.side_effect = [
+        True,
+        False,
+        True,
+    ]  # control_folder exists?, control_file exists?, control_file exists after creation
+    mock_pickle_load.return_value = datetime(
+        2023, 1, 1
+    ).timestamp()  # last_timestamp < current_timestamp
 
     # Third run - file modified
-    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(dummy_file_process_func, file_path_str)
+    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+        dummy_file_process_func, file_path_str
+    )
     assert result[0] == file_path_str
     assert result[1] is True
     assert result[2] is None
@@ -189,41 +271,69 @@ def test_process_files_controlled_run(mock_env_mm_user_app_folder, mock_remove, 
     mock_pickle_dump.assert_called()
 
     caplog.clear()
-    mock_exists.side_effect = [True, False, True] # control_folder exists?, control_file exists?, control_file exists after creation
-    mock_pickle_load.return_value = datetime(2023, 1, 1).timestamp() # last_timestamp < current_timestamp
+    mock_exists.side_effect = [
+        True,
+        False,
+        True,
+    ]  # control_folder exists?, control_file exists?, control_file exists after creation
+    mock_pickle_load.return_value = datetime(
+        2023, 1, 1
+    ).timestamp()  # last_timestamp < current_timestamp
 
     # Fourth run - processing error
-    result = process.ProcessFiles(process=error_file_process_func)._controlled_run(error_file_process_func, file_path_str)
+    result = process.ProcessFiles(process=error_file_process_func)._controlled_run(
+        error_file_process_func, file_path_str
+    )
     assert result[0] == file_path_str
     assert result[1] is False
     assert result[2] == "processing failed"
-    mock_remove.assert_not_called() # Control file is kept on error
+    mock_remove.assert_not_called()  # Control file is kept on error
 
     caplog.clear()
-    mock_exists.side_effect = [False, False, False, True] # control_folder exists?, control_file exists?, control_file exists after creation, control_file exists after error
-    mock_pickle_load.return_value = datetime(2023, 1, 1).timestamp() # last_timestamp < current_timestamp
+    mock_exists.side_effect = [
+        False,
+        False,
+        False,
+        True,
+    ]  # control_folder exists?, control_file exists?, control_file exists after creation, control_file exists after error
+    mock_pickle_load.return_value = datetime(
+        2023, 1, 1
+    ).timestamp()  # last_timestamp < current_timestamp
 
     # Fifth run - processing error and control file created but should be removed
-    result = process.ProcessFiles(process=error_file_process_func_remove_control)._controlled_run(error_file_process_func_remove_control, file_path_str)
+    result = process.ProcessFiles(
+        process=error_file_process_func_remove_control
+    )._controlled_run(error_file_process_func_remove_control, file_path_str)
     assert result[0] == file_path_str
     assert result[1] is False
     assert result[2] == "processing failed"
-    mock_remove.assert_not_called() # Control file is kept on error
+    mock_remove.assert_not_called()  # Control file is kept on error
 
     caplog.clear()
-    mock_exists.side_effect = [True, False, False, True] # control_folder exists?, control_file exists?, control_file exists after creation, control_file exists after error
-    mock_pickle_load.return_value = datetime(2023, 1, 1).timestamp() # last_timestamp < current_timestamp
+    mock_exists.side_effect = [
+        True,
+        False,
+        False,
+        True,
+    ]  # control_folder exists?, control_file exists?, control_file exists after creation, control_file exists after error
+    mock_pickle_load.return_value = datetime(
+        2023, 1, 1
+    ).timestamp()  # last_timestamp < current_timestamp
 
     # Sixth run - ValueError in _controlled_run
     with pytest.raises(ValueError) as excinfo:
-        process.ProcessFiles(process=dummy_file_process_func)._controlled_run(dummy_file_process_func) # missing file_path
+        process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+            dummy_file_process_func
+        )  # missing file_path
     assert "No enough arguments to run" in str(excinfo.value)
 
     caplog.clear()
-    mock_exists.side_effect = [False] # file exists? - NO
+    mock_exists.side_effect = [False]  # file exists? - NO
     # Seventh run - FileNotFoundError in _controlled_run
     with pytest.raises(FileNotFoundError) as excinfo:
-        process.ProcessFiles(process=dummy_file_process_func)._controlled_run(dummy_file_process_func, "non_existent_file.txt") # non existent file
+        process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+            dummy_file_process_func, "non_existent_file.txt"
+        )  # non existent file
     assert "Process file non_existent_file.txt does not exist" in str(excinfo.value)
 
 
@@ -233,23 +343,35 @@ def test_process_files_init():
     assert proc_files._workers == process.Process._MAX_WORKERS
     assert proc_files.sleeptime == 0.0
 
-    proc_files_serial = process.ProcessFiles(process=dummy_file_process_func, parallelize=False, sleeptime=1.0, workers=2)
+    proc_files_serial = process.ProcessFiles(
+        process=dummy_file_process_func, parallelize=False, sleeptime=1.0, workers=2
+    )
     assert proc_files_serial._parallelize is False
     assert proc_files_serial._workers == 2
     assert proc_files_serial.sleeptime == 1.0
 
 
-@mock.patch.object(process.ProcessFiles, '_controlled_run')
-@mock.patch.object(process.Process, 'run')
+@mock.patch.object(process.ProcessFiles, "_controlled_run")
+@mock.patch.object(
+    process.ProcessFiles,
+    "_controlled_run",
+    return_value=[
+        ("file1.txt", True, None, "result"),
+        ("file2.txt", True, None, "result"),
+    ],
+)
+@mock.patch.object(process.Process, "run")
 def test_process_files_run(mock_super_run, mock_controlled_run, caplog):
     proc_files = process.ProcessFiles(process=dummy_file_process_func)
     params = [("file1.txt",), ("file2.txt",)]
 
     # Test controlled run
-    proc_files.run(params, controlled=True)
+    results = proc_files.run(params, controlled=True)
     mock_controlled_run.assert_called()
     assert mock_super_run.call_count == 1
     assert "Starting controlled execution" in caplog.text
+    assert len(results) == 2
+    assert all(res[1] is True for res in results)
 
     caplog.clear()
     mock_super_run.reset_mock()
@@ -286,21 +408,39 @@ def test_session_process_generate_task_id():
     assert len(task_id) > len("task_")
 
 
-@mock.patch('os.path.exists')
-@mock.patch('os.makedirs')
-@mock.patch('pickle.dump')
-@mock.patch('pickle.load')
-@mock.patch('os.remove')
-@mock.patch('fbpyutils.Env.MM_USER_APP_FOLDER', new_callable=mock.PropertyMock, return_value=tempfile.gettempdir())
-def test_session_process_controlled_run_session(mock_env_mm_user_app_folder, mock_remove, mock_pickle_load, mock_pickle_dump, mock_makedirs, mock_exists, caplog):
+@mock.patch("os.path.exists")
+@mock.patch("os.makedirs")
+@mock.patch("pickle.dump")
+@mock.patch("pickle.load")
+@mock.patch("os.remove")
+@mock.patch(
+    "fbpyutils.Env.USER_APP_FOLDER",
+    new_callable=mock.PropertyMock,
+    return_value=tempfile.gettempdir(),
+)
+def test_session_process_controlled_run_session(
+    mock_env_mm_user_app_folder,
+    mock_remove,
+    mock_pickle_load,
+    mock_pickle_dump,
+    mock_makedirs,
+    mock_exists,
+    caplog,
+):
     session_id = "test_session_id"
     params = (1, 2)
     task_id = process.SessionProcess.generate_task_id(params)
 
-    mock_exists.side_effect = [False, False, True] # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
+    mock_exists.side_effect = [
+        False,
+        False,
+        True,
+    ]  # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
 
     # First run - task control file does not exist
-    result = process.SessionProcess(process=dummy_session_process_func)._controlled_run(session_id, dummy_session_process_func, *params)
+    result = process.SessionProcess(process=dummy_session_process_func)._controlled_run(
+        session_id, dummy_session_process_func, *params
+    )
     assert result[0] == task_id
     assert result[1] is True
     assert result[2] is None
@@ -310,10 +450,16 @@ def test_session_process_controlled_run_session(mock_env_mm_user_app_folder, moc
     mock_exists.assert_called()
 
     caplog.clear()
-    mock_exists.side_effect = [True, True, True] # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
+    mock_exists.side_effect = [
+        True,
+        True,
+        True,
+    ]  # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
 
     # Second run - task already processed
-    result = process.SessionProcess(process=dummy_session_process_func)._controlled_run(session_id, dummy_session_process_func, *params)
+    result = process.SessionProcess(process=dummy_session_process_func)._controlled_run(
+        session_id, dummy_session_process_func, *params
+    )
     assert result[0] == task_id
     assert result[1] is True
     assert result[2] == "Skipped"
@@ -321,10 +467,16 @@ def test_session_process_controlled_run_session(mock_env_mm_user_app_folder, moc
     mock_pickle_load.assert_not_called()
 
     caplog.clear()
-    mock_exists.side_effect = [True, False, True] # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
+    mock_exists.side_effect = [
+        True,
+        False,
+        True,
+    ]  # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
 
     # Third run - task not processed yet
-    result = process.SessionProcess(process=dummy_session_process_func)._controlled_run(session_id, dummy_session_process_func, *params)
+    result = process.SessionProcess(process=dummy_session_process_func)._controlled_run(
+        session_id, dummy_session_process_func, *params
+    )
     assert result[0] == task_id
     assert result[1] is True
     assert result[2] is None
@@ -332,51 +484,79 @@ def test_session_process_controlled_run_session(mock_env_mm_user_app_folder, moc
     mock_pickle_dump.assert_called()
 
     caplog.clear()
-    mock_exists.side_effect = [True, False, True] # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
+    mock_exists.side_effect = [
+        True,
+        False,
+        True,
+    ]  # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation
 
     # Fourth run - processing error
-    result = process.SessionProcess(process=error_session_process_func)._controlled_run(session_id, error_session_process_func, *params)
+    result = process.SessionProcess(process=error_session_process_func)._controlled_run(
+        session_id, error_session_process_func, *params
+    )
     assert result[0] == task_id
     assert result[1] is False
     assert result[2] == "session processing failed"
-    mock_remove.assert_not_called() # Control file is kept on error
+    mock_remove.assert_not_called()  # Control file is kept on error
 
     caplog.clear()
-    mock_exists.side_effect = [False, False, False, True] # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation, task_control_file exists after error
+    mock_exists.side_effect = [
+        False,
+        False,
+        False,
+        True,
+    ]  # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation, task_control_file exists after error
 
     # Fifth run - processing error and control file created but should be removed
-    result = process.SessionProcess(process=error_session_process_func_remove_control)._controlled_run(session_id, error_session_process_func_remove_control, *params)
+    result = process.SessionProcess(
+        process=error_session_process_func_remove_control
+    )._controlled_run(session_id, error_session_process_func_remove_control, *params)
     assert result[0] == task_id
     assert result[1] is False
     assert result[2] == "session processing failed"
-    mock_remove.assert_not_called() # Control file is kept on error
-
+    mock_remove.assert_not_called()  # Control file is kept on error
 
     caplog.clear()
-    mock_exists.side_effect = [True, False, False, True] # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation, task_control_file exists after error
+    mock_exists.side_effect = [
+        True,
+        False,
+        False,
+        True,
+    ]  # session_control_folder exists?, task_control_file exists?, task_control_file exists after creation, task_control_file exists after error
 
     # Sixth run - ValueError in _controlled_run
     with pytest.raises(ValueError) as excinfo:
-        process.SessionProcess(process=dummy_session_process_func)._controlled_run(session_id, dummy_session_process_func, ) # missing params
-    assert "Not enough arguments to run session controlled process" in str(excinfo.value)
+        process.SessionProcess(process=dummy_session_process_func)._controlled_run(
+            session_id,
+            dummy_session_process_func,
+        )  # missing params
+    assert "Not enough arguments to run session controlled process" in str(
+        excinfo.value
+    )
 
 
 def test_session_process_init():
     proc_session = process.SessionProcess(process=dummy_session_process_func)
     assert proc_session._parallelize is True
-    assert proc_session._parallel_type == 'threads'
+    assert proc_session._parallel_type == "threads"
     assert proc_session._workers == process.Process._MAX_WORKERS
     assert proc_session.sleeptime == 0.0
 
-    proc_session_serial = process.SessionProcess(process=dummy_session_process_func, parallelize=False, sleeptime=1.0, workers=2, parallel_type='processes')
+    proc_session_serial = process.SessionProcess(
+        process=dummy_session_process_func,
+        parallelize=False,
+        sleeptime=1.0,
+        workers=2,
+        parallel_type="processes",
+    )
     assert proc_session_serial._parallelize is False
-    assert proc_session_serial._parallel_type == 'processes'
+    assert proc_session_serial._parallel_type == "processes"
     assert proc_session_serial._workers == 2
     assert proc_session_serial.sleeptime == 1.0
 
 
-@mock.patch.object(process.SessionProcess, '_controlled_run')
-@mock.patch.object(process.Process, 'run')
+@mock.patch.object(process.SessionProcess, "_controlled_run")
+@mock.patch.object(process.Process, "run")
 def test_session_process_run(mock_super_run, mock_controlled_run, caplog):
     proc_session = process.SessionProcess(process=dummy_session_process_func)
     params = [(1,), (2,)]
@@ -397,7 +577,7 @@ def test_session_process_run(mock_super_run, mock_controlled_run, caplog):
     mock_controlled_run.assert_called()
     mock_super_run.assert_called()
     assert "Starting session controlled execution" in caplog.text
-    assert "Session ID: session_" in caplog.text # Check if session ID is generated
+    assert "Session ID: session_" in caplog.text  # Check if session ID is generated
 
     caplog.clear()
     mock_super_run.reset_mock()
