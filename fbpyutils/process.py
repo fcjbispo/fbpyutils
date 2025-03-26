@@ -341,7 +341,7 @@ class ProcessFiles(Process):
         """
         try:
             if len(args) < 2:
-                raise ValueError('No enough arguments to run')
+                raise ValueError('Not enough arguments to run')
 
             process: Callable = args[0] # Added type hint
             process_file: str = args[1] # Added type hint
@@ -379,15 +379,31 @@ class ProcessFiles(Process):
 
             Logger.log(Logger.INFO, f"Processing file: {process_file}")
             # Execute processing function
-            _args: Tuple[Any, ...] = args[1:] # Added type hint
-            result: Tuple[bool, Optional[str], Any] = process(_args) # Added type hint
-
-            if len(result) < 2:
-                Logger.log(Logger.ERROR, f"Unexpected result length: {len(result)}. Result: {result}")
-                return (process_file, False, "Unexpected result length", None)
+            try:
+                result = process(process_file)  # Call with file path for file processing functions
+                
+                # Handle various return value formats from the process function
+                if len(result) < 3:
+                    Logger.log(Logger.ERROR, f"Unexpected result length: {len(result)}. Result: {result}")
+                    return (process_file, False, "Unexpected result length", None)
+                
+                # Extract components based on ProcessingFilesFunction protocol 
+                # For a 4-tuple, it should be (file_path, success, message, data)
+                if len(result) >= 4:
+                    success = result[1]  # success is second element
+                    message = result[2]  # message is third element
+                    proc_result = result[3]  # result is fourth element
+                else:
+                    # For a 3-tuple, assume (success, message, data) 
+                    success = result[0]
+                    message = result[1]
+                    proc_result = result[2]
+            except Exception as e:
+                Logger.log(Logger.ERROR, f"Error processing file: {str(e)}")
+                return (process_file, False, str(e), None)
 
             # Update control file if processing was successful
-            if result[1]:  # success
+            if success:  # success
                 with open(control_file, 'wb') as cf:
                     pickle.dump(current_timestamp, cf)
                 Logger.log(Logger.INFO, f"Updated control file: {control_file}")
@@ -396,7 +412,8 @@ class ProcessFiles(Process):
                 os.remove(control_file)
                 Logger.log(Logger.INFO, f"Removed control file due to error: {control_file}")
 
-            return (process_file, result[1], result[2], result[3]) # type: ignore # file_path, success, message, result
+            # For ProcessingFilesFunction, return consistent format (file_path, success, message, result)
+            return (process_file, success, message, proc_result)
         except Exception as e:
             Logger.log(Logger.ERROR, f"Error in controlled run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
@@ -446,9 +463,9 @@ class ProcessFiles(Process):
         try:
             if controlled:
                 Logger.log(Logger.INFO, "Starting controlled execution")
-                # Guarda a função original
+                # Save the original process function
                 original_process: Callable = self._process # Added type hint
-                # Substitui temporariamente por _controlled_run
+                # Temporarily replace with _controlled_run method
                 self._process = self._controlled_run
                 try:
                     # Execute using the modified infrastructure for execution control
@@ -565,14 +582,26 @@ class SessionProcess(Process):
 
             Logger.log(Logger.INFO, f"Processing task: {task_id} in session: {session_id}")
             # Execute processing function
-            result: Tuple[bool, Optional[str], Any] = process(*params) # Added type hint
+            try:
+                # For session process function, we pass the actual parameters
+                result = process(*params)  # May return various formats
 
-            if len(result) < 2:
-                Logger.log(Logger.ERROR, f"Unexpected result length: {len(result)}. Result: {result}")
-                return (task_id, False, "Unexpected result length", None)
+                # Handle various return value formats from the process function
+                if len(result) < 2:
+                    Logger.log(Logger.ERROR, f"Unexpected result length: {len(result)}. Result: {result}")
+                    return (task_id, False, "Unexpected result length", None)
+                
+                # Extract components from result
+                # For session process func, typically (success, message, result, data)
+                success = result[0]
+                message = result[1] if len(result) > 1 else None
+                proc_result = result[2] if len(result) > 2 else None
+            except Exception as e:
+                Logger.log(Logger.ERROR, f"Error processing task: {str(e)}")
+                return (task_id, False, str(e), None)
 
             # Update task control file if processing was successful
-            if result[1]:  # success
+            if success:  # success
                 with open(task_control_file, 'wb') as cf:
                     pickle.dump(True, cf) # just mark that the task was successfully executed
                 Logger.log(Logger.INFO, f"Updated task control file: {task_control_file}")
@@ -581,7 +610,9 @@ class SessionProcess(Process):
                 os.remove(task_control_file)
                 Logger.log(Logger.INFO, f"Removed task control file due to error: {task_control_file}")
 
-            return (task_id, result[1], result[2], result[3]) # task_id, success, message, result # type: ignore
+            # For the session process, return a standardized format
+            # Return structure: (task_id, success, message, result)
+            return (task_id, success, message, proc_result)
         except Exception as e:
             Logger.log(Logger.ERROR, f"Error in session controlled run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
@@ -638,9 +669,10 @@ class SessionProcess(Process):
                 Logger.log(Logger.INFO, "Starting session controlled execution")
                 _session_id: str = session_id or SessionProcess.generate_session_id() # Added type hint
                 Logger.log(Logger.INFO, f"Session ID: {_session_id}")
-                # Guarda a função original
+                # Save the original process function
                 original_process: Callable = self._process # Added type hint
-                # Substitui temporariamente por _controlled_run
+                # Temporarily replace with _controlled_run method
+                # Need to ensure it's bound to self to avoid method missing self issue
                 self._process = self._controlled_run
                 try:
                     # Execute using the modified infrastructure for session control
