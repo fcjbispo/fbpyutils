@@ -30,12 +30,30 @@ class Logger:
     WARNING: int = logging.WARNING
     ERROR: int = logging.ERROR
 
+    _logger = logging.getLogger('fbpyutils')
+    _logger.setLevel(logging.DEBUG)
+    
+    # Configure console handler if not already configured
+    if not _logger.handlers:
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        console_handler.setFormatter(formatter)
+        _logger.addHandler(console_handler)
+
     @staticmethod
     def log(log_type: int, log_text: str) -> None:
         """
         Logs a message with the specified type and text.
         """
-        pass
+        if log_type == Logger.DEBUG:
+            Logger._logger.debug(log_text)
+        elif log_type == Logger.INFO:
+            Logger._logger.info(log_text)
+        elif log_type == Logger.WARNING:
+            Logger._logger.warning(log_text)
+        elif log_type == Logger.ERROR:
+            Logger._logger.error(log_text)
 
 
 class Env:
