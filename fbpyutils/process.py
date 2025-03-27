@@ -363,7 +363,7 @@ class ProcessFiles(Process):
             control_file: str = os.path.sep.join([control_folder, f"f_{hash_string(process_file)}.reg"])
 
             # Get current file timestamp
-            current_timestamp: float = creation_date(process_file).timestamp()
+            current_timestamp: float = os.path.getmtime(process_file)
 
             # Check if control file exists and read last timestamp
             control_exists: bool = os.path.exists(control_file)
@@ -374,7 +374,8 @@ class ProcessFiles(Process):
 
                 # If file has not been modified since last processing, skip processing
                 if last_timestamp >= current_timestamp:
-                    Logger.log(Logger.INFO, f"Skipping unmodified file: {process_file}")
+                    Logger.log(Logger.DEBUG, f"Control file timestamp: {last_timestamp}, File timestamp: {current_timestamp}. Elapsed time: {round(abs(last_timestamp - current_timestamp), 4)}")
+                    Logger.log(Logger.INFO, f"Skipping unmodified file: {process_file}.")
                     return (process_file, True, "Skipped", None)
 
             Logger.log(Logger.INFO, f"Processing file: {process_file}")
