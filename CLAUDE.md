@@ -2,6 +2,7 @@
 
 ## Build, Lint, and Test Commands
 - Install: `uv pip install .`
+- Always activate the virtual environment before run code
 - Run all tests: `pytest tests`
 - Run single test: `pytest tests/test_file_name.py::test_function_name -v`
 - Run tests with coverage: `pytest tests --cov=fbpyutils`

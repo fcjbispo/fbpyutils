@@ -241,7 +241,7 @@ def test_process_files_controlled_run(
     # Set newer timestamp to simulate file modification
     # Opens the file and write some text to force it updates
 
-    print("Waiting..")
+    print("Waiting a bit to force file update..")
     time.sleep(5)
     test_file.write("new content")
     modified_timestamp = datetime.now()
