@@ -201,7 +201,7 @@ def test_process_files_controlled_run(
     initial_timestamp = datetime.now()
 
     # Run the process
-    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+    result = process.FileProcess(process=dummy_file_process_func)._controlled_run(
         dummy_file_process_func, file_path_str
     )
 
@@ -225,7 +225,7 @@ def test_process_files_controlled_run(
     caplog.clear()
 
     # Run the process
-    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+    result = process.FileProcess(process=dummy_file_process_func)._controlled_run(
         dummy_file_process_func, file_path_str
     )
 
@@ -247,7 +247,7 @@ def test_process_files_controlled_run(
     modified_timestamp = datetime.now()
 
     # Run the process
-    result = process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+    result = process.FileProcess(process=dummy_file_process_func)._controlled_run(
         dummy_file_process_func, file_path_str
     )
 
@@ -265,7 +265,7 @@ def test_process_files_controlled_run(
     caplog.clear()
 
     # Fourth run - processing error
-    result = process.ProcessFiles(process=error_file_process_func)._controlled_run(
+    result = process.FileProcess(process=error_file_process_func)._controlled_run(
         error_file_process_func, file_path_str
     )
     assert result[0] == file_path_str
@@ -275,7 +275,7 @@ def test_process_files_controlled_run(
     caplog.clear()
 
     # Fifth run - processing error and control file created but should be removed
-    result = process.ProcessFiles(
+    result = process.FileProcess(
         process=error_file_process_func_remove_control
     )._controlled_run(error_file_process_func_remove_control, file_path_str)
     assert result[0] == file_path_str
@@ -286,7 +286,7 @@ def test_process_files_controlled_run(
 
     # Sixth run - ValueError in _controlled_run
     with pytest.raises(ValueError) as excinfo:
-        process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+        process.FileProcess(process=dummy_file_process_func)._controlled_run(
             dummy_file_process_func
         )  # missing file_path
     assert "Not enough arguments to run" in str(excinfo.value)
@@ -294,19 +294,19 @@ def test_process_files_controlled_run(
     caplog.clear()
     # Seventh run - FileNotFoundError in _controlled_run
     with pytest.raises(FileNotFoundError) as excinfo:
-        process.ProcessFiles(process=dummy_file_process_func)._controlled_run(
+        process.FileProcess(process=dummy_file_process_func)._controlled_run(
             dummy_file_process_func, "non_existent_file.txt"
         )  # non existent file
     assert "Process file non_existent_file.txt does not exist" in str(excinfo.value)
 
 
 def test_process_files_init():
-    proc_files = process.ProcessFiles(process=dummy_file_process_func)
+    proc_files = process.FileProcess(process=dummy_file_process_func)
     assert proc_files._parallelize is True
     assert proc_files._workers == process.Process._MAX_WORKERS
     assert proc_files.sleeptime == 0.0
 
-    proc_files_serial = process.ProcessFiles(
+    proc_files_serial = process.FileProcess(
         process=dummy_file_process_func, parallelize=False, sleeptime=1.0, workers=2
     )
     assert proc_files_serial._parallelize is False
@@ -322,7 +322,7 @@ def test_process_files_run(caplog, tmpdir):
         return_value=str(tmpdir),
     ):
         # Create a concrete instance
-        proc_files = process.ProcessFiles(process=dummy_file_process_func)
+        proc_files = process.FileProcess(process=dummy_file_process_func)
 
         # Create test files
         test_file1 = tmpdir.join("file1.txt")
