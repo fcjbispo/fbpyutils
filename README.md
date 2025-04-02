@@ -14,6 +14,11 @@ This project provides a collection of Python utility functions for various tasks
 - OFX parsing
 - Process management with parallel execution and control mechanisms
 
+## Documentation
+
+- [DOC.md](DOC.md): Detailed documentation of all modules and functions.
+- [TODO.md](TODO.md): Current status comparing documentation, implementation, and test coverage.
+
 ## License
 
 Apache-2.0
@@ -47,4 +52,3 @@ uv pip install .
 
 ```bash
 pytest tests
-```
