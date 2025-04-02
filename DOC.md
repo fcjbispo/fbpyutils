@@ -464,10 +464,10 @@ class Process:
         """
 ```
 
-##### `ProcessFiles`
+##### `FileProcess`
 
 ```python
-class ProcessFiles(Process):
+class FileProcess(Process):
     """
     Class for file processing with timestamp-based control to prevent reprocessing.
     """
@@ -475,7 +475,7 @@ class ProcessFiles(Process):
     def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
                  workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0) -> None:
         """
-        Initializes a new instance of ProcessFiles.
+        Initializes a new instance of FileProcess.
         """
 
     def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:

@@ -8,7 +8,7 @@ resumable processes.
 
 Classes:
     Process: Base class for executing functions in parallel or serial.
-    ProcessFiles: Extends Process to add timestamp-based control for file processing,
+    FileProcess: Extends Process to add timestamp-based control for file processing,
                   preventing reprocessing of unmodified files.
     SessionProcess: Extends Process to provide session-based control, allowing
                     resumption of processing sessions after interruptions or failures.
@@ -292,7 +292,7 @@ class Process:
             raise
 
 
-class ProcessFiles(Process):
+class FileProcess(Process):
     """
     Class for file processing with timestamp-based control to prevent reprocessing.
 
@@ -422,7 +422,7 @@ class ProcessFiles(Process):
     def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
                  workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0) -> None:
         """
-        Initializes a new instance of ProcessFiles.
+        Initializes a new instance of FileProcess.
 
         Args:
             process (Callable): The file processing function to be executed.
@@ -438,7 +438,7 @@ class ProcessFiles(Process):
         self._parallelize: bool = parallelize and Process.is_parallelizable()
         self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
         self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
-        Logger.log(Logger.INFO, f"ProcessFiles initialized: parallel={self._parallelize}, workers={self._workers}")
+        Logger.log(Logger.INFO, f"FileProcess initialized: parallel={self._parallelize}, workers={self._workers}")
 
     def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
         """
