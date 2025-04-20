@@ -48,9 +48,9 @@ uv pip install .
 
 ```bash
 pytest tests
+````
 
 ## License
-
 This project is licensed under the MIT License. For the full text of the license, see [the official MIT License](https://opensource.org/licenses/MIT).
 
 ---
