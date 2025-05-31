@@ -1,0 +1,3 @@
+[run]
+source = fbpyutils/
+omit = */test_*.py

@@ -1,8 +1,8 @@
+from freezegun import freeze_time
 import pytest
 from datetime import date, datetime
 from fbpyutils.calendar import add_markers, calendarize, get_calendar
 import pandas as pd
-from freezegun import freeze_time  # Import freezegun
 
 
 def test_get_calendar_valid_dates():

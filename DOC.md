@@ -411,6 +411,113 @@ def read_from_path(x: str, native_date: bool = True) -> Dict:
     """
 \`\`\`
 
+### process Module
+
+Provides classes for parallel or serial process execution with control mechanisms like timestamp-based file processing and session-based resumable processes.
+
+#### Classes
+
+##### `Process`
+
+```python
+class Process:
+    """
+    Base class for parallel or serial function processing.
+
+    Attributes:
+        _MAX_WORKERS: int
+        _process: Callable
+        _parallelize: bool
+        _workers: int
+        sleeptime: float
+        _parallel_type: str
+    """
+
+    @staticmethod
+    def get_available_cpu_count() -> int:
+        """
+        Determines the number of available CPU cores for processing.
+        """
+
+    @staticmethod
+    def is_parallelizable(parallel_type: str = 'threads') -> bool:
+        """
+        Checks if the current system supports the specified parallel processing type.
+        """
+
+    @staticmethod
+    def get_function_info(func: Callable) -> Dict[str, str]:
+        """
+        Gets detailed information about a function.
+        """
+
+    def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
+                 workers: Optional[int] = _MAX_WORKERS, sleeptime: float = 0,
+                 parallel_type: str = 'threads') -> None:
+        """
+        Initializes a new Process instance.
+        """
+
+    def run(self, params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]:
+        """
+        Executes the processing function for each parameter set in the given list.
+        """
+```
+
+##### `FileProcess`
+
+```python
+class FileProcess(Process):
+    """
+    Class for file processing with timestamp-based control to prevent reprocessing.
+    """
+
+    def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
+                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0) -> None:
+        """
+        Initializes a new instance of FileProcess.
+        """
+
+    def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
+        """
+        Executes file processing for multiple files, optionally with timestamp control.
+        """
+```
+
+##### `SessionProcess`
+
+```python
+class SessionProcess(Process):
+    """
+    Class for session-based process execution with resume capability.
+    """
+
+    @staticmethod
+    def generate_session_id() -> str:
+        """
+        Generates a unique session ID with the prefix 'session_'.
+        """
+
+    @staticmethod
+    def generate_task_id(params: Tuple[Any, ...]) -> str:
+        """
+        Generates a unique task ID based on the hash of the process parameters.
+        """
+
+    def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
+                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0,
+                 parallel_type: str = 'threads') -> None:
+        """
+        Initializes a new instance of SessionProcess.
+        """
+
+    def run(self, params: List[Tuple[Any, ...]], session_id: Optional[str] = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
+        """
+        Executes processing for multiple parameter sets, optionally with session control.
+        """
+```
+
+
 ### string Module
 
 #### Functions
