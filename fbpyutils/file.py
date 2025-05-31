@@ -7,8 +7,8 @@ import platform
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
-
+from typing import Dict, Union
+import base64
 import magic
 
 
@@ -252,3 +252,46 @@ def describe_file(file_path: str) -> Dict:
         'first_256_bytes_sha256_hex': first_256_bytes_sha256_hex,
         'md5sum': md5sum,
     }
+
+
+def get_file_head_content(
+    file_path: str,
+    num_bytes: int = 256,
+    output_format: str = 'text',
+    encoding: str = 'utf-8',
+    errors: str = 'replace'
+) -> Union[str, bytes, None]:
+    """
+    Reads the first `num_bytes` of a file and returns its content in the specified format.
+
+    Parameters:
+        file_path (str): The path to the file.
+        num_bytes (int): The number of bytes to read from the beginning of the file. Defaults to 256.
+        output_format (str): The desired output format. Can be 'text', 'bytes', or 'base64'.
+                             Defaults to 'text'.
+        encoding (str): The encoding to use if output_format is 'text'. Defaults to 'utf-8'.
+        errors (str): The error handling scheme to use for decoding if output_format is 'text'.
+                      Defaults to 'replace'.
+
+    Returns:
+        Union[str, bytes, None]: The content of the head of the file in the specified format,
+                                 or None if the file does not exist, an error occurs,
+                                 or the output_format is invalid.
+    """
+    if not os.path.exists(file_path):
+        return None
+
+    try:
+        with open(file_path, 'rb') as f:
+            head_bytes = f.read(num_bytes)
+
+        if output_format == 'text':
+            return head_bytes.decode(encoding, errors=errors)
+        elif output_format == 'bytes':
+            return head_bytes
+        elif output_format == 'base64':
+            return base64.b64encode(head_bytes).decode('ascii')
+        else:
+            return None # Invalid output_format
+    except IOError:
+        return None
