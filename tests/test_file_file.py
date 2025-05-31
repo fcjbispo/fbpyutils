@@ -148,3 +148,108 @@ def test_describe_file_basic(tmpdir):
     assert described_properties['md5sum'] == expected_md5sum
 
     # No explicit tearDown needed as tmpdir fixture handles temporary file deletion
+
+
+def test_get_file_head_content_text_format(tmpdir):
+    # Test with text output format
+    file_content = "This is a test file with some content."
+    test_file = tmpdir.join("head_test_text.txt")
+    test_file.write(file_content)
+
+    # Read less than full content
+    head_content = file.get_file_head_content(str(test_file), num_bytes=10, output_format='text')
+    assert head_content == file_content[:10]
+    assert isinstance(head_content, str)
+
+    # Read more than full content (should return full content)
+    head_content_full = file.get_file_head_content(str(test_file), num_bytes=100, output_format='text')
+    assert head_content_full == file_content
+    assert isinstance(head_content_full, str)
+
+    # Test with specific encoding and errors
+    # Test with specific encoding and errors
+    # Create a file with invalid UTF-8 characters
+    # A valid UTF-8 string with an invalid byte (0xff) inserted
+    invalid_utf8_content = b"Hello \xff World"
+    invalid_utf8_file = tmpdir.join("invalid_utf8.txt")
+    invalid_utf8_file.write_binary(invalid_utf8_content)
+
+    # Test 'replace' error handling
+    head_replace = file.get_file_head_content(str(invalid_utf8_file), output_format='text', encoding='utf-8', errors='replace')
+    assert '�' in head_replace # Expect replacement characters
+    assert "Hello � World" == head_replace # Ensure the valid parts are there
+
+    # Test 'ignore' error handling
+    head_ignore = file.get_file_head_content(str(invalid_utf8_file), output_format='text', encoding='utf-8', errors='ignore')
+    assert 'Hello  World' == head_ignore # Expect problematic chars to be ignored
+
+    # Test 'strict' error handling (should raise UnicodeDecodeError)
+    with pytest.raises(UnicodeDecodeError):
+        file.get_file_head_content(str(invalid_utf8_file), output_format='text', encoding='utf-8', errors='strict')
+
+
+def test_get_file_head_content_bytes_format(tmpdir):
+    # Test with bytes output format
+    file_content = b"This is raw bytes content."
+    test_file = tmpdir.join("head_test_bytes.bin")
+    test_file.write_binary(file_content)
+
+    head_content = file.get_file_head_content(str(test_file), num_bytes=10, output_format='bytes')
+    assert head_content == file_content[:10]
+    assert isinstance(head_content, bytes)
+
+    head_content_full = file.get_file_head_content(str(test_file), num_bytes=100, output_format='bytes')
+    assert head_content_full == file_content
+    assert isinstance(head_content_full, bytes)
+
+
+def test_get_file_head_content_base64_format(tmpdir):
+    # Test with base64 output format
+    import base64
+    file_content = b"Binary data for base64 encoding."
+    test_file = tmpdir.join("head_test_base64.bin")
+    test_file.write_binary(file_content)
+
+    expected_base64 = base64.b64encode(file_content[:10]).decode('ascii')
+    head_content = file.get_file_head_content(str(test_file), num_bytes=10, output_format='base64')
+    assert head_content == expected_base64
+    assert isinstance(head_content, str)
+
+    expected_base64_full = base64.b64encode(file_content).decode('ascii')
+    head_content_full = file.get_file_head_content(str(test_file), num_bytes=100, output_format='base64')
+    assert head_content_full == expected_base64_full
+    assert isinstance(head_content_full, str)
+
+
+def test_get_file_head_content_non_existent_file(tmpdir):
+    # Test with a non-existent file
+    non_existent_file = tmpdir.join("non_existent.txt")
+    head_content = file.get_file_head_content(str(non_existent_file))
+    assert head_content is None
+
+
+def test_get_file_head_content_empty_file(tmpdir):
+    # Test with an empty file
+    empty_file = tmpdir.join("empty.txt")
+    empty_file.write("")
+
+    head_content_text = file.get_file_head_content(str(empty_file), output_format='text')
+    assert head_content_text == ""
+    assert isinstance(head_content_text, str)
+
+    head_content_bytes = file.get_file_head_content(str(empty_file), output_format='bytes')
+    assert head_content_bytes == b""
+    assert isinstance(head_content_bytes, bytes)
+
+    head_content_base64 = file.get_file_head_content(str(empty_file), output_format='base64')
+    assert head_content_base64 == ""
+    assert isinstance(head_content_base64, str)
+
+
+def test_get_file_head_content_invalid_output_format(tmpdir):
+    # Test with an invalid output format
+    test_file = tmpdir.join("invalid_format.txt")
+    test_file.write("some content")
+
+    head_content = file.get_file_head_content(str(test_file), output_format='invalid_format')
+    assert head_content is None
