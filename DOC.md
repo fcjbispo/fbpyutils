@@ -29,7 +29,7 @@ pip install fbpyutils
 
 ##### `add_markers`
 
-\`\`\`python
+```python
 def add_markers(x: List, reference_date: date = datetime.now().date()) -> List:
     '''
     Adds markers to past months from the reference date.
@@ -49,11 +49,11 @@ def add_markers(x: List, reference_date: date = datetime.now().date()) -> List:
             - last_6_months (bool): True if the calendar date is within the last 6 months from the current date.
             - last_3_months (bool): True if the calendar date is within the last 3 months from the current date.
     '''
-\`\`\`
+```
 
 ##### `calendarize`
 
-\`\`\`python
+```python
 def calendarize(x: DataFrame, date_column: str, with_markers: bool = False, reference_date: date = datetime.now().date()) -> DataFrame:
     '''
     Adds calendar columns to a dataframe.
@@ -65,11 +65,11 @@ def calendarize(x: DataFrame, date_column: str, with_markers: bool = False, refe
      Returns:
         DataFrame: A new dataframe with calendar columns and optional markers added to the passed dataframe.
     '''
-\`\`\`
+```
 
 ##### `get_calendar`
 
-\`\`\`python
+```python
 def get_calendar(x: date, y: date) -> List:
     '''
     Build a calendar to be used as a time dimension.
@@ -98,7 +98,7 @@ def get_calendar(x: date, y: date) -> List:
             - year_quarter_str (str): The year and quarter of the year in string format.
             - year_month_str (str): The year and month in string format.
     '''
-\`\`\`
+```
 
 ### datetime Module
 
@@ -106,7 +106,7 @@ def get_calendar(x: date, y: date) -> List:
 
 ##### `apply_timezone`
 
-\`\`\`python
+```python
 def apply_timezone(x: datetime, tz: str) -> datetime:
     '''
     Apply the specified timezone to a datetime object.
@@ -116,11 +116,11 @@ def apply_timezone(x: datetime, tz: str) -> datetime:
      Returns:
         datetime: The datetime object with the timezone information.
     '''
-\`\`\`
+```
 
 ##### `delta`
 
-\`\`\`python
+```python
 def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
     '''
     Gets the time delta between two dates.
@@ -133,11 +133,11 @@ def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
      Returns:
         int: The number of months or years between both dates.
     '''
-\`\`\`
+```
 
 ##### `elapsed_time`
 
-\`\`\`python
+```python
 def elapsed_time(x: datetime, y: datetime) -> tuple:
     '''
     Calculates and returns the elapsed time as a tuple (days, hours, minutes, seconds).
@@ -147,7 +147,7 @@ def elapsed_time(x: datetime, y: datetime) -> tuple:
      Returns:
         tuple: The elapsed time formatted as a tuple (days, hours, minutes, seconds).
     '''
-\`\`\`
+```
 
 ### debug Module
 
@@ -155,7 +155,7 @@ def elapsed_time(x: datetime, y: datetime) -> tuple:
 
 ##### `debug`
 
-\`\`\`python
+```python
 def debug(func):
     '''
     Decorator function used to debug the execution of system functions.
@@ -169,16 +169,16 @@ def debug(func):
      Returns:
         The function decorator.
     '''
-\`\`\`
+```
 
 ##### `debug_info`
 
-\`\`\`python
+```python
 def debug_info(x: Exception):
     '''
     Return extra exception/execution info for debug.
     '''
-\`\`\`
+```
 
 ### file Module
 
@@ -186,7 +186,7 @@ def debug_info(x: Exception):
 
 ##### `absolute_path`
 
-\`\`\`python
+```python
 def absolute_path(x: str):
     '''
     Returns the absolute path for the file x.
@@ -198,11 +198,11 @@ def absolute_path(x: str):
         >>> absolute_path('file.txt')
         '/path/to/file.txt'
     '''
-\`\`\`
+```
 
 ##### `build_platform_path`
 
-\`\`\`python
+```python
 def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
     '''
     Builds a path for a specific file according to the operating system.
@@ -216,11 +216,11 @@ def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
         >>> build_platform_path('C:\\\\', '/root/', ['folder', 'subfolder', 'file.txt'])
         'C:\\\\folder\\\\subfolder\\\\file.txt'
     '''
-\`\`\`
+```
 
 ##### `contents`
 
-\`\`\`python
+```python
 def contents(x: str) -> bytearray:
     '''
     Reads a file and returns its contents as an array of bytes.
@@ -232,11 +232,11 @@ def contents(x: str) -> bytearray:
         >>> contents('/path/to/file.txt')
         bytearray(b'This is the file contents.')
     '''
-\`\`\`
+```
 
 ##### `creation_date`
 
-\`\`\`python
+```python
 def creation_date(x: str) -> datetime:
     '''
     Tries to retrieve the datetime when a file was created, falling back to when it was last modified if that information is not available.
@@ -249,11 +249,11 @@ def creation_date(x: str) -> datetime:
         >>> creation_date('/path/to/file.txt')
         datetime.datetime(2022, 1, 1, 10, 30, 15)
     '''
-\`\`\`
+```
 
 ##### `find`
 
-\`\`\`python
+```python
 def find(x: str, mask: str = '*.*') -> list:
     """
     Finds files recursively in a source folder using a specific mask.
@@ -268,11 +268,11 @@ def find(x: str, mask: str = '*.*') -> list:
         >>> find('/path/to/another/folder')
         ['/path/to/another/folder/file3.txt', '/path/to/another/folder/file4.jpg']
     """
-\`\`\`
+```
 
 ##### `load_from_json`
 
-\`\`\`python
+```python
 def load_from_json(x: str, encoding='utf-8') -> Dict:
     """
     Loads data from a JSON file and returns it as a dictionary.
@@ -285,11 +285,11 @@ def load_from_json(x: str, encoding='utf-8') -> Dict:
         >>> load_from_json('/path/to/file.json')
         {'key1': 'value1', 'key2': 'value2'}
     """
-\`\`\`
+```
 
 ##### `mime_type`
 
-\`\`\`python
+```python
 def mime_type(x: str) -> str:
     """
     Returns the mime type of a file.
@@ -301,11 +301,11 @@ def mime_type(x: str) -> str:
         >>> mime_type('/path/to/file.txt')
         'text/plain'
     """
-\`\`\`
+```
 
 ##### `write_to_json`
 
-\`\`\`python
+```python
 def write_to_json(x: Dict, path_to_file: str, prettify=True):
     """
     Writes data from a dictionary to a JSON file.
@@ -319,11 +319,11 @@ def write_to_json(x: Dict, path_to_file: str, prettify=True):
         >>> data = {'key1': 'value1', 'key2': 'value2'}
         >>> write_to_json(data, '/path/to/file.json', prettify=True)
     """
-\`\`\`
+```
 
 ##### `_is_windows`
 
-\`\`\`python
+```python
 def _is_windows() -> bool:
     """
     Returns whether the code is running on the Windows operating system.
@@ -333,7 +333,71 @@ def _is_windows() -> bool:
         >>> _is_windows()
         True
     """
-\`\`\`
+```
+
+##### `describe_file`
+
+```python
+def describe_file(file_path: str) -> Dict:
+    """
+    Inspects a file and returns a dictionary containing its properties.
+     Parameters:
+        file_path (str): The path to the file.
+     Returns:
+        Dict: A dictionary with the following keys:
+            - complete_filename (str): The full name of the file (e.g., "document.txt").
+            - filename_no_ext (str): The filename without its extension (e.g., "document").
+            - extension (str): The file extension (e.g., ".txt").
+            - size_bytes (int): The size of the file in bytes.
+            - creation_date (str): The creation date of the file in ISO 8601 format (e.g., "2023-10-27T10:30:00"). Note: This is a naive datetime.
+            - mime_type_code (str): The detected MIME type code (e.g., "text/plain").
+            - mime_type_description (str): A human-readable description of the MIME type (e.g., "Text file").
+            - first_256_bytes_sha256_hex (str): The SHA256 hash (hexadecimal string) of the first 256 bytes of the file. If the file is smaller than 256 bytes, it hashes the entire content.
+            - md5sum (str): The MD5 hash (hexadecimal string) of the entire file content.
+     Example:
+        >>> from fbpyutils.file import describe_file
+        >>> file_info = describe_file("my_document.txt")
+        >>> if file_info:
+        >>>     print(f"Filename: {file_info['complete_filename']}")
+        >>>     print(f"Size: {file_info['size_bytes']} bytes")
+        >>>     print(f"MD5 Hash: {file_info['md5sum']}")
+    """
+```
+
+##### `get_file_head_content`
+
+```python
+def get_file_head_content(file_path: str, num_bytes: int = 256, output_format: str = 'text', encoding: str = 'utf-8', errors: str = 'replace') -> Optional[Union[str, bytes]]:
+    """
+    Reads the first `num_bytes` of a file and returns its content in the specified format.
+     Parameters:
+        file_path (str): The path to the file.
+        num_bytes (int): The number of bytes to read from the beginning of the file. Defaults to 256.
+        output_format (str): The desired output format. Can be 'text', 'bytes', or 'base64'. Defaults to 'text'.
+        encoding (str): The encoding to use if `output_format` is 'text'. Defaults to 'utf-8'.
+        errors (str): The error handling scheme to use for decoding if `output_format` is 'text'. Defaults to 'replace'.
+     Returns:
+        Optional[Union[str, bytes]]: The content of the head of the file in the specified format (str, bytes, or None if an error occurs or format is invalid).
+     Example:
+        >>> from fbpyutils.file import get_file_head_content
+        >>> # Get first 100 bytes as text
+        >>> head_text = get_file_head_content("my_document.txt", num_bytes=100, output_format='text')
+        >>> if head_text is not None:
+        >>>     print(f"First 100 bytes (text): {head_text}")
+        >>> # Get first 50 bytes as raw bytes
+        >>> head_bytes = get_file_head_content("my_image.jpg", num_bytes=50, output_format='bytes')
+        >>> if head_bytes is not None:
+        >>>     print(f"First 50 bytes (raw): {head_bytes}")
+        >>> # Get first 200 bytes as base64 string
+        >>> head_base64 = get_file_head_content("my_archive.zip", num_bytes=200, output_format='base64')
+        >>> if head_base64 is not None:
+        >>>     print(f"First 200 bytes (base64): {head_base64}")
+        >>> # Handle non-existent file
+        >>> non_existent = get_file_head_content("non_existent_file.txt")
+        >>> if non_existent is None:
+        >>>     print("File not found or an error occurred.")
+    """
+```
 
 ### ofx Module
 
@@ -341,7 +405,7 @@ def _is_windows() -> bool:
 
 ##### `format_date`
 
-\`\`\`python
+```python
 def format_date(x: datetime, native: bool = True) -> Union[datetime, str]:
     """
     Formats a datetime for use in ofx data.
@@ -353,11 +417,11 @@ def format_date(x: datetime, native: bool = True) -> Union[datetime, str]:
         Union[datetime, str]: The datetime formatted to be used in dict or string iso format.
             Example: "2020-03-10T03:00:00"
     """
-\`\`\`
+```
 
 ##### `main`
 
-\`\`\`python
+```python
 def main(argv):
     """
     Main function of the program.
@@ -379,11 +443,11 @@ def main(argv):
     $ python ofx.py --print myfile.ofx
      This will read the data from "myfile.ofx" and print it as a formatted JSON string.
     """
-\`\`\`
+```
 
 ##### `read`
 
-\`\`\`python
+```python
 def read(x: str, native_date: bool = True) -> Dict:
     """
     Reads ofx data into a dictionary.
@@ -394,11 +458,11 @@ def read(x: str, native_date: bool = True) -> Dict:
      Returns:
         Dict: A dictionary with the ofx data.
     """
-\`\`\`
+```
 
 ##### `read_from_path`
 
-\`\`\`python
+```python
 def read_from_path(x: str, native_date: bool = True) -> Dict:
     """
     Reads ofx data from a file into a dictionary.
@@ -409,7 +473,7 @@ def read_from_path(x: str, native_date: bool = True) -> Dict:
      Returns:
         Dict: A dictionary with the ofx data.
     """
-\`\`\`
+```
 
 ### process Module
 
@@ -524,7 +588,7 @@ class SessionProcess(Process):
 
 ##### `hash_json`
 
-\`\`\`python
+```python
 def hash_json(x: Dict) -> str:
     """
     Generates a hexadecimal hash string from a dictionary x using the MD5 algorithm.
@@ -533,11 +597,11 @@ def hash_json(x: Dict) -> str:
      Returns:
         str: An MD5 hash string created from x.
     """
-\`\`\`
+```
 
 ##### `hash_string`
 
-\`\`\`python
+```python
 def hash_string(x: str) -> str:
     """
     Generates a hexadecimal hash string from x using the MD5 algorithm.
@@ -546,11 +610,11 @@ def hash_string(x: str) -> str:
      Returns:
         str: An MD5 hash string created from x.
     """
-\`\`\`
+```
 
 ##### `json_string`
 
-\`\`\`python
+```python
 def json_string(x: Dict) -> str:
     """
     Converts a dictionary to a string encoded as UTF-8.
@@ -559,11 +623,11 @@ def json_string(x: Dict) -> str:
      Returns:
         str: A string version of the dictionary encoded as UTF-8.
     """
-\`\`\`
+```
 
 ##### `normalize_names`
 
-\`\`\`python
+```python
 def normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]:
     """
     Normalize string names to lower case, with spaces and slashes converted to underscores,
@@ -575,11 +639,11 @@ def normalize_names(names: List[str], normalize_specials: bool = True) -> List[s
      Returns:
         list: The list of string names normalized.
     """
-\`\`\`
+```
 
 ##### `normalize_value`
 
-\`\`\`python
+```python
 def normalize_value(x: float, size: int = 4, decimal_places: int = 2) -> str:
     """
     Converts a float number into a string formatted with padding zeroes
@@ -598,11 +662,11 @@ def normalize_value(x: float, size: int = 4, decimal_places: int = 2) -> str:
          normalize_value(12.3)
         will produce '1230'
     """
-\`\`\`
+```
 
 ##### `random_string`
 
-\`\`\`python
+```python
 def random_string(x: int = 32, include_digits: bool = True, include_special: bool = False) -> str:
     """
     Generates a random string with the combination of lowercase and uppercase
@@ -616,11 +680,11 @@ def random_string(x: int = 32, include_digits: bool = True, include_special: boo
      Returns:
         str: A random string with the specified length, with or without digits or special characters.
     """
-\`\`\`
+```
 
 ##### `similarity`
 
-\`\`\`python
+```python
 def similarity(x: str, y: str, ignore_case: bool = True, compress_spaces: bool = True) -> float:
     """
     Calculates the similarity ratio between two strings.
@@ -634,11 +698,11 @@ def similarity(x: str, y: str, ignore_case: bool = True, compress_spaces: bool =
         float: The similarity ratio between the strings in a range from 0 to 1
             where 1 means that both strings are equal.
     """
-\`\`\`
+```
 
 ##### `split_by_lengths`
 
-\`\`\`python
+```python
 def split_by_lengths(string: str, lengths: List[int]) -> List[str]:
     """
     Splits a given string into multiple substrings based on the provided lengths.
@@ -657,11 +721,11 @@ def split_by_lengths(string: str, lengths: List[int]) -> List[str]:
         >>> split_by_lengths("HelloWorld", [5, 5])
         ['Hello', 'World']
     """
-\`\`\`
+```
 
 ##### `translate_special_chars`
 
-\`\`\`python
+```python
 def translate_special_chars(x) -> str:
     """
     Translates special (accented) characters in a string to regular characters.
@@ -670,18 +734,18 @@ def translate_special_chars(x) -> str:
      Returns:
         str: A new string with all special characters translated to regular ones.
     """
-\`\`\`
+```
 
 ##### `uuid`
 
-\`\`\`python
+```python
 def uuid() -> str:
     """
     Generates a standard uuid4 as string.
      Returns:
         str: A string with a standard uuid key.
     """
-\`\`\`
+```
 
 ### xlsx Module
 
@@ -689,7 +753,7 @@ def uuid() -> str:
 
 ##### `ExcelWorkbook`
 
-\`\`\`python
+```python
 class ExcelWorkbook:
     """Represents an Excel workbook."""
 
@@ -741,13 +805,13 @@ class ExcelWorkbook:
         Raises:
             NameError: If the sheet index is invalid or does not exist.
         \"\"\"
-\`\`\`
+```
 
 #### Functions
 
 ##### `get_all_sheets`
 
-\`\`\`python
+```python
 def get_all_sheets(xl_file: Union[str, bytes]) -> Dict[str, tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]]:
     """
     Reads all sheets from an Excel file.
@@ -759,11 +823,11 @@ def get_all_sheets(xl_file: Union[str, bytes]) -> Dict[str, tuple[tuple[Union[st
         dict[str, tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]]:
             Dictionary where keys are sheet names and values are sheet contents.
     """
-\`\`\`
+```
 
 ##### `get_sheet_by_name`
 
-\`\`\`python
+```python
 def get_sheet_by_name(xl_file: Union[str, bytes], sheet_name: str) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
     """
     Reads a specific sheet from an Excel file by name.
@@ -776,11 +840,11 @@ def get_sheet_by_name(xl_file: Union[str, bytes], sheet_name: str) -> tuple[tupl
         tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
             Contents of the sheet as a tuple of tuples.
     """
-\`\`\`
+```
 
 ##### `get_sheet_names`
 
-\`\`\`python
+```python
 def get_sheet_names(xl_file: Union[str, bytes]) -> list[str]:
     """
     Retrieves sheet names from an Excel file.
@@ -791,11 +855,11 @@ def get_sheet_names(xl_file: Union[str, bytes]) -> list[str]:
     Returns:
         list[str]: List of sheet names.
     """
-\`\`\`
+```
 
 ##### `write_to_sheet`
 
-\`\`\`python
+```python
 def write_to_sheet(df: pd.DataFrame, workbook_path: str, sheet_name: str) -> None:
     """
     Writes a pandas DataFrame to an Excel file.
@@ -808,7 +872,7 @@ def write_to_sheet(df: pd.DataFrame, workbook_path: str, sheet_name: str) -> Non
     Returns:
         None
     """
-\`\`\`
+```
 
 ## Contributing
 
