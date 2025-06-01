@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Dict, Union
 import base64
 import magic
+import sys
+from fbpyutils.logging import logger # Import the global logger
 
 
 def find(x: str, mask: str = '*.*') -> list:
@@ -130,16 +132,33 @@ def mime_type(x: str) -> str:
         >>> mime_type('/path/to/file.txt')
         'text/plain'
     """
-    file_path = x
+    # Use pathlib to ensure proper path handling, especially with special characters
+    file_path_obj: Path = Path(x).resolve() # Resolve to get absolute path and normalize
+    file_path_str = str(file_path_obj)
+    logger.debug(f"Resolved file_path (string): {file_path_str}")
 
     try:
-        mime_type_detected = magic.from_file(file_path, mime=True)
-        print(f"magic.from_file('{file_path}', mime=True) returned: {mime_type_detected}")
+        if not os.path.isfile(file_path_str):
+            logger.warning(f"Path '{file_path_str}' is not a file. Accepting as directory.")
+            return 'directory'
+
+        if sys.platform.startswith('win'):
+            file_contents = contents(file_path_str)[0:256]
+            mime_type_detected = magic.from_buffer(file_contents, mime=True)
+            logger.debug(f"Detected mime type for '{file_path_str}' on Windows: {mime_type_detected}")
+        else:
+            mime_type_detected = magic.from_file(file_path_str, mime=True)
+            logger.debug(f"Detected mime type for '{file_path_str}' on non-Windows: {mime_type_detected}")
         return mime_type_detected
     except IsADirectoryError:
+        logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
         return 'directory'
     except FileNotFoundError:
+        logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
         return 'file_not_found'
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred while getting mime type for '{file_path_str}'.")
+        raise # Re-raise the exception for further handling if needed
 
 
 def _is_windows() -> bool:
