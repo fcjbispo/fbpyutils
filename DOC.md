@@ -11,6 +11,7 @@ Francisco Bispo's Utilities for Python. This library provides a collection of ut
 - `datetime`: Utility functions to manipulate date and time.
 - `debug`: Functions to support code debugging.
 - `file`: Functions to read and/or process files and directories on the operating system.
+- `logging`: Global logging system for the library.
 - `ofx`: Reads and processes OFX (Open Financial Exchange) files and data.
 - `string`: Several functions to manipulate and process strings and/or produce strings from any kind of data.
 - `xlsx`: Functions to read and MS Excel Spreadsheet files in xls or xlsx formats.
@@ -885,3 +886,21 @@ For support, please open an issue on [GitHub](https://github.com/franciscobispo/
 ## License
 
 [MIT](LICENSE)
+
+### logging Module
+
+Provides a global logging system for the `fbpyutils` library, configured to write logs to a file with automatic rotation.
+
+#### Functions
+
+##### `setup_logging`
+
+```python
+def setup_logging():
+    """
+    Configures a global file logging system for the fbpyutils library.
+
+    Logs are rotated automatically, supporting concurrency, with a maximum of
+    5 backup files and a maximum size of 256 KB per file.
+    Logs are stored in a '.fbpyutils' folder within the user's HOME directory.
+    """

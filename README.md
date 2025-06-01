@@ -73,6 +73,7 @@ This project provides a collection of Python utility functions for various tasks
 
 - [DOC.md](DOC.md): Detailed documentation of all modules and functions.
 - [TODO.md](TODO.md): Current status comparing documentation, implementation, and test coverage.
+- [Logging System](#logging-system): Information about the global logging system.
 
 ## Authors
 
@@ -107,6 +108,18 @@ pytest tests
 
 ## License
 This project is licensed under the MIT License. For the full text of the license, see [the official MIT License](https://opensource.org/licenses/MIT).
+
+## Logging System
+
+The `fbpyutils` library includes a global logging system configured to write logs to a file with automatic rotation.
+
+- **Log File Location**: Logs are stored in a `.fbpyutils` folder within the user's HOME directory (e.g., `C:\Users\<username>\.fbpyutils\fbpyutils.log` on Windows, or `~/.fbpyutils/fbpyutils.log` on Linux/macOS).
+- **Rotation Policy**: Log files are rotated when they reach 256 KB, keeping up to 5 backup files. This ensures that log files do not grow indefinitely and consume excessive disk space.
+- **Usage**: To use the logger in any module within `fbpyutils`, simply import it:
+    ```python
+    from fbpyutils.logging import logger
+    ```
+    Then, use the `logger` object for logging messages (e.g., `logger.info("Your message here")`, `logger.debug("Debug message")`).
 
 ---
 ## MIT License Disclaimer
