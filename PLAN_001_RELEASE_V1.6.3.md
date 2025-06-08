@@ -39,9 +39,9 @@ This document outlines the detailed steps required to implement the "Next Steps"
 
 ---
 
-## 4. Implement the global logging system (`fbpyutils.logging`) as configurable via a client's `Env` class. Default values are meant to be assumed when no client `Env` configuration is present.
+## 4. Implement the global logging system (`fbpyutils.logging`) as configurable via a client's `Env` class.
 
-*   **Objective:** Enable external clients to customize the global logging system's behavior by allowing it to be configured through their own `Env` class, with default values applied if no client-specific configuration is provided. This ensures reusability and personalization.
+*   **Objective:** Implement a global logging system (`fbpyutils.logging`) configurable via an instance of a class `Env` from `fbpyutils` to make it reusable by API clients. The API clients should provide their own instances for the `Env` class to configure the logging system and if no one is provided, the default values are meant to be loaded from the own API `Env` class. Maybe the `Env` class should be refactored to be a singleton and data class to be used as a configuration class but keeping backward compatibility. The logging system should be thread-safe and provide a consistent interface for search and gather logging messages.
 *   **Suggested Mode:** `CODE`
 *   **Detailed Steps:**
     1.  **Define Configuration Interface:** In `fbpyutils/logging.py`, define a clear interface or a method (e.g., `logging.configure(env_instance=None)`) that the logging system can use to receive configuration parameters. This method should be able to accept an instance of a client's `Env` class.
@@ -56,12 +56,12 @@ This document outlines the detailed steps required to implement the "Next Steps"
 
 ---
 
-## 5. Integrate the global logging system (`fbpyutils.logging`) into the following modules: `calendar`, `datetime`, `debug`, `ofx`, `process`, `string`, `xlsx`.
+## 5. Integrate the global logging system (`fbpyutils.logging`) into the following modules: `calendar`, `datetime`, `debug`, `file`, `ofx`, `process`, `string`, `xlsx`.
 
 *   **Objective:** Replace any existing logging mechanisms or add new logging calls to utilize the global `fbpyutils.logging` system within the specified modules.
 *   **Suggested Mode:** `CODE`
 *   **Detailed Steps:**
-    1.  For each module listed (`calendar`, `datetime`, `debug`, `ofx`, `process`, `string`, `xlsx`):
+    1.  For each module listed (`calendar`, `datetime`, `debug`, `file`, `ofx`, `process`, `string`, `xlsx`):
         a.  Open the corresponding `.py` file (e.g., `fbpyutils/calendar.py`).
         b.  Import the global logging system (e.g., `from fbpyutils import logging`).
         c.  Identify key points in the code where logging is appropriate (e.g., function entry/exit, error handling, warnings).

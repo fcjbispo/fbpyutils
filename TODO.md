@@ -25,8 +25,8 @@ This file compares the features documented in `README.md` and `DOC.md` against t
 *   [ ] Improve test coverage for the `ofx` and `xlsx` modules.
 *   [ ] Consider adding modules to `__init__.py` for easier import (`import fbpyutils.calendar` vs `from fbpyutils import calendar`).
 *   [ ] Create a `SPEC.md` file to formally define specifications.
-*   [ ] Implement the global logging system (`fbpyutils.logging`) as configurable via the class Env from `fbpyutils` in order to make it reusable by external clients. Default values are meant to be assumed when the class is not configured/present.
-*   [ ] Integrate the global logging system (`fbpyutils.logging`) into the following modules:
+*   [ ] Implement the global logging system.
+*   [ ] Integrate the global logging system into the following modules:
     *   [ ] `calendar`
     *   [ ] `datetime`
     *   [ ] `debug`
@@ -35,4 +35,12 @@ This file compares the features documented in `README.md` and `DOC.md` against t
     *   [ ] `process`
     *   [ ] `string`
     *   [ ] `xlsx`
-*   [ ] Move the legacy Logger class from `fbpyutils` into `fbpyutils.logging` and refactor it to use the global logging system in order to keep the API compatible. This will allow the removal of the legacy Logger class from `fbpyutils`. To logging system used in this library, refactor all use from Logger to the new logging system.
+*   [ ] Refactor the legacy Logger class.
+
+
+**Next Steps Details:**
+
+*   Implement the global logging system:
+    *  Implement a global logging system (`fbpyutils.logging`) as configurable via an instance of a class Env from `fbpyutils` in order to make it reusable by API clients. The API clients should be provide its own instances for the Env class to configure the logging system and if no one is provided, the Default values are meant to be loaded from the own api Env class. Maybe the Env class should be refactored to be a singleton and data class to be used as a configuration class but keeping backward compatibility. The logging system should be thread-safe and provide a consistent interface for search and gather logging messages.
+*   Refactor the legacy Logger class:
+    *  Refactor the existing Logger class to use the global logging system but keeping its methods and functionalities in order to keep backward compatibility. Check to avoid circular dependencies.
