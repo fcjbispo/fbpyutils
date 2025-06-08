@@ -156,34 +156,49 @@ def main(argv):
     helper_msg = 'Use ofx.py --print <file_path>'
     source_path = ''
 
+    opts, args = [], []
     try:
-        opts, args = getopt.getopt(argv, '', ['print='])
+        opts, args = getopt.getopt(argv, '', ['print=', 'help'])
     except getopt.GetoptError:
         print(helper_msg)
         sys.exit(2)
 
-    if len(opts) == 0:
+    if not opts: # Se não houver opções, imprime a mensagem de ajuda e sai
         print(helper_msg)
         sys.exit(2)
+        return # Garante que o código não continue
 
     for opt, arg in opts:
-        if opt in ('-h', '--help'):
+        if opt == '--help':
             print(helper_msg)
-        elif opt in ('--print'):
+            sys.exit(0) # Saída com 0 para ajuda
+            return # Garante que o código não continue
+        elif opt == '--print':
             source_path = arg
 
-    if path.exists(source_path):
-        try:
-            ofx_data = read_from_path(source_path,
-                                          native_date=False)
-            print(json.dumps(ofx_data, sort_keys=True, indent=4))
-        except Exception:
-            print('Invalid or corrupted file: %s' %
-                  (source_path.split(path.sep)[-1]))
-    else:
-        print('File not found.')
+    # Verifica se source_path foi definido APÓS o loop de opções
+    # Se --help foi usado, o return anterior já terá saído.
+    # Se --print foi usado sem argumento, ou outra opção inválida, getopt já deu erro.
+    # Esta verificação agora cobre o caso de --print não ser a opção fornecida.
+    if not source_path and not any(opt[0] == '--help' for opt in opts):
+        print(helper_msg)
         sys.exit(2)
-    sys.exit()
+        return
+
+    if source_path: # Prossiga apenas se source_path estiver definido
+        if path.exists(source_path):
+            try:
+                ofx_data = read_from_path(source_path, native_date=False)
+                print(json.dumps(ofx_data, sort_keys=True, indent=4))
+                sys.exit(0) # Saída com 0 para sucesso
+            except Exception:
+                print('Invalid or corrupted file: %s' % (source_path.split(path.sep)[-1]))
+                sys.exit(2) # Saída com 2 para erro de arquivo
+        else:
+            print('File not found.')
+            sys.exit(2)
+    # Se chegou aqui, significa que --help foi processado ou um erro já ocorreu e sys.exit foi chamado.
+    # Não é necessário um sys.exit(0) explícito aqui, pois os caminhos de sucesso já o fazem.
 
 
 if __name__ == '__main__':
