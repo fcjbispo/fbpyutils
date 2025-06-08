@@ -2,16 +2,16 @@
 
 This file compares the features documented in `README.md` and `DOC.md` against the current implementation status and test coverage.
 
-| Module     | Initialized? | Implemented? | Tested? (% Coverage) | Notes                                      |
-| :--------- | :----------: | :----------: | :------------------: | :----------------------------------------- |
-| calendar   | No           | Yes          | Yes (94.6%)          |                                            |
-| datetime   | No           | Yes          | Yes (100%)           |                                            |
-| debug      | No           | Yes          | Yes (84.6%)          |                                            |
-| ofx        | No           | Yes          | Yes (55.7%)          | Low test coverage                          |
-| file       | No           | Yes          | Yes (90.0%)          | Documented in README.md and DOC.md         |
-| process    | No           | Yes          | Yes (86.1%)          | Documented in README.md and DOC.md         |
-| string     | No           | Yes          | Yes (100%)           |                                            |
-| xlsx       | No           | Yes          | Yes (62.3%)          | Test coverage could be improved            |
+| Module     | Initialized? | Implemented? | Tested? (% Coverage) | Notes                                            |
+| :--------- | :----------: | :----------: | :------------------: | :----------------------------------------------- |
+| calendar   | No           | Yes          | Yes (94.6%)          |                                                  |
+| datetime   | No           | Yes          | Yes (100%)           |                                                  |
+| debug      | No           | Yes          | Yes (84.6%)          |                                                  |
+| ofx        | No           | Yes          | Yes (55.7%)          | Low test coverage                                |
+| file       | No           | Yes          | Yes (90.0%)          | Documented in README.md and DOC.md               |
+| process    | No           | Yes          | Yes (86.1%)          | Documented in README.md and DOC.md               |
+| string     | No           | Yes          | Yes (100%)           |                                                  |
+| xlsx       | No           | Yes          | Yes (62.3%)          | Test coverage could be improved                  |
 | logging    | Yes          | Yes          | N/A                  | Global logging system implemented and documented |
 
 **Legend:**
