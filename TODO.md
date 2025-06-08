@@ -25,6 +25,7 @@ This file compares the features documented in `README.md` and `DOC.md` against t
 *   [ ] Improve test coverage for the `ofx` and `xlsx` modules.
 *   [ ] Consider adding modules to `__init__.py` for easier import (`import fbpyutils.calendar` vs `from fbpyutils import calendar`).
 *   [ ] Create a `SPEC.md` file to formally define specifications.
+*   [ ] Implement the global logging system (`fbpyutils.logging`) as configurable via the class Env from `fbpyutils` in order to make it reusable by external clients. Default values are meant to be assumed when the class is not configured/present.
 *   [ ] Integrate the global logging system (`fbpyutils.logging`) into the following modules:
     *   [ ] `calendar`
     *   [ ] `datetime`
@@ -34,3 +35,4 @@ This file compares the features documented in `README.md` and `DOC.md` against t
     *   [ ] `process`
     *   [ ] `string`
     *   [ ] `xlsx`
+*   [ ] Move the legacy Logger class from `fbpyutils` into `fbpyutils.logging` and refactor it to use the global logging system in order to keep the API compatible. This will allow the removal of the legacy Logger class from `fbpyutils`. To logging system used in this library, refactor all use from Logger to the new logging system.
