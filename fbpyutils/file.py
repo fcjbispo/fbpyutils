@@ -138,20 +138,32 @@ def mime_type(x: str) -> str:
     logger.debug(f"Resolved file_path (string): {file_path_str}")
 
     try:
-        if not os.path.isfile(file_path_str):
-            logger.warning(f"Path '{file_path_str}' is not a file. Accepting as directory.")
+        if not os.path.exists(file_path_str):
+            logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
+            return 'file_not_found'
+        
+        if os.path.isdir(file_path_str):
+            logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
             return 'directory'
 
         if sys.platform.startswith('win'):
+            # For Windows, magic.from_file might have issues with certain paths or permissions.
+            # Reading content and using from_buffer is generally more robust.
+            # Ensure the file is actually a file before attempting to read its contents.
+            if not os.path.isfile(file_path_str):
+                logger.warning(f"Path '{file_path_str}' is not a regular file. Cannot determine mime type via content. Returning 'unknown'.")
+                return 'unknown' # Or raise an error, depending on desired behavior for non-regular files
+            
             file_contents = contents(file_path_str)[0:256]
             mime_type_detected = magic.from_buffer(file_contents, mime=True)
             logger.debug(f"Detected mime type for '{file_path_str}' on Windows: {mime_type_detected}")
         else:
+            # On non-Windows, from_file is generally reliable and efficient.
             mime_type_detected = magic.from_file(file_path_str, mime=True)
             logger.debug(f"Detected mime type for '{file_path_str}' on non-Windows: {mime_type_detected}")
         return mime_type_detected
-    except IsADirectoryError:
-        logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
+    except IsADirectoryError: # This exception might still be caught if os.path.isdir fails or is not used
+        logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory' from exception handler.")
         return 'directory'
     except FileNotFoundError:
         logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
