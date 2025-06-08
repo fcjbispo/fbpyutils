@@ -7,9 +7,11 @@ import platform
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
-
+from typing import Dict, Union
+import base64
 import magic
+import sys
+from fbpyutils.logging import logger # Import the global logger
 
 
 def find(x: str, mask: str = '*.*') -> list:
@@ -130,16 +132,33 @@ def mime_type(x: str) -> str:
         >>> mime_type('/path/to/file.txt')
         'text/plain'
     """
-    file_path = x
+    # Use pathlib to ensure proper path handling, especially with special characters
+    file_path_obj: Path = Path(x).resolve() # Resolve to get absolute path and normalize
+    file_path_str = str(file_path_obj)
+    logger.debug(f"Resolved file_path (string): {file_path_str}")
 
     try:
-        mime_type_detected = magic.from_file(file_path, mime=True)
-        print(f"magic.from_file('{file_path}', mime=True) returned: {mime_type_detected}")
+        if not os.path.isfile(file_path_str):
+            logger.warning(f"Path '{file_path_str}' is not a file. Accepting as directory.")
+            return 'directory'
+
+        if sys.platform.startswith('win'):
+            file_contents = contents(file_path_str)[0:256]
+            mime_type_detected = magic.from_buffer(file_contents, mime=True)
+            logger.debug(f"Detected mime type for '{file_path_str}' on Windows: {mime_type_detected}")
+        else:
+            mime_type_detected = magic.from_file(file_path_str, mime=True)
+            logger.debug(f"Detected mime type for '{file_path_str}' on non-Windows: {mime_type_detected}")
         return mime_type_detected
     except IsADirectoryError:
+        logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
         return 'directory'
     except FileNotFoundError:
+        logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
         return 'file_not_found'
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred while getting mime type for '{file_path_str}'.")
+        raise # Re-raise the exception for further handling if needed
 
 
 def _is_windows() -> bool:
@@ -184,3 +203,114 @@ def absolute_path(x: str):
     """
     x = x or __file__
     return os.path.sep.join(os.path.realpath(x).split(os.path.sep)[:-1])
+
+
+def describe_file(file_path: str) -> Dict:
+    """
+    Describes a file, returning a dictionary with its properties.
+     Parameters:
+        file_path (str): The path of the file to describe.
+     Returns:
+        Dict: A dictionary containing the file properties.
+     Example:
+        >>> describe_file('/path/to/file.txt')
+        {
+            'complete_filename': 'file.txt',
+            'filename_no_ext': 'file',
+            'extension': '.txt',
+            'size_bytes': 1234,
+            'creation_date': '2022-01-01T10:30:15',
+            'mime_type_code': 'text/plain',
+            'mime_type_description': 'Text file',
+            'first_256_bytes_sha256_hex': '...',
+            'md5sum': '...'
+        }
+    """
+    # Import hashlib here to avoid circular dependencies if it's used elsewhere
+    import hashlib
+
+    complete_filename = os.path.basename(file_path)
+    filename_no_ext, extension = os.path.splitext(complete_filename)
+    size_bytes = os.path.getsize(file_path)
+    # creation_date returns a naive datetime object.
+    created_at = creation_date(file_path)
+    mime_type_code = mime_type(file_path)
+
+    # Basic MIME type mapping
+    mime_type_map = {
+        'text/plain': 'Text file',
+        'application/pdf': 'PDF document',
+        'application/json': 'JSON file',
+        'image/jpeg': 'JPEG image',
+        'image/png': 'PNG image',
+        'application/zip': 'ZIP archive',
+        # Add more mappings as needed
+    }
+    mime_type_description = mime_type_map.get(mime_type_code, 'Other')
+
+    file_content = contents(file_path)
+
+    # SHA256 hash of the first 256 bytes
+    sha256_hash = hashlib.sha256()
+    sha256_hash.update(file_content[:256])
+    first_256_bytes_sha256_hex = sha256_hash.hexdigest()
+
+    # MD5 hash of the entire file
+    md5_hash = hashlib.md5()
+    md5_hash.update(file_content)
+    md5sum = md5_hash.hexdigest()
+
+    return {
+        'complete_filename': complete_filename,
+        'filename_no_ext': filename_no_ext,
+        'extension': extension,
+        'size_bytes': size_bytes,
+        'creation_date': created_at.isoformat(),
+        'mime_type_code': mime_type_code,
+        'mime_type_description': mime_type_description,
+        'first_256_bytes_sha256_hex': first_256_bytes_sha256_hex,
+        'md5sum': md5sum,
+    }
+
+
+def get_file_head_content(
+    file_path: str,
+    num_bytes: int = 256,
+    output_format: str = 'text',
+    encoding: str = 'utf-8',
+    errors: str = 'replace'
+) -> Union[str, bytes, None]:
+    """
+    Reads the first `num_bytes` of a file and returns its content in the specified format.
+
+    Parameters:
+        file_path (str): The path to the file.
+        num_bytes (int): The number of bytes to read from the beginning of the file. Defaults to 256.
+        output_format (str): The desired output format. Can be 'text', 'bytes', or 'base64'.
+                             Defaults to 'text'.
+        encoding (str): The encoding to use if output_format is 'text'. Defaults to 'utf-8'.
+        errors (str): The error handling scheme to use for decoding if output_format is 'text'.
+                      Defaults to 'replace'.
+
+    Returns:
+        Union[str, bytes, None]: The content of the head of the file in the specified format,
+                                 or None if the file does not exist, an error occurs,
+                                 or the output_format is invalid.
+    """
+    if not os.path.exists(file_path):
+        return None
+
+    try:
+        with open(file_path, 'rb') as f:
+            head_bytes = f.read(num_bytes)
+
+        if output_format == 'text':
+            return head_bytes.decode(encoding, errors=errors)
+        elif output_format == 'bytes':
+            return head_bytes
+        elif output_format == 'base64':
+            return base64.b64encode(head_bytes).decode('ascii')
+        else:
+            return None # Invalid output_format
+    except IOError:
+        return None
