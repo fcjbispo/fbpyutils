@@ -44,7 +44,7 @@ class ExcelWorkbook:
                         data = f.read()
                         f.close()
                 except (OSError, IOError) as e:
-                    raise e(f'Error reading the file {xl_file}: {e}')
+                    raise type(e)(f'Error reading the file {xl_file}: {e}')
             else:
                 raise NameError(f'File {xl_file} does not exist.')
         elif type(xl_file) == bytes:
@@ -199,26 +199,35 @@ def write_to_sheet(
         )
     else:
         warnings.simplefilter("ignore")
-        book = load_workbook(workbook_path)
-        writer = pd.ExcelWriter(workbook_path, engine='openpyxl')
-        writer.book = book
+        # Use mode='a' and if_sheet_exists='new' to append to existing workbook
+        # The writer will load the book internally.
+        # Ensure proper closing of the writer using a try/finally block or context manager
+        try:
+            with pd.ExcelWriter(workbook_path, engine='openpyxl', mode='a', if_sheet_exists='new') as writer:
+                # The 'if_sheet_exists' handles new sheet creation.
+                # Pandas >= 1.3.0 handles sheet name duplication by appending numbers if 'new' is used and name exists.
+                # For older pandas or more control, manual check might be needed, but 'new' should suffice.
+                # The logic for renaming (while loop) might be redundant with if_sheet_exists='new'
+                # but let's keep it for now to ensure unique names if 'new' doesn't behave as expected across all pandas versions.
+                
+                # Temporarily load book to check existing sheet names for custom renaming logic if needed.
+                # This is a bit redundant if if_sheet_exists='new' works perfectly.
+                temp_book = load_workbook(workbook_path)
+                current_sheet_names = temp_book.sheetnames
+                temp_book.close() # Close immediately after getting names
 
-        writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+                final_sheet_name = sheet_name
+                index = 0
+                while final_sheet_name in current_sheet_names:
+                    index += 1
+                    final_sheet_name = f"{sheet_name}{index}"
 
-        index, sheet_names = 0, [ws.title for ws in book.worksheets]
-        while sheet_name in sheet_names:
-            index += 1
-            sheet_name = sheet_name + str(index)
-
-        df.to_excel(
-            writer,
-            sheet_name=sheet_name,
-            index=False,
-            freeze_panes=(1, 0),
-            header=True,
-        )
-
-        writer.save()
-        writer.close()
-        book.close()
-        warnings.simplefilter("default")
+                df.to_excel(
+                    writer,
+                    sheet_name=final_sheet_name,
+                    index=False,
+                    freeze_panes=(1, 0),
+                    header=True,
+                )
+        finally:
+            warnings.simplefilter("default")
