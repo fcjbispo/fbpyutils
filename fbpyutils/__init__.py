@@ -4,6 +4,15 @@
 import os
 import logging
 
+from . import calendar
+from . import datetime
+from . import debug
+from . import ofx
+from . import file
+from . import process
+from . import string
+from . import xlsx
+
 
 # mock class to fake logging system
 class Logger:
