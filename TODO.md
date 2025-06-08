@@ -8,9 +8,11 @@ This file compares the features documented in `README.md` and `DOC.md` against t
 | datetime   | No           | Yes          | Yes (100%)           |                                            |
 | debug      | No           | Yes          | Yes (84.6%)          |                                            |
 | ofx        | No           | Yes          | Yes (55.7%)          | Low test coverage                          |
+| file       | No           | Yes          | Yes (90.0%)          | Documented in README.md and DOC.md         |
 | process    | No           | Yes          | Yes (86.1%)          | Documented in README.md and DOC.md         |
 | string     | No           | Yes          | Yes (100%)           |                                            |
 | xlsx       | No           | Yes          | Yes (62.3%)          | Test coverage could be improved            |
+| logging    | Yes          | Yes          | N/A                  | Global logging system implemented and documented |
 
 **Legend:**
 
@@ -23,3 +25,12 @@ This file compares the features documented in `README.md` and `DOC.md` against t
 *   [ ] Improve test coverage for the `ofx` and `xlsx` modules.
 *   [ ] Consider adding modules to `__init__.py` for easier import (`import fbpyutils.calendar` vs `from fbpyutils import calendar`).
 *   [ ] Create a `SPEC.md` file to formally define specifications.
+*   [ ] Integrate the global logging system (`fbpyutils.logging`) into the following modules:
+    *   [ ] `calendar`
+    *   [ ] `datetime`
+    *   [ ] `debug`
+    *   [X] `file` (Completed)
+    *   [ ] `ofx`
+    *   [ ] `process`
+    *   [ ] `string`
+    *   [ ] `xlsx`

@@ -132,3 +132,5 @@ tests/results.xml
 .vscode/*
 .aider**
 poetry.lock
+CKP_*.md
+sandbox*.ipynb
