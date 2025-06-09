@@ -74,3 +74,13 @@ Use monkeypatch.setattr(sys, "argv", ["script"]) or patch.object to simulate CLI
 Apply mock.patch via context managers in pytest, unless mixing with fixtures carefully.
 
 Avoid decorator patching of sys.argv when not accepting parameters in test signature.
+
+## THE GLOBAL LOGGING SYSTEM
+Considere as seguintes diretivas para o sistema global de logging a fim de evitar o problema de referência circular ao importar logging diretamente em __init__.py:
+- Utilizar um arquivo .json para a configuração da aplicação (app.json) a ser criado na raiz do projeto e cujo dicionário deverá ser passado quando da configuração do sistema global de logging.
+- A classe Env em __init__.py deverá também receber este dicionário lido do arquivo app.json como parâmetro para seu construtor e configurar seus valores conforme a seguir:
+    - APP: seus valores deverão ser lidos do dicionário recebido como parâmetro.
+    - USER_FOLDER e USER_APP_FOLDER deverão ser construídos conforme o código atual.
+    - As demais deverão seguir a precedência: variável de ambiente, valor lido do dicionário, valor padrão.
+    - A instanciação da classe Env deverá cuidar da verificação e criação de USER_APP_FOLDER.
+- A classe Logger DEVERÁ SER MOVIDA para logging.py e deverá ser instanciada com o dicionário lido do arquivo app.json e configurar o sistema global de logging conforme o código a ser implementado e prover a partir dele suas funcionalidades.

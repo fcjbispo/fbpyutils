@@ -13,6 +13,7 @@ import sys
 import getopt
 
 from fbpyutils import string as strt
+from fbpyutils import logging
 
 from typing import Dict, Union
 
@@ -51,9 +52,12 @@ def read(x: str, native_date: bool = True) -> Dict:
      Returns:
         Dict: A dictionary with the ofx data.
     """
+    logging.debug(f"Starting read OFX data. native_date: {native_date}")
     try:
         ofx = OfxParser.parse(x)
-    except Exception:
+        logging.info("OFX data parsed successfully.")
+    except Exception as e:
+        logging.error(f"Error parsing OFX data: {e}")
         return {}
     else:
         acct = ofx.account
@@ -108,6 +112,7 @@ def read(x: str, native_date: bool = True) -> Dict:
                         ofx_data['statement']['transactions'].append(trn)
                         i = i + 1
 
+        logging.debug("Finished read OFX data successfully.")
         return ofx_data
 
 
@@ -121,14 +126,31 @@ def read_from_path(x: str, native_date: bool = True) -> Dict:
      Returns:
         Dict: A dictionary with the ofx data.
     """
+def read_from_path(x: str, native_date: bool = True) -> Dict:
+    """
+    Reads ofx data from a file into a dictionary.
+     Args:
+        x (str): The ofx file path to be read.
+        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
+            Otherwise, uses datetime string iso format. Default is True.
+     Returns:
+        Dict: A dictionary with the ofx data.
+    """
+    logging.debug(f"Starting read_from_path for file: {x}, native_date: {native_date}")
     try:
-        f = codecs.open(x)
-    except OSError:
-        return {}
-    else:
-        ofx_data = read(f, native_date)
-        f.close()
+        with codecs.open(x, 'r') as f:
+            ofx_data = read(f, native_date)
+        logging.info(f"Successfully read OFX data from file: {x}")
         return ofx_data
+    except FileNotFoundError:
+        logging.error(f"OFX file not found: {x}")
+        return {}
+    except OSError as e:
+        logging.error(f"OS error when reading OFX file {x}: {e}")
+        return {}
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while reading OFX file {x}: {e}")
+        raise
 
 # ----
 
@@ -153,6 +175,28 @@ def main(argv):
     $ python ofx.py --print myfile.ofx
      This will read the data from "myfile.ofx" and print it as a formatted JSON string.
     """
+def main(argv):
+    """
+    Main function of the program.
+     Parameters:
+    - argv (list): A list of command-line arguments passed to the program.
+     Returns:
+    None
+     Functionality:
+    - Parses the command-line arguments using getopt.
+    - If no arguments are provided or an invalid option is used, it prints a helper message and exits.
+    - If the "--print" option is used, it sets the source_path variable to the provided argument.
+    - If the source_path exists, it reads data from the file using the read_from_path function.
+    - It then prints the data as a JSON string.
+    - If an exception occurs during the process, it prints an error message indicating an invalid or corrupted file.
+    - If the source_path does not exist, it prints a "File not found" message.
+     Note:
+    - The read_from_path function is not defined in the provided code snippet and should be implemented separately.
+     Example Usage:
+    $ python ofx.py --print myfile.ofx
+     This will read the data from "myfile.ofx" and print it as a formatted JSON string.
+    """
+    logging.info("OFX module main function started.")
     helper_msg = 'Use ofx.py --print <file_path>'
     source_path = ''
 
@@ -160,45 +204,54 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, '', ['print=', 'help'])
     except getopt.GetoptError:
+        logging.error(f"Invalid command line option. {helper_msg}")
         print(helper_msg)
         sys.exit(2)
 
     if not opts: # Se não houver opções, imprime a mensagem de ajuda e sai
+        logging.warning("No options provided. Displaying helper message and exiting.")
         print(helper_msg)
         sys.exit(2)
         return # Garante que o código não continue
 
     for opt, arg in opts:
         if opt == '--help':
+            logging.info("Help option requested. Displaying helper message and exiting.")
             print(helper_msg)
             sys.exit(0) # Saída com 0 para ajuda
             return # Garante que o código não continue
         elif opt == '--print':
             source_path = arg
+            logging.debug(f"Print option selected. Source path: {source_path}")
 
     # Verifica se source_path foi definido APÓS o loop de opções
     # Se --help foi usado, o return anterior já terá saído.
     # Se --print foi usado sem argumento, ou outra opção inválida, getopt já deu erro.
     # Esta verificação agora cobre o caso de --print não ser a opção fornecida.
     if not source_path and not any(opt[0] == '--help' for opt in opts):
+        logging.error(f"No source path provided for --print option. {helper_msg}")
         print(helper_msg)
         sys.exit(2)
         return
 
     if source_path: # Prossiga apenas se source_path estiver definido
         if path.exists(source_path):
+            logging.info(f"Processing OFX file: {source_path}")
             try:
                 ofx_data = read_from_path(source_path, native_date=False)
                 print(json.dumps(ofx_data, sort_keys=True, indent=4))
+                logging.info(f"Successfully processed and printed OFX data from {source_path}.")
                 sys.exit(0) # Saída com 0 para sucesso
-            except Exception:
-                print('Invalid or corrupted file: %s' % (source_path.split(path.sep)[-1]))
+            except Exception as e:
+                error_msg = 'Invalid or corrupted file: %s' % (source_path.split(path.sep)[-1])
+                logging.critical(f"{error_msg}. Exception: {e}")
+                print(error_msg)
                 sys.exit(2) # Saída com 2 para erro de arquivo
         else:
+            logging.error(f"File not found: {source_path}")
             print('File not found.')
             sys.exit(2)
-    # Se chegou aqui, significa que --help foi processado ou um erro já ocorreu e sys.exit foi chamado.
-    # Não é necessário um sys.exit(0) explícito aqui, pois os caminhos de sucesso já o fazem.
+    logging.info("OFX module main function finished.")
 
 
 if __name__ == '__main__':
