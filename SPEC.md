@@ -165,3 +165,60 @@ This section outlines potential future enhancements and considerations for the `
 *   **New Modules:** Explore the addition of new utility modules based on common needs (e.g., network utilities, data validation).
 *   **Dependency Management:** Regularly review and update external dependencies.
 *   **CI/CD Integration:** Implement continuous integration and continuous deployment pipelines for automated testing and releases.
+
+## 8. Client Implementation Guidance for Logging
+
+External clients can configure the `fbpyutils` logging system by providing an `app.json` file within the `fbpyutils/` directory (e.g., `fbpyutils/app.json`) and utilizing the `Env` class.
+
+### 8.1. `app.json` Configuration
+
+Create an `app.json` file in the `fbpyutils/` directory with a `logging` section. This section allows you to specify the desired `log_level`, `log_format`, and `log_file_path`.
+
+**Example `fbpyutils/app.json`:**
+
+```json
+{
+  "app": {
+    "name": "YourAppName",
+    "version": "1.0.0",
+    "environment": "dev",
+    "appcode": "YOURAPPCODE",
+    "year": 2025
+  },
+  "logging": {
+    "log_level": "DEBUG",
+    "log_format": "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    "log_file_path": "logs/your_app.log"
+  }
+}
+```
+
+*   **`log_level`**: (Optional) Specifies the minimum level of messages to log (e.g., "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"). Defaults to "INFO" if not provided or if the environment variable `LOG_LEVEL` is not set.
+*   **`log_format`**: (Optional) Defines the format of the log messages. Defaults to `"%(asctime)s - %(name)s - %(levelname)s - %(message)s"` if not provided.
+*   **`log_file_path`**: (Optional) Specifies the path to the log file. If provided, logs will be written to this file. If not provided, logs will default to a file within the user's application folder (e.g., `~/.fbpyutils/fbpyutils.log`). This path can be absolute or relative to the project root.
+
+### 8.2. `Env` Class Usage
+
+The `fbpyutils` library automatically loads the `app.json` file and initializes the `Env` class, which then configures the global logging system. You do not need to explicitly call `Logger.configure()` unless you want to reconfigure the logging system at runtime with a different configuration dictionary.
+
+The `Env` class prioritizes configuration values in the following order:
+1.  Environment variables (e.g., `LOG_LEVEL`).
+2.  Values from the `fbpyutils/app.json` dictionary.
+3.  Default values defined within the `Env` class.
+
+To access environment variables or logging settings, you can import `Env` and `Logger` from `fbpyutils`:
+
+```python
+from fbpyutils import Env, Logger
+
+# Access application configuration
+app_name = Env.APP['name']
+log_level = Env.LOG_LEVEL
+log_file = Env.LOG_FILE
+
+# Use the logger
+Logger.log(Logger.INFO, f"Application '{app_name}' started with log level: {log_level}")
+Logger.log(Logger.DEBUG, f"Logs are being written to: {log_file}")
+```
+
+This setup ensures that clients can easily customize the logging behavior of `fbpyutils` to fit their specific application requirements.

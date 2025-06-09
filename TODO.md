@@ -22,7 +22,17 @@ This file compares the features documented in `README.md` and `DOC.md` against t
 
 **Next Steps:**
 
-*   [ ] Improve test coverage for the `ofx` and `xlsx` modules.
+*   [ ] Improve test coverage for the modules:
+    *   [ ] `calendar` (Current: ?)
+    *   [ ] `datetime` (Current: ?)
+    *   [ ] `debug` (Current: ?)
+    *   [ ] `env` (Current: ?)
+    *   [ ] `file` (Current: ?)
+    *   [ ] `logging` (Current: ?)
+    *   [ ] `ofx` (Current: 55.7%)
+    *   [ ] `process` (Current: ?)
+    *   [ ] `string` (Current: ?)
+    *   [ ] `xlsx` (Current: 62.3%)
 *   [ ] Consider adding modules to `__init__.py` for easier import (`import fbpyutils.calendar` vs `from fbpyutils import calendar`).
 *   [ ] Create a `SPEC.md` file to formally define specifications.
 *   [ ] Implement the global logging system.
