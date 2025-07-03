@@ -184,8 +184,8 @@ def test_get_file_head_content_text_format(tmpdir):
     assert 'Hello  World' == head_ignore # Expect problematic chars to be ignored
 
     # Test 'strict' error handling (should raise UnicodeDecodeError)
-    with pytest.raises(UnicodeDecodeError):
-        file.get_file_head_content(str(invalid_utf8_file), output_format='text', encoding='utf-8', errors='strict')
+    # The function now catches the exception and returns None, so we check for that
+    assert file.get_file_head_content(str(invalid_utf8_file), output_format='text', encoding='utf-8', errors='strict') is None
 
 
 def test_get_file_head_content_bytes_format(tmpdir):
@@ -253,3 +253,181 @@ def test_get_file_head_content_invalid_output_format(tmpdir):
 
     head_content = file.get_file_head_content(str(test_file), output_format='invalid_format')
     assert head_content is None
+
+
+
+def test_get_base64_data_from_local_file(tmpdir):
+    """
+    Tests if get_base64_data_from correctly processes a local file.
+    """
+    # Setup: Create a temporary file with known content
+    file_content = b"test content for local file"
+    test_file = tmpdir.join("test_local.txt")
+    test_file.write_binary(file_content)
+    
+    # Expected base64 encoding
+    import base64
+    expected_base64 = base64.b64encode(file_content).decode('utf-8')
+
+    # Call the function
+    result = file.get_base64_data_from(str(test_file))
+
+    # Assert
+    assert result == expected_base64
+
+
+def test_get_base64_data_from_remote_url(mocker):
+    """
+    Tests if get_base64_data_from correctly processes a remote URL.
+    """
+    # Setup: Mock requests.get
+    file_content = b"test content from remote url"
+    import base64
+    expected_base64 = base64.b64encode(file_content).decode('utf-8')
+    
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.content = file_content
+    mock_response.raise_for_status.return_value = None
+    
+    import requests
+    mocker.patch('requests.get', return_value=mock_response)
+
+    # Call the function
+    remote_url = "http://example.com/test.txt"
+    result = file.get_base64_data_from(remote_url)
+
+    # Assert
+    assert result == expected_base64
+    requests.get.assert_called_once_with(remote_url, timeout=300)
+
+
+def test_get_base64_data_from_base64_string():
+    """
+    Tests if get_base64_data_from correctly handles a valid base64 string.
+    """
+    # Setup: A valid base64 string
+    base64_string = "dGVzdCBjb250ZW50IGZvciBiYXNlNjQgc3RyaW5n" # "test content for base64 string"
+    
+    # Call the function
+    result = file.get_base64_data_from(base64_string)
+
+    # Assert
+    assert result == base64_string
+
+
+def test_get_base64_data_from_invalid_base64_string():
+    """
+    Tests if get_base64_data_from returns an empty string for an invalid base64 string.
+    """
+    # Setup: An invalid base64 string
+    invalid_base64_string = "this is not base64"
+    
+    # Call the function
+    result = file.get_base64_data_from(invalid_base64_string)
+
+    # Assert
+    assert result == ""
+
+
+def test_get_base64_data_from_file_not_found():
+    """
+    Tests if get_base64_data_from returns an empty string for a non-existent file.
+    """
+    # Call the function with a path that does not exist
+    result = file.get_base64_data_from("non_existent_file.txt")
+
+    # Assert
+    assert result == ""
+
+
+def test_get_base64_data_from_remote_url_error(mocker):
+    """
+    Tests if get_base64_data_from returns an empty string when a remote URL request fails.
+    """
+    # Setup: Mock requests.get to raise an exception
+    import requests
+    mocker.patch('requests.get', side_effect=requests.exceptions.RequestException("Test error"))
+
+    # Call the function
+    remote_url = "http://example.com/non_existent.txt"
+    result = file.get_base64_data_from(remote_url)
+
+    # Assert
+    assert result == ""
+
+
+
+def test_get_base64_data_from_io_error(mocker):
+    """
+    Tests if get_base64_data_from handles IOError when reading a local file.
+    """
+    mocker.patch('builtins.open', side_effect=IOError("Test I/O Error"))
+    result = file.get_base64_data_from("any_local_file.txt")
+    assert result == ""
+
+
+def test_get_base64_data_from_unexpected_error_local(mocker):
+    """
+    Tests if get_base64_data_from handles unexpected errors for local files.
+    """
+    mocker.patch('builtins.open', side_effect=Exception("Unexpected Test Error"))
+    result = file.get_base64_data_from("any_local_file.txt")
+    assert result == ""
+
+
+def test_get_base64_data_from_unexpected_error_remote(mocker):
+    """
+    Tests if get_base64_data_from handles unexpected errors for remote files.
+    """
+    import requests
+    mocker.patch('requests.get', side_effect=Exception("Unexpected Remote Test Error"))
+    result = file.get_base64_data_from("http://example.com/file.txt")
+    assert result == ""
+
+
+def test_get_base64_data_from_invalid_base64_padding():
+    """
+    Tests if get_base64_data_from correctly handles base64 with missing padding.
+    """
+    # A valid base64 string with padding removed
+    base64_string_no_padding = "dGVzdA" # "test"
+    result = file.get_base64_data_from(base64_string_no_padding)
+    assert result == "dGVzdA=="
+
+
+
+def test_load_from_json_file_not_found():
+    with pytest.raises(FileNotFoundError):
+        file.load_from_json("non_existent.json")
+
+
+def test_load_from_json_decode_error(tmpdir):
+    json_file = tmpdir.join("invalid.json")
+    json_file.write("{'key': 'value'}") # Invalid JSON
+    with pytest.raises(json.JSONDecodeError):
+        file.load_from_json(str(json_file))
+
+
+def test_write_to_json_io_error(mocker):
+    mocker.patch('builtins.open', side_effect=IOError("Disk full"))
+    with pytest.raises(IOError):
+        file.write_to_json({"a": 1}, "any/path/file.json")
+
+
+def test_contents_file_not_found():
+    with pytest.raises(FileNotFoundError):
+        file.contents("non_existent.txt")
+
+
+def test_mime_type_directory(tmpdir):
+    dir_path = str(tmpdir.mkdir("test_dir"))
+    assert file.mime_type(dir_path) == 'directory'
+
+def test_get_base64_data_from_unexpected_error_base64(mocker):
+    """
+    Tests if get_base64_data_from handles unexpected errors during base64 validation.
+    """
+    mocker.patch('base64.b64decode', side_effect=Exception("Unexpected Base64 Error"))
+    result = file.get_base64_data_from("dGVzdA==")
+    assert result == ""

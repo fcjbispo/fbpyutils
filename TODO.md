@@ -1,56 +1,47 @@
-# TODO List - Documentation vs Implementation Comparison
+# TODO List
 
-This file compares the features documented in `README.md` and `DOC.md` against the current implementation status and test coverage.
+This file tracks the project's releases, detailing completed tasks and outlining future work.
 
-| Module     | Initialized? | Implemented? | Tested? (% Coverage) | Notes                                            |
-| :--------- | :----------: | :----------: | :------------------: | :----------------------------------------------- |
-| calendar   | No           | Yes          | Yes (94.6%)          |                                                  |
-| datetime   | No           | Yes          | Yes (100%)           |                                                  |
-| debug      | No           | Yes          | Yes (84.6%)          |                                                  |
-| ofx        | No           | Yes          | Yes (55.7%)          | Low test coverage                                |
-| file       | No           | Yes          | Yes (90.0%)          | Documented in README.md and DOC.md               |
-| process    | No           | Yes          | Yes (86.1%)          | Documented in README.md and DOC.md               |
-| string     | No           | Yes          | Yes (100%)           |                                                  |
-| xlsx       | No           | Yes          | Yes (62.3%)          | Test coverage could be improved                  |
-| logging    | Yes          | Yes          | N/A                  | Global logging system implemented and documented |
+---
 
-**Legend:**
+## Release History
 
-*   **Initialized?**: Indicates if the module is directly exposed via `fbpyutils/__init__.py`. Currently, no modules are explicitly imported in `__init__.py`.
-*   **Implemented?**: Indicates if the corresponding `.py` file for the module exists in the `fbpyutils` directory.
-*   **Tested? (% Coverage)**: Indicates if tests exist and the line coverage percentage reported by `coverage.xml`.
+### **[v1.6.3] - 2025-07-03**
 
-**Next Steps:**
+**Status: Ready for Deploy**
 
-*   [ ] Improve test coverage for the modules:
-    *   [ ] `calendar` (Current: ?)
-    *   [ ] `datetime` (Current: ?)
-    *   [ ] `debug` (Current: ?)
-    *   [ ] `env` (Current: ?)
-    *   [ ] `file` (Current: ?)
-    *   [ ] `logging` (Current: ?)
-    *   [ ] `ofx` (Current: 55.7%)
-    *   [ ] `process` (Current: ?)
-    *   [ ] `string` (Current: ?)
-    *   [ ] `xlsx` (Current: 62.3%)
-*   [ ] Consider adding modules to `__init__.py` for easier import (`import fbpyutils.calendar` vs `from fbpyutils import calendar`).
-*   [ ] Create a `SPEC.md` file to formally define specifications.
-*   [ ] Implement the global logging system.
-*   [ ] Integrate the global logging system into the following modules:
-    *   [ ] `calendar`
-    *   [ ] `datetime`
-    *   [ ] `debug`
-    *   [X] `file` (Completed)
-    *   [ ] `ofx`
-    *   [ ] `process`
-    *   [ ] `string`
-    *   [ ] `xlsx`
-*   [ ] Refactor the legacy Logger class.
+This release focused on improving test coverage, formalizing specifications, and implementing a robust, configurable logging system.
 
+**Completed Tasks:**
 
-**Next Steps Details:**
+*   **[X] Improve test coverage for `ofx` and `xlsx` modules:**
+    *   Increased test coverage for `ofx` to >90%.
+    *   Increased test coverage for `xlsx` to >90%.
+*   **[X] Add modules to `__init__.py`:**
+    *   Modules are now directly accessible (e.g., `from fbpyutils import file`).
+*   **[X] Create `SPEC.md` file:**
+    *   A formal specification document has been created and populated.
+*   **[X] Implement and Integrate Global Logging System:**
+    *   The `fbpyutils.logging` system is now configurable via a client's `Env` class.
+    *   Logging has been integrated into `calendar`, `datetime`, `debug`, `file`, `ofx`, `process`, `string`, and `xlsx`.
+*   **[X] Refactor Legacy Logger:**
+    *   The legacy `Logger` class was moved to `fbpyutils.logging` and refactored to maintain API compatibility.
+*   **[X] Add `get_base64_data_from` to `file` module:**
+    *   New function implemented with full test coverage and documentation.
 
-*   Implement the global logging system:
-    *  Implement a global logging system (`fbpyutils.logging`) as configurable via an instance of a class Env from `fbpyutils` in order to make it reusable by API clients. The API clients should be provide its own instances for the Env class to configure the logging system and if no one is provided, the Default values are meant to be loaded from the own api Env class. Maybe the Env class should be refactored to be a singleton and data class to be used as a configuration class but keeping backward compatibility. The logging system should be thread-safe and provide a consistent interface for search and gather logging messages.
-*   Refactor the legacy Logger class:
-    *  Refactor the existing Logger class to use the global logging system but keeping its methods and functionalities in order to keep backward compatibility. Check to avoid circular dependencies.
+---
+
+## **Next Release (v1.7.0) - Pending**
+
+**Goals:**
+*   Achieve 100% test coverage for all modules.
+*   Refine documentation and examples.
+
+**Pending Tasks:**
+
+*   [ ] **Improve test coverage for remaining modules:**
+    *   [ ] `debug` (Current: 84.6%)
+    *   [ ] `process` (Current: 86.1%)
+*   [ ] **Review and enhance documentation:**
+    *   [ ] Add more usage examples to `DOC.md` and `SPEC.md`.
+    *   [ ] Review all docstrings for clarity and completeness.

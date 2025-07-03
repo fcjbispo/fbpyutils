@@ -63,6 +63,7 @@ This section outlines the purpose and key functionalities of each module within 
     *   `absolute_path(file_path)`: Returns the absolute path of a file.
     *   `describe_file(file_path)`: Provides detailed information about a file.
     *   `get_file_head_content(...)`: Retrieves the head content of a file.
+    *   `get_base64_data_from(file_uri, timeout)`: Retrieves data from a file URI (local path, remote URL, or base64 string) and returns it as a base64 encoded string.
 
 ### 3.5. `logging.py`
 *   **Purpose:** Manages logging configurations for the library, ensuring consistent and effective log output.
