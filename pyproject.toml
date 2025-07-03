@@ -1,6 +1,6 @@
 [project]
 name = "fbpyutils"
-version = "1.6.4"
+version = "1.6.3"
 description = "Francisco Bispo's Utilities for Python"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
