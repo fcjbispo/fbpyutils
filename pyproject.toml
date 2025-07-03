@@ -1,6 +1,6 @@
 [project]
 name = "fbpyutils"
-version = "1.6.3"
+version = "1.6.4"
 description = "Francisco Bispo's Utilities for Python"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
@@ -17,14 +17,8 @@ dependencies = [
     "python-magic==0.4.27", # Added python-magic
     "freezegun>=1.5.1",
     "requests>=2.32.3",
-]
-
-[project.optional-dependencies]
-windows = [
-    "python-magic-bin>=0.4.14",
-]
-unix = [
-    "python-magic>=0.4.27",
+    "python-magic-bin>=0.4.14; sys_platform == 'win32'",
+    "python-magic>=0.4.27; sys_platform != 'win32'"
 ]
 
 [build-system]
