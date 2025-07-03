@@ -82,3 +82,29 @@ This document outlines the detailed steps required to implement the "Next Steps"
     5.  Remove the legacy `Logger` class from its original location in `fbpyutils`.
     6.  Search the entire project for all occurrences of the legacy `Logger` class usage and refactor them to directly use the new global logging system, or through the refactored `Logger` class if strict compatibility is required.
     7.  Execute tests to confirm that all logging functionalities continue to operate correctly after the refactoring.
+
+---
+
+## 7. Add `get_base64_data_from` function to `file` module.
+
+*   **Objective:** Add a new function to the `file` module that can retrieve data from a local file, a remote URL, or a base64-encoded string and return it as a base64-encoded string. This function will enhance the library's capability to handle different data sources seamlessly.
+*   **Suggested Mode:** `CODE`
+*   **Detailed Steps:**
+    1.  **Add `requests` dependency:** Add the `requests` library to the `pyproject.toml` file to handle HTTP requests.
+    2.  **Implement `get_base64_data_from`:**
+        *   Create the function in `fbpyutils/file.py`.
+        *   It should accept a `file_uri` (string) and an optional `timeout` (integer).
+        *   Handle three cases for `file_uri`:
+            *   If it's a valid local file path, read the file, encode it to base64, and return the string.
+            *   If it's a URL (starts with `http://` or `https://`), download the content, encode it to base64, and return the string.
+            *   Otherwise, assume the string is already base64 and validate it. If valid, return it; otherwise, log an error and return an empty string.
+    3.  **Integrate Logging:** Add `fbpyutils.logging` calls for debugging, information, and error handling throughout the function.
+    4.  **Add Unit Tests:**
+        *   In `tests/test_file_file.py`, create new tests for `get_base64_data_from`.
+        *   Test all three input scenarios (local file, URL, base64 string).
+        *   Test error conditions (file not found, invalid URL, invalid base64 string).
+        *   Use mocking for the `requests.get` call to avoid actual network requests during tests.
+    5.  **Update Documentation:**
+        *   Add the new function's specification to `SPEC.md`.
+        *   Update `TODO.md` to mark this task as complete.
+        *   Update the memory bank (`activeContext.md`, `progress.md`).

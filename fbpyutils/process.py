@@ -134,10 +134,10 @@ class Process:
         """
         try:
             cpu_count = multiprocessing.cpu_count()
-            logging.debug(f"Detected CPU count: {cpu_count}")
+            Logger.debug(f"Detected CPU count: {cpu_count}")
             return cpu_count
         except NotImplementedError:
-            logging.info("CPU count not supported, falling back to single worker")
+            Logger.info("CPU count not supported, falling back to single worker")
             return 1
 
     @staticmethod
@@ -162,16 +162,16 @@ class Process:
         if parallel_type == 'processes':
             try:
                 import multiprocessing  # Import here to avoid global namespace pollution
-                logging.info("Multiprocessing parallelization available")
+                Logger.info("Multiprocessing parallelization available")
                 return True
             except ImportError:
-                logging.error(f"Multiprocessing not available: {__file__}:{inspect.currentframe().f_lineno}")
+                Logger.error(f"Multiprocessing not available: {__file__}:{inspect.currentframe().f_lineno}")
                 return False
         elif parallel_type == 'threads':
-            logging.info("Default multi-threads parallelization available")
+            Logger.info("Default multi-threads parallelization available")
             return True
         else:
-            logging.warning(f"Unknown parallel type: {parallel_type}. Assuming not parallelizable.")
+            Logger.warning(f"Unknown parallel type: {parallel_type}. Assuming not parallelizable.")
             return False
 
     @staticmethod
@@ -237,16 +237,16 @@ class Process:
             raise ValueError(f'Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.')
         self._process: Callable = process
         self._parallel_type: str = parallel_type
-        logging.debug(f"Initializing Process with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}, parallel_type={parallel_type}")
+        Logger.debug(f"Initializing Process with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}, parallel_type={parallel_type}")
         if parallel_type not in ('threads', 'processes'): # Corrected typo 'process' to 'processes'
-            logging.error(f"Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.")
+            Logger.error(f"Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.")
             raise ValueError(f'Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.')
         self._process: Callable = process
         self._parallel_type: str = parallel_type
         self._parallelize: bool = parallelize and Process.is_parallelizable(parallel_type=self._parallel_type)
         self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
         self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
-        logging.info(f"Process initialized: parallel={self._parallelize}, type={self._parallel_type}, workers={self._workers}")
+        Logger.info(f"Process initialized: parallel={self._parallelize}, type={self._parallel_type}, workers={self._workers}")
 
     def run(self, params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]:
         """
@@ -272,28 +272,28 @@ class Process:
             When running in parallel mode, the order of results may not match the order of input parameters
             due to the nature of concurrent execution.
         """
-        logging.info(f"Starting execution with {len(params)} parameter sets.")
+        Logger.info(f"Starting execution with {len(params)} parameter sets.")
         responses: List[Tuple[bool, Optional[str], Any]] = []
         if not self._parallelize:
-            logging.info("Running in serial mode (parallelization disabled)")
+            Logger.info("Running in serial mode (parallelization disabled)")
             for i, param in enumerate(params):
-                logging.debug(f"Processing item {i+1}/{len(params)} in serial mode.")
+                Logger.debug(f"Processing item {i+1}/{len(params)} in serial mode.")
                 try:
                     responses.append(self._process(*param))
                 except Exception as e:
-                    logging.error(f"Error processing item {i+1} in serial mode: {e}")
+                    Logger.error(f"Error processing item {i+1} in serial mode: {e}")
                     responses.append((False, str(e), None)) # Ensure consistent return format
                 if self.sleeptime > 0:
                     time.sleep(self.sleeptime)
-            logging.info("Finished serial execution.")
+            Logger.info("Finished serial execution.")
             return responses
 
         max_workers = self._workers or Process.get_available_cpu_count()
         if (max_workers < 1 or max_workers > Process.get_available_cpu_count()):
-            logging.warning(f"Requested workers ({max_workers}) out of bounds. Adjusting to available CPU count: {Process.get_available_cpu_count()}")
+            Logger.warning(f"Requested workers ({max_workers}) out of bounds. Adjusting to available CPU count: {Process.get_available_cpu_count()}")
             max_workers = Process.get_available_cpu_count()
 
-        logging.info(f"Starting parallel execution with {max_workers} workers using {self._parallel_type}.")
+        Logger.info(f"Starting parallel execution with {max_workers} workers using {self._parallel_type}.")
         executor_class = concurrent.futures.ProcessPoolExecutor if self._parallel_type == 'processes' else concurrent.futures.ThreadPoolExecutor
         try:
             with executor_class(max_workers=max_workers) as executor:
@@ -301,10 +301,10 @@ class Process:
                     responses = list(executor.map(Process._process_wrapper, [(self._process, p) for p in params]))
                 else:
                     responses = list(executor.map(lambda x: self._process(*x), params))
-            logging.info(f"Processed {len(responses)} items successfully in parallel.")
+            Logger.info(f"Processed {len(responses)} items successfully in parallel.")
             return responses
         except Exception as e:
-            logging.error(f"Error during parallel process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            Logger.error(f"Error during parallel process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
 
@@ -383,28 +383,28 @@ class FileProcess(Process):
             data directory, using a hash of the function's full reference as the folder name
             and a hash of the file path as the control file name.
         """
-        logging.debug(f"Starting _controlled_run with args: {args}")
+        Logger.debug(f"Starting _controlled_run with args: {args}")
         try:
             if len(args) < 2:
-                logging.error("Not enough arguments for _controlled_run. Expected at least (process_function, file_path).")
+                Logger.error("Not enough arguments for _controlled_run. Expected at least (process_function, file_path).")
                 raise ValueError('Not enough arguments to run')
 
             process: Callable = args[0] # Added type hint
             process_file: str = args[1] # Added type hint
 
             if not os.path.exists(process_file):
-                logging.error(f"Process file not found: {process_file}")
+                Logger.error(f"Process file not found: {process_file}")
                 raise FileNotFoundError(f"Process file {process_file} does not exist")
 
             # Create control folder
             control_folder: str = os.path.sep.join([Env.USER_APP_FOLDER,
                                              f"p_{hash_string(Process.get_function_info(process)['full_ref'])}.control"])
             if not os.path.exists(control_folder):
-                logging.info(f"Creating control folder: {control_folder}")
+                Logger.info(f"Creating control folder: {control_folder}")
                 try:
                     os.makedirs(control_folder)
                 except FileExistsError:
-                    logging.warning(f"{control_folder} already exists, probably created by concurrent process. Skipping.")
+                    Logger.warning(f"{control_folder} already exists, probably created by concurrent process. Skipping.")
 
             # Define control file path
             control_file: str = os.path.sep.join([control_folder, f"f_{hash_string(process_file)}.reg"])
@@ -414,29 +414,29 @@ class FileProcess(Process):
 
             # Check if control file exists and read last timestamp
             control_exists: bool = os.path.exists(control_file)
-            logging.debug(f"Control file exists for {process_file}: {control_exists}")
+            Logger.debug(f"Control file exists for {process_file}: {control_exists}")
             if control_exists:
                 try:
                     with open(control_file, 'rb') as cf:
                         last_timestamp: float = pickle.load(cf) # Added type hint
                 except Exception as e:
-                    logging.warning(f"Could not read control file {control_file}: {e}. Treating as if control file does not exist.")
+                    Logger.warning(f"Could not read control file {control_file}: {e}. Treating as if control file does not exist.")
                     last_timestamp = -1 # Treat as if no previous timestamp
 
                 # If file has not been modified since last processing, skip processing
                 if last_timestamp >= current_timestamp:
-                    logging.debug(f"Control file timestamp: {last_timestamp}, File timestamp: {current_timestamp}. Elapsed time: {round(abs(last_timestamp - current_timestamp), 4)}")
-                    logging.info(f"Skipping unmodified file: {process_file}.")
+                    Logger.debug(f"Control file timestamp: {last_timestamp}, File timestamp: {current_timestamp}. Elapsed time: {round(abs(last_timestamp - current_timestamp), 4)}")
+                    Logger.info(f"Skipping unmodified file: {process_file}.")
                     return (process_file, True, "Skipped", None)
 
-            logging.info(f"Processing file: {process_file}")
+            Logger.info(f"Processing file: {process_file}")
             # Execute processing function
             try:
                 result = process(process_file)  # Call with file path for file processing functions
                 
                 # Handle various return value formats from the process function
                 if len(result) < 3:
-                    logging.error(f"Unexpected result length from process function: {len(result)}. Result: {result}")
+                    Logger.error(f"Unexpected result length from process function: {len(result)}. Result: {result}")
                     return (process_file, False, "Unexpected result length", None)
                 
                 # Extract components based on ProcessingFilesFunction protocol
@@ -451,7 +451,7 @@ class FileProcess(Process):
                     message = result[1]
                     proc_result = result[2]
             except Exception as e:
-                logging.error(f"Error processing file {process_file}: {str(e)}")
+                Logger.error(f"Error processing file {process_file}: {str(e)}")
                 return (process_file, False, str(e), None)
 
             # Update control file if processing was successful
@@ -459,22 +459,22 @@ class FileProcess(Process):
                 try:
                     with open(control_file, 'wb') as cf:
                         pickle.dump(current_timestamp, cf)
-                    logging.info(f"Updated control file: {control_file}")
+                    Logger.info(f"Updated control file: {control_file}")
                 except Exception as e:
-                    logging.error(f"Error writing control file {control_file}: {e}")
+                    Logger.error(f"Error writing control file {control_file}: {e}")
             # Remove control file if it was created but an error occurred
             elif not control_exists and os.path.exists(control_file):
                 try:
                     os.remove(control_file)
-                    logging.info(f"Removed control file due to error: {control_file}")
+                    Logger.info(f"Removed control file due to error: {control_file}")
                 except Exception as e:
-                    logging.error(f"Error removing control file {control_file}: {e}")
+                    Logger.error(f"Error removing control file {control_file}: {e}")
 
             # For ProcessingFilesFunction, return consistent format (file_path, success, message, result)
-            logging.debug(f"Finished _controlled_run for {process_file}. Success: {success}")
+            Logger.debug(f"Finished _controlled_run for {process_file}. Success: {success}")
             return (process_file, success, message, proc_result)
         except Exception as e:
-            logging.critical(f"Critical error in controlled run for {process_file}: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            Logger.critical(f"Critical error in controlled run for {process_file}: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
     def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
@@ -493,7 +493,7 @@ class FileProcess(Process):
         """
         super().__init__(process, parallelize, workers, sleeptime) # Pass process to super().__init__
         self._process: Callable = process # Added type hint
-        logging.debug(f"Initializing FileProcess with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}")
+        Logger.debug(f"Initializing FileProcess with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}")
         super().__init__(process, parallelize, workers, sleeptime) # Pass process to super().__init__
         self._process: Callable = process # Added type hint
         self._parallelize: bool = parallelize and Process.is_parallelizable()

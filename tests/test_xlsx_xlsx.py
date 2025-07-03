@@ -67,7 +67,7 @@ def test_write_to_sheet_xlsx():
 
 def test_excel_workbook_constructor_file_not_found():
     # Test constructor with a non-existent file path
-    with pytest.raises(NameError, match="File non_existent_file.xlsx does not exist."):
+    with pytest.raises(FileNotFoundError, match="File non_existent_file.xlsx does not exist."):
         ExcelWorkbook('non_existent_file.xlsx')
 
 def test_excel_workbook_constructor_invalid_type():

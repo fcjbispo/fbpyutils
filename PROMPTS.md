@@ -84,3 +84,51 @@ Considere as seguintes diretivas para o sistema global de logging a fim de evita
     - As demais deverão seguir a precedência: variável de ambiente, valor lido do dicionário, valor padrão.
     - A instanciação da classe Env deverá cuidar da verificação e criação de USER_APP_FOLDER.
 - A classe Logger DEVERÁ SER MOVIDA para logging.py e deverá ser instanciada com o dicionário lido do arquivo app.json e configurar o sistema global de logging conforme o código a ser implementado e prover a partir dele suas funcionalidades.
+
+
+## UPDATE ON THE PLAN FOR RELEASE V1.6.3
+
+Consider this snipped code below and perform the following actions:
+
+```python
+import os
+import base64
+import requests
+
+def get_base64_data_from(file_uri: str, timeout: int = 300) -> str:
+    # Check if the data file is a local file
+    if os.path.exists(file_uri):
+        with open(file_uri, "rb") as img_file:
+            image_bytes = img_file.read()
+        base64_data = base64.b64encode(image_bytes).decode("utf-8")
+    # If the data_file is a remote URL
+    elif file_uri.startswith("http://") or file_uri.startswith("https://"):
+        try:
+            response = requests.get(file_uri, timeout=timeout)
+            response.raise_for_status()
+            image_bytes = response.content
+            base64_data = base64.b64encode(image_bytes).decode("utf-8")
+        except Exception as e:
+            print(f"Error downloading the image: {e}")
+            return ""
+    else:
+        # Assume the content is already in base64
+        base64_data = file_uri
+
+    return base64_data
+```
+
+*Actions*: 
+    - Create a new step to add the functionality of this snipped code into the file module.
+    - Perform all adjustments on the snipped code to:
+        . Add suitable checks to guarantee that the given file is in the base64 format before returning, adding the best treatment for the last else;
+        . Add robust error treatments;
+        . Add all necessary libraries;
+        . Integrate it with the system logging;
+        . Add the suitable docstrings and logging debug and info;
+        . Add the suitable unit tests to the new functionality;
+    - Update all related documentations:
+        . README.md
+        . TODO.md
+        . SPEC.md
+    - Update the memory bank

@@ -11,6 +11,7 @@ from . import datetime
 from . import debug
 from . import ofx
 from . import file
+from . import logging
 from . import process
 from . import string
 from . import xlsx
@@ -19,7 +20,7 @@ from .logging import Logger # Import the Logger from the new module
 
 
 # Function to initialize the global environment and logging system
-def initialize_fbpyutils():
+def initialize():
     """
     Initializes the global environment configuration and the logging system
     for the fbpyutils library. This function should be called once when the
@@ -30,4 +31,4 @@ def initialize_fbpyutils():
     Logger.configure(config_dict=_config.get("logging", {}))
 
 # Call the initialization function when the package is imported
-initialize_fbpyutils()
+initialize()

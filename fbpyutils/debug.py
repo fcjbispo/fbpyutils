@@ -3,7 +3,7 @@ Functions support code debugging.
 '''
 import traceback
 
-from fbpyutils import logging
+from fbpyutils.logging import Logger
 
 
 def debug(func):
@@ -20,9 +20,9 @@ def debug(func):
         The function decorator.
     '''
     def _debug(*args, **kwargs):
-        logging.debug(f"Calling function: {func.__name__} with args: {args}, kwargs: {kwargs}")
+        Logger.debug(f"Calling function: {func.__name__} with args: {args}, kwargs: {kwargs}")
         result = func(*args, **kwargs)
-        logging.debug(f"Function {func.__name__} returned: {result}")
+        Logger.debug(f"Function {func.__name__} returned: {result}")
         return result
 
     return _debug
@@ -32,12 +32,12 @@ def debug_info(x: Exception):
     '''
     Return extra exception/execution info for debug.
     '''
-    logging.debug(f"Getting debug info for exception: {x.__str__()}")
+    Logger.debug(f"Getting debug info for exception: {x.__str__()}")
     try:
         info = f"{x.__str__()}: {traceback.format_exc()}."
-        logging.debug(f"Successfully retrieved debug info: {info}")
+        Logger.debug(f"Successfully retrieved debug info: {info}")
     except Exception as e:
         info = f"{x.__str__()}: Unable to get debug info: {e}"
-        logging.error(f"Failed to retrieve debug info for exception {x.__str__()}: {e}")
+        Logger.error(f"Failed to retrieve debug info for exception {x.__str__()}: {e}")
 
     return info

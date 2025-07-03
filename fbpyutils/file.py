@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Union
 import base64
 import magic
+import requests
 import sys
 from fbpyutils import logging
 
@@ -28,10 +29,10 @@ def find(x: str, mask: str = '*.*') -> list:
         >>> find('/path/to/another/folder')
         ['/path/to/another/folder/file3.txt', '/path/to/another/folder/file4.jpg']
     """
-    logging.debug(f"Starting find in folder: {x} with mask: {mask}")
+    logging.Logger.debug(f"Starting find in folder: {x} with mask: {mask}")
     all_files = [str(filename)
                  for filename in Path(x).rglob(mask)]
-    logging.debug(f"Found {len(all_files)} files.")
+    logging.Logger.debug(f"Found {len(all_files)} files.")
     return all_files
 
 
@@ -47,30 +48,30 @@ def creation_date(x: str) -> datetime:
         >>> creation_date('/path/to/file.txt')
         datetime.datetime(2022, 1, 1, 10, 30, 15)
     """
-    logging.debug(f"Attempting to get creation date for file: {x}")
+    logging.Logger.debug(f"Attempting to get creation date for file: {x}")
     t = None
     try:
         if platform.system() == 'Windows':
             t = os.path.getctime(x)
-            logging.debug(f"Using ctime for Windows: {t}")
+            logging.Logger.debug(f"Using ctime for Windows: {t}")
         else:
             stat = os.stat(x)
             try:
                 t = stat.st_birthtime
-                logging.debug(f"Using st_birthtime for non-Windows: {t}")
+                logging.Logger.debug(f"Using st_birthtime for non-Windows: {t}")
             except AttributeError:
-                logging.warning("st_birthtime not available, falling back to st_mtime.")
+                logging.Logger.warning("st_birthtime not available, falling back to st_mtime.")
                 t = stat.st_mtime
-                logging.debug(f"Using st_mtime for non-Windows: {t}")
+                logging.Logger.debug(f"Using st_mtime for non-Windows: {t}")
     except FileNotFoundError:
-        logging.error(f"File not found when getting creation date: {x}")
+        logging.Logger.error(f"File not found when getting creation date: {x}")
         raise
     except Exception as e:
-        logging.error(f"An error occurred while getting creation date for {x}: {e}")
+        logging.Logger.error(f"An error occurred while getting creation date for {x}: {e}")
         raise
 
     result = datetime.fromtimestamp(t)
-    logging.debug(f"Creation date for {x}: {result}")
+    logging.Logger.debug(f"Creation date for {x}: {result}")
     return result
 
 
@@ -86,20 +87,20 @@ def load_from_json(x: str, encoding='utf-8') -> Dict:
         >>> load_from_json('/path/to/file.json')
         {'key1': 'value1', 'key2': 'value2'}
     """
-    logging.debug(f"Loading JSON from file: {x} with encoding: {encoding}")
+    logging.Logger.debug(f"Loading JSON from file: {x} with encoding: {encoding}")
     try:
         with open(x, 'r', encoding=encoding) as f:
             data = json.load(f)
-        logging.debug(f"Successfully loaded JSON from {x}")
+        logging.Logger.debug(f"Successfully loaded JSON from {x}")
         return data
     except FileNotFoundError:
-        logging.error(f"JSON file not found: {x}")
+        logging.Logger.error(f"JSON file not found: {x}")
         raise
     except json.JSONDecodeError as e:
-        logging.error(f"Error decoding JSON from {x}: {e}")
+        logging.Logger.error(f"Error decoding JSON from {x}: {e}")
         raise
     except Exception as e:
-        logging.error(f"An unexpected error occurred while loading JSON from {x}: {e}")
+        logging.Logger.error(f"An unexpected error occurred while loading JSON from {x}: {e}")
         raise
 
 
@@ -116,7 +117,7 @@ def write_to_json(x: Dict, path_to_file: str, prettify=True):
         >>> data = {'key1': 'value1', 'key2': 'value2'}
         >>> write_to_json(data, '/path/to/file.json', prettify=True)
     """
-    logging.debug(f"Writing JSON to file: {path_to_file}, prettify: {prettify}")
+    logging.Logger.debug(f"Writing JSON to file: {path_to_file}, prettify: {prettify}")
     try:
         with open(path_to_file, 'w') as outputfile:
             if prettify:
@@ -128,12 +129,12 @@ def write_to_json(x: Dict, path_to_file: str, prettify=True):
                 json.dump(
                     x, outputfile,
                     ensure_ascii=False)
-        logging.debug(f"Successfully wrote JSON to {path_to_file}")
+        logging.Logger.debug(f"Successfully wrote JSON to {path_to_file}")
     except IOError as e:
-        logging.error(f"Error writing JSON to file {path_to_file}: {e}")
+        logging.Logger.error(f"Error writing JSON to file {path_to_file}: {e}")
         raise
     except Exception as e:
-        logging.error(f"An unexpected error occurred while writing JSON to {path_to_file}: {e}")
+        logging.Logger.error(f"An unexpected error occurred while writing JSON to {path_to_file}: {e}")
         raise
 
 
@@ -148,23 +149,23 @@ def contents(x: str) -> bytearray:
         >>> contents('/path/to/file.txt')
         bytearray(b'This is the file contents.')
     """
-    logging.debug(f"Reading contents of file: {x}")
+    logging.Logger.debug(f"Reading contents of file: {x}")
     fileName = x
     fileContent = None
 
     try:
         with open(fileName, mode='rb') as file:
             fileContent = file.read()
-        logging.debug(f"Successfully read contents from {x}")
+        logging.Logger.debug(f"Successfully read contents from {x}")
         return fileContent
     except FileNotFoundError:
-        logging.error(f"File not found when reading contents: {x}")
+        logging.Logger.error(f"File not found when reading contents: {x}")
         raise
     except IOError as e:
-        logging.error(f"Error reading contents from file {x}: {e}")
+        logging.Logger.error(f"Error reading contents from file {x}: {e}")
         raise
     except Exception as e:
-        logging.error(f"An unexpected error occurred while reading contents from {x}: {e}")
+        logging.Logger.error(f"An unexpected error occurred while reading contents from {x}: {e}")
         raise
 
 
@@ -182,15 +183,15 @@ def mime_type(x: str) -> str:
     # Use pathlib to ensure proper path handling, especially with special characters
     file_path_obj: Path = Path(x).resolve() # Resolve to get absolute path and normalize
     file_path_str = str(file_path_obj)
-    logging.debug(f"Resolved file_path (string): {file_path_str}")
+    logging.Logger.debug(f"Resolved file_path (string): {file_path_str}")
 
     try:
         if not os.path.exists(file_path_str):
-            logging.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
+            logging.Logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
             return 'file_not_found'
         
         if os.path.isdir(file_path_str):
-            logging.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
+            logging.Logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
             return 'directory'
 
         if sys.platform.startswith('win'):
@@ -198,25 +199,25 @@ def mime_type(x: str) -> str:
             # Reading content and using from_buffer is generally more robust.
             # Ensure the file is actually a file before attempting to read its contents.
             if not os.path.isfile(file_path_str):
-                logging.warning(f"Path '{file_path_str}' is not a regular file. Cannot determine mime type via content. Returning 'unknown'.")
+                logging.Logger.warning(f"Path '{file_path_str}' is not a regular file. Cannot determine mime type via content. Returning 'unknown'.")
                 return 'unknown' # Or raise an error, depending on desired behavior for non-regular files
             
             file_contents = contents(file_path_str)[0:256]
             mime_type_detected = magic.from_buffer(file_contents, mime=True)
-            logging.debug(f"Detected mime type for '{file_path_str}' on Windows: {mime_type_detected}")
+            logging.Logger.debug(f"Detected mime type for '{file_path_str}' on Windows: {mime_type_detected}")
         else:
             # On non-Windows, from_file is generally reliable and efficient.
             mime_type_detected = magic.from_file(file_path_str, mime=True)
-            logging.debug(f"Detected mime type for '{file_path_str}' on non-Windows: {mime_type_detected}")
+            logging.Logger.debug(f"Detected mime type for '{file_path_str}' on non-Windows: {mime_type_detected}")
         return mime_type_detected
     except IsADirectoryError: # This exception might still be caught if os.path.isdir fails or is not used
-        logging.warning(f"Path '{file_path_str}' is a directory, returning 'directory' from exception handler.")
+        logging.Logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory' from exception handler.")
         return 'directory'
     except FileNotFoundError:
-        logging.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
+        logging.Logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
         return 'file_not_found'
     except Exception as e:
-        logging.error(f"An unexpected error occurred while getting mime type for '{file_path_str}'. Exception: {e}")
+        logging.Logger.error(f"An unexpected error occurred while getting mime type for '{file_path_str}'. Exception: {e}")
         raise # Re-raise the exception for further handling if needed
 
 
@@ -245,10 +246,10 @@ def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
         >>> build_platform_path('C:\\', '/root/', ['folder', 'subfolder', 'file.txt'])
         'C:\\folder\\subfolder\\file.txt'
     """
-    logging.debug(f"Building platform path with winroot: {winroot}, otherroot: {otherroot}, pathparts: {pathparts}")
+    logging.Logger.debug(f"Building platform path with winroot: {winroot}, otherroot: {otherroot}, pathparts: {pathparts}")
     winroot = winroot.rstrip(os.path.sep) # Remove trailing separator from winroot
     result = os.path.sep.join([(winroot.rstrip(os.path.sep) if _is_windows() else otherroot), *pathparts])
-    logging.debug(f"Built platform path: {result}")
+    logging.Logger.debug(f"Built platform path: {result}")
     return result
 
 
@@ -263,10 +264,10 @@ def absolute_path(x: str):
         >>> absolute_path('file.txt')
         '/path/to/file.txt'
     """
-    logging.debug(f"Getting absolute path for: {x}")
+    logging.Logger.debug(f"Getting absolute path for: {x}")
     x = x or __file__
     result = os.path.sep.join(os.path.realpath(x).split(os.path.sep)[:-1])
-    logging.debug(f"Absolute path for {x}: {result}")
+    logging.Logger.debug(f"Absolute path for {x}: {result}")
     return result
 
 
@@ -291,7 +292,7 @@ def describe_file(file_path: str) -> Dict:
             'md5sum': '...'
         }
     """
-    logging.debug(f"Describing file: {file_path}")
+    logging.Logger.debug(f"Describing file: {file_path}")
     # Import hashlib here to avoid circular dependencies if it's used elsewhere
     import hashlib
 
@@ -337,7 +338,7 @@ def describe_file(file_path: str) -> Dict:
         'first_256_bytes_sha256_hex': first_256_bytes_sha256_hex,
         'md5sum': md5sum,
     }
-    logging.debug(f"Finished describing file: {file_path}")
+    logging.Logger.debug(f"Finished describing file: {file_path}")
     return result
 
 
@@ -365,9 +366,9 @@ def get_file_head_content(
                                  or None if the file does not exist, an error occurs,
                                  or the output_format is invalid.
     """
-    logging.debug(f"Getting file head content for: {file_path}, num_bytes: {num_bytes}, output_format: {output_format}")
+    logging.Logger.debug(f"Getting file head content for: {file_path}, num_bytes: {num_bytes}, output_format: {output_format}")
     if not os.path.exists(file_path):
-        logging.warning(f"File not found: {file_path}. Returning None.")
+        logging.Logger.warning(f"File not found: {file_path}. Returning None.")
         return None
 
     try:
@@ -383,8 +384,84 @@ def get_file_head_content(
         else:
             return None # Invalid output_format
     except IOError as e:
-        logging.error(f"IOError reading file head content from {file_path}: {e}")
+        logging.Logger.error(f"IOError reading file head content from {file_path}: {e}")
         return None
     except Exception as e:
-        logging.error(f"An unexpected error occurred while getting file head content from {file_path}: {e}")
+        logging.Logger.error(f"An unexpected error occurred while getting file head content from {file_path}: {e}")
         return None
+
+
+def get_base64_data_from(file_uri: str, timeout: int = 300) -> str:
+    """
+    Retrieves data from a file URI (local path, remote URL, or base64 string)
+    and returns it as a base64 encoded string.
+
+    This function handles three types of file URIs:
+    1.  A local file path: It reads the file, encodes its content to base64, and returns the result.
+    2.  A remote URL (starting with 'http://' or 'https://'): It downloads the content from the URL,
+        encodes it to base64, and returns the result.
+    3.  A base64 encoded string: It validates if the string is a valid base64 string and returns it.
+
+    Args:
+        file_uri (str): The URI of the file to process. Can be a local path, a URL, or a base64 string.
+        timeout (int, optional): The timeout in seconds for the request if the URI is a URL.
+                                 Defaults to 300.
+
+    Returns:
+        str: The base64 encoded data as a string, or an empty string if an error occurs
+             or the input is invalid.
+    """
+    logging.Logger.debug(f"Getting base64 data from: {file_uri}")
+
+    # Check if the data file is a local file
+    if os.path.exists(file_uri):
+        logging.Logger.info(f"'{file_uri}' is a local file. Reading content.")
+        try:
+            with open(file_uri, "rb") as f:
+                file_bytes = f.read()
+            base64_data = base64.b64encode(file_bytes).decode("utf-8")
+            logging.Logger.debug("Successfully encoded local file to base64.")
+            return base64_data
+        except IOError as e:
+            logging.Logger.error(f"Error reading local file '{file_uri}': {e}")
+            return ""
+        except Exception as e:
+            logging.Logger.error(f"An unexpected error occurred while processing local file '{file_uri}': {e}")
+            return ""
+
+    # If the data_file is a remote URL
+    elif file_uri.startswith("http://") or file_uri.startswith("https://"):
+        logging.Logger.info(f"'{file_uri}' is a remote URL. Downloading content.")
+        try:
+            response = requests.get(file_uri, timeout=timeout)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            image_bytes = response.content
+            base64_data = base64.b64encode(image_bytes).decode("utf-8")
+            logging.Logger.debug("Successfully downloaded and encoded remote file to base64.")
+            return base64_data
+        except requests.exceptions.RequestException as e:
+            logging.Logger.error(f"Error downloading the file from '{file_uri}': {e}")
+            return ""
+        except Exception as e:
+            logging.Logger.error(f"An unexpected error occurred while processing remote file '{file_uri}': {e}")
+            return ""
+
+    # Assume the content is already in base64 and validate it
+    else:
+        logging.Logger.info("Assuming the input is a base64 string. Validating.")
+        try:
+            # Add padding if it's missing
+            missing_padding = len(file_uri) % 4
+            if missing_padding:
+                file_uri += '=' * (4 - missing_padding)
+            
+            # Validate by decoding
+            base64.b64decode(file_uri, validate=True)
+            logging.Logger.debug("Input string is a valid base64 string.")
+            return file_uri
+        except (base64.binascii.Error, ValueError) as e:
+            logging.Logger.error(f"Invalid base64 string provided: {e}")
+            return ""
+        except Exception as e:
+            logging.Logger.error(f"An unexpected error occurred during base64 validation: {e}")
+            return ""
