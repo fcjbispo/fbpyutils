@@ -12,6 +12,7 @@ import calendar as xcalendar
 from typing import List
 
 from fbpyutils import datetime as dutl
+from fbpyutils import logging
 
 
 def get_calendar(x: date, y: date) -> List:
@@ -42,8 +43,10 @@ def get_calendar(x: date, y: date) -> List:
             - year_quarter_str (str): The year and quarter of the year in string format.
             - year_month_str (str): The year and month in string format.
     """
+    logging.debug(f"Starting get_calendar with start_date: {x}, end_date: {y}")
     start_date, end_date = x, y
     if end_date <= start_date:
+        logging.error(f"Invalid end date: {end_date}. Must be greater than start date: {start_date}.")
         raise ValueError("Invalid end date. Must be greater than start date.")
 
     cal = None
@@ -74,7 +77,9 @@ def get_calendar(x: date, y: date) -> List:
             for d in dates
         ]
     except ValueError as e:
+        logging.error(f"Error building calendar: {e}")
         raise e
+    logging.debug("Finished get_calendar successfully.")
 
     return cal
 
@@ -96,6 +101,7 @@ def add_markers(x: List) -> List:
       - last_day_of_year (always uses actual last day of year)
       - last_24_months, last_12_months, last_6_months, last_3_months (only for dates up to today)
     """
+    logging.debug("Starting add_markers.")
     cal = x
     today = datetime.now().date()
 
@@ -159,7 +165,7 @@ def add_markers(x: List) -> List:
                 "last_3_months": d <= today and dutl.delta(today, d, "months") <= 3,
             }
         )
-
+    logging.debug("Finished add_markers successfully.")
     return cal
 
 
@@ -175,14 +181,15 @@ def calendarize(
      Returns:
         DataFrame: A new dataframe with calendar columns and optional markers added to the passed dataframe.
     """
-    if not type(x) == type(pd.DataFrame([])):
+    logging.debug(f"Starting calendarize with date_column: {date_column}, with_markers: {with_markers}.")
+    if not isinstance(x, pd.DataFrame):
+        logging.error(f"Invalid object type for calendarize. Expected Pandas DataFrame, got {type(x)}.")
         raise TypeError(f"Invalid object type. Expected Pandas DataFrame.")
 
     df = x.copy()
 
-    if date_column not in df.columns or not np.issubdtype(
-        df[date_column], np.datetime64
-    ):
+    if date_column not in df.columns or not np.issubdtype(df[date_column], np.datetime64):
+        logging.error(f"DateTime column not found or invalid: {date_column}.")
         raise NameError(f"DateTime column not found or invalid: {date_column}.")
 
     mind, maxd = min(df[date_column]), max(df[date_column])
@@ -197,4 +204,5 @@ def calendarize(
     calendar.columns = columns
     df[date_column] = df[date_column].dt.date
 
+    logging.debug("Finished calendarize successfully.")
     return df.merge(calendar, left_on=date_column, right_on="calendar_date")
