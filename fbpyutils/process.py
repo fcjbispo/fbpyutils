@@ -27,9 +27,8 @@ from datetime import datetime
 
 from fbpyutils.env import Env # Import Env from its new module
 from fbpyutils.logging import Logger
-from fbpyutils.file import creation_date
 from fbpyutils.string import hash_string
-from fbpyutils.logging import Logger
+
 
 
 # Type variable for generic processing function
@@ -355,34 +354,7 @@ class FileProcess(Process):
             data directory, using a hash of the function's full reference as the folder name
             and a hash of the file path as the control file name.
         """
-    def _controlled_run(self, *args: Any) -> Tuple[str, bool, Optional[str], Any]:
-        """Execute a function with file timestamp-based control.
-
-        This function checks if a file needs to be processed based on its creation
-        timestamp compared to the last recorded processing timestamp. Control is maintained
-        through a pickle file that stores the timestamp of the last successful execution.
-
-        Args:
-            *args: Variable length argument list. Expects the first argument to be the
-                   processing function and the second to be the file path, followed by
-                   any other arguments required by the processing function.
-
-        Returns:
-            Tuple[str, bool, Optional[str], Any]: A tuple containing:
-                - file_path (str): Path of the processed file.
-                - success (bool): True if processed successfully, False otherwise.
-                - error_message (Optional[str]): Error message if processing failed, None otherwise.
-                - result (Any): Function result if successful, None otherwise.
-
-        Raises:
-            ValueError: If not enough arguments are provided (at least processing function and file path).
-            FileNotFoundError: If the file to be processed does not exist.
-
-        Note:
-            The control file is stored in a dedicated folder under the application's
-            data directory, using a hash of the function's full reference as the folder name
-            and a hash of the file path as the control file name.
-        """
+        from fbpyutils.file import creation_date
         Logger.debug(f"Starting _controlled_run with args: {args}")
         try:
             if len(args) < 2:
@@ -410,7 +382,7 @@ class FileProcess(Process):
             control_file: str = os.path.sep.join([control_folder, f"f_{hash_string(process_file)}.reg"])
 
             # Get current file timestamp
-            current_timestamp: float = os.path.getmtime(process_file)
+            current_timestamp: float = creation_date(process_file).timestamp()
 
             # Check if control file exists and read last timestamp
             control_exists: bool = os.path.exists(control_file)

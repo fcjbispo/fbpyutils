@@ -431,3 +431,87 @@ def test_get_base64_data_from_unexpected_error_base64(mocker):
     mocker.patch('base64.b64decode', side_effect=Exception("Unexpected Base64 Error"))
     result = file.get_base64_data_from("dGVzdA==")
     assert result == ""
+
+
+def test_find_non_recursive(tmpdir):
+    # Create a nested structure
+    dir1 = tmpdir.mkdir("dir1")
+    dir2 = dir1.mkdir("dir2")
+    file1 = tmpdir.join("file1.txt")
+    file2 = dir1.join("file2.txt")
+    file3 = dir2.join("file3.txt")
+    file1.write("content")
+    file2.write("content")
+    file3.write("content")
+
+    # Non-recursive search in the root
+    found_files = file.find(str(tmpdir), mask="*.txt", recurse=False)
+    assert len(found_files) == 1
+    assert str(file1) in found_files
+    assert str(file2) not in found_files
+    assert str(file3) not in found_files
+
+    # Non-recursive search in a subdirectory
+    found_files_dir1 = file.find(str(dir1), mask="*.txt", recurse=False)
+    assert len(found_files_dir1) == 1
+    assert str(file2) in found_files_dir1
+
+
+def test_find_recursive_and_parallel(tmpdir):
+    # Create a more complex structure for parallel testing
+    dir1 = tmpdir.mkdir("dir1")
+    dir2 = tmpdir.mkdir("dir2")
+    dir3 = dir1.mkdir("dir3")
+
+    f1 = tmpdir.join("f1.log")
+    f2 = dir1.join("f2.log")
+    f3 = dir2.join("f3.log")
+    f4 = dir3.join("f4.log")
+    f5 = dir3.join("f5.txt") # Different extension
+
+    for f in [f1, f2, f3, f4, f5]:
+        f.write("log content")
+
+    # Run parallel recursive search
+    found_files = file.find(str(tmpdir), mask="*.log", recurse=True, parallel=True)
+    
+    expected_files = sorted([str(f1), str(f2), str(f3), str(f4)])
+    
+    assert found_files == expected_files
+
+
+def test_find_returns_sorted_and_unique_list(tmpdir):
+    # Create files with names that would be out of order if not sorted
+    tmpdir.join("c.txt").write("c")
+    tmpdir.join("a.txt").write("a")
+    tmpdir.join("b.txt").write("b")
+
+    # Create a duplicate entry scenario for parallel execution
+    dir1 = tmpdir.mkdir("dir1")
+    dir1.join("a.txt").write("a_dupe") # Same filename as in root
+
+    found_files_seq = file.find(str(tmpdir), mask="*.txt", recurse=True, parallel=False)
+    found_files_par = file.find(str(tmpdir), mask="*.txt", recurse=True, parallel=True)
+
+    expected = sorted([
+        str(tmpdir.join("a.txt")),
+        str(tmpdir.join("b.txt")),
+        str(tmpdir.join("c.txt")),
+        str(dir1.join("a.txt"))
+    ])
+
+    assert found_files_seq == expected
+    assert found_files_par == expected
+
+
+def test_find_empty_directory(tmpdir):
+    empty_dir = tmpdir.mkdir("empty")
+    assert file.find(str(empty_dir)) == []
+    assert file.find(str(empty_dir), recurse=False) == []
+    assert file.find(str(empty_dir), parallel=True) == []
+
+
+def test_find_non_existent_directory(tmpdir):
+    non_existent_path = str(tmpdir.join("non_existent"))
+    assert file.find(non_existent_path) == []
+
