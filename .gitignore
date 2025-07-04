@@ -136,4 +136,4 @@ tests/results.xml
 .aider**
 poetry.lock
 CKP_*.md
-sandbox*.ipynb
+sandbox*.*
