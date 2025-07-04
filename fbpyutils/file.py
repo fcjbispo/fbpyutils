@@ -13,27 +13,78 @@ import magic
 import requests
 import sys
 from fbpyutils import logging
+from fbpyutils.process import Process
 
 
-def find(x: str, mask: str = '*.*') -> list:
+def find(
+    x: str,
+    mask: str = '*.*',
+    recurse: bool = True,
+    parallel: bool = False
+) -> list:
     """
-    Finds files recursively in a source folder using a specific mask.
-     Parameters:
+    Finds files in a source folder using a specific mask, with options for recursive and parallel search.
+
+    Parameters:
         x (str): The source folder to find and list files from.
         mask (str): The mask to be used when finding files. Default is '*.*'.
-     Returns:
-        list: A list containing the full paths of files found recursively in the source folder using the specified mask.
-     Examples:
+        recurse (bool): If True, the search will be recursive. If False, it will only search the top-level directory. Default is True.
+        parallel (bool): If True and recurse is also True, the search will be performed in parallel. Default is False.
+
+    Returns:
+        list: A sorted list containing the full paths of unique files found.
+
+    Examples:
         >>> find('/path/to/folder', '*.txt')
         ['/path/to/folder/file1.txt', '/path/to/folder/subfolder/file2.txt']
-        >>> find('/path/to/another/folder')
+        >>> find('/path/to/another/folder', recurse=False)
         ['/path/to/another/folder/file3.txt', '/path/to/another/folder/file4.jpg']
     """
-    logging.Logger.debug(f"Starting find in folder: {x} with mask: {mask}")
-    all_files = [str(filename)
-                 for filename in Path(x).rglob(mask)]
-    logging.Logger.debug(f"Found {len(all_files)} files.")
-    return all_files
+    logging.Logger.debug(f"Starting find in folder: {x} with mask: {mask}, recurse: {recurse}, parallel: {parallel}")
+    
+    source_path = Path(x)
+    if not source_path.is_dir():
+        logging.Logger.warning(f"Source folder not found or is not a directory: {x}")
+        return []
+
+    found_files = set()
+
+    if parallel and recurse:
+        # Parallel search
+        subdirectories = [str(d) for d in source_path.iterdir() if d.is_dir()]
+        subdirectories.append(str(source_path))  # Include the root directory itself
+
+        def search_worker(directory: str, search_mask: str):
+            """Worker function to search for files in a directory."""
+            try:
+                path = Path(directory)
+                files = {str(p) for p in path.rglob(search_mask) if p.is_file()}
+                return True, None, list(files)
+            except Exception as e:
+                return False, str(e), []
+
+        process_runner = Process(process=search_worker, parallelize=True)
+        params = [(d, mask) for d in subdirectories]
+        results = process_runner.run(params)
+
+        for success, error, files in results:
+            if success and files:
+                found_files.update(files)
+            elif error:
+                logging.Logger.error(f"Error in parallel search worker: {error}")
+
+    else:
+        # Sequential search
+        if recurse:
+            search_method = source_path.rglob
+        else:
+            search_method = source_path.glob
+        
+        found_files.update(str(p) for p in search_method(mask) if p.is_file())
+
+    sorted_files = sorted(list(found_files))
+    logging.Logger.debug(f"Found {len(sorted_files)} files.")
+    return sorted_files
 
 
 def creation_date(x: str) -> datetime:
