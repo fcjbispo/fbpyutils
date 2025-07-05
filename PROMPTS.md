@@ -1,3 +1,21 @@
+
+## FIX RELEASE V1.6.5
+Estou com problemas no clientes da biblioteca fbpyutils.file especificamente com a função `mime_type` que não está sendo executada corretamente devido a problemas com a biblioteca `magic`.
+
+Refatore a biblioteca `fbpyutils` para modernizar a detecção de tipos de arquivo, seguindo estas diretrizes:
+
+1.  **Objetivo Principal:** Substitua toda a lógica customizada de identificação de MIME types pela biblioteca padrão do Python, `mimetypes`.
+2.  **Análise:** Identifique as funções em `fbpyutils` que determinam o tipo de um arquivo (MIME type) com base em seu nome ou extensão.
+3.  **Implementação:** Em cada local identificado, substitua a lógica existente por uma chamada à função `mimetypes.guess_type(caminho_do_arquivo)`.
+4.  **Tratamento do Retorno:** A função `guess_type` retorna uma tupla `(type, encoding)`. Utilize o primeiro elemento (o tipo). Se o tipo retornado for `None`, sua implementação deve retornar um valor padrão seguro, como `'application/octet-stream'`.
+5.  **Limpeza:** Remova quaisquer importações, dependências ou código de suporte que se tornaram obsoletos com esta alteração.
+
+*Utilize as orientações de VIBE CODING para realização das tarefas;
+*A branch atual do projeto já é a v1.6.5. Utilize-a para manter o repositório de código e realizar o build;
+*Atualize o arquivo do projeto `pyproject.toml` com as alterações necessárias;
+*Após todo desenvolvimento, testes e aprovação do código, execute o prompt APPLY_CHECKPOINT.
+
+
 ## SOMETHING WEIRD
 I have this python code that runs unit tests. 
 ```python
