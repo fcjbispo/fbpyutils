@@ -9,9 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Union
 import base64
-import magic
+import mimetypes
 import requests
-import sys
 from fbpyutils import logging
 from fbpyutils.process import Process
 
@@ -222,54 +221,43 @@ def contents(x: str) -> bytearray:
 
 def mime_type(x: str) -> str:
     """
-    Returns the mime type of a file.
-     Parameters:
+    Guesses the mime type of a file based on its extension.
+
+    Parameters:
         x (str): The path of the file to get its mime type.
-     Returns:
-        str: The mime type of the file passed.
-     Example:
+
+    Returns:
+        str: The guessed mime type of the file, or 'application/octet-stream' if the type
+             cannot be determined. Returns 'directory' if the path is a directory,
+             and 'file_not_found' if the path does not exist.
+
+    Example:
         >>> mime_type('/path/to/file.txt')
         'text/plain'
+        >>> mime_type('/path/to/unknown.xyz')
+        'application/octet-stream'
     """
-    # Use pathlib to ensure proper path handling, especially with special characters
-    file_path_obj: Path = Path(x).resolve() # Resolve to get absolute path and normalize
-    file_path_str = str(file_path_obj)
-    logging.Logger.debug(f"Resolved file_path (string): {file_path_str}")
+    logging.Logger.debug(f"Attempting to guess mime type for: {x}")
+
+    if not os.path.exists(x):
+        logging.Logger.error(f"File not found: '{x}'.")
+        return 'file_not_found'
+    
+    if os.path.isdir(x):
+        logging.Logger.warning(f"Path '{x}' is a directory.")
+        return 'directory'
 
     try:
-        if not os.path.exists(file_path_str):
-            logging.Logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
-            return 'file_not_found'
-        
-        if os.path.isdir(file_path_str):
-            logging.Logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory'.")
-            return 'directory'
-
-        if sys.platform.startswith('win'):
-            # For Windows, magic.from_file might have issues with certain paths or permissions.
-            # Reading content and using from_buffer is generally more robust.
-            # Ensure the file is actually a file before attempting to read its contents.
-            if not os.path.isfile(file_path_str):
-                logging.Logger.warning(f"Path '{file_path_str}' is not a regular file. Cannot determine mime type via content. Returning 'unknown'.")
-                return 'unknown' # Or raise an error, depending on desired behavior for non-regular files
-            
-            file_contents = contents(file_path_str)[0:256]
-            mime_type_detected = magic.from_buffer(file_contents, mime=True)
-            logging.Logger.debug(f"Detected mime type for '{file_path_str}' on Windows: {mime_type_detected}")
+        mime_type_detected, _ = mimetypes.guess_type(x)
+        if mime_type_detected:
+            logging.Logger.debug(f"Detected mime type for '{x}': {mime_type_detected}")
+            return mime_type_detected
         else:
-            # On non-Windows, from_file is generally reliable and efficient.
-            mime_type_detected = magic.from_file(file_path_str, mime=True)
-            logging.Logger.debug(f"Detected mime type for '{file_path_str}' on non-Windows: {mime_type_detected}")
-        return mime_type_detected
-    except IsADirectoryError: # This exception might still be caught if os.path.isdir fails or is not used
-        logging.Logger.warning(f"Path '{file_path_str}' is a directory, returning 'directory' from exception handler.")
-        return 'directory'
-    except FileNotFoundError:
-        logging.Logger.error(f"File not found: '{file_path_str}'. Returning 'file_not_found'.")
-        return 'file_not_found'
+            logging.Logger.warning(f"Could not guess mime type for '{x}'. Defaulting to 'application/octet-stream'.")
+            return 'application/octet-stream'
     except Exception as e:
-        logging.Logger.error(f"An unexpected error occurred while getting mime type for '{file_path_str}'. Exception: {e}")
-        raise # Re-raise the exception for further handling if needed
+        logging.Logger.error(f"An unexpected error occurred while guessing mime type for '{x}': {e}")
+        raise
 
 
 def _is_windows() -> bool:
