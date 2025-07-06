@@ -1,6 +1,6 @@
 [project]
 name = "fbpyutils"
-version = "1.6.5"
+version = "1.6.6"
 description = "Francisco Bispo's Utilities for Python"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
@@ -15,7 +15,8 @@ dependencies = [
     "openpyxl>=3.1.5,<4.0.0",
     "xlrd>=2.0.1,<3.0.0",
     "freezegun>=1.5.1",
-    "requests>=2.32.3"
+    "requests>=2.32.3",
+    "pydantic>=2.0,<3.0"
 ]
 
 [build-system]

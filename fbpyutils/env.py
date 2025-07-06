@@ -1,75 +1,126 @@
 import os
 import json
 import logging
-from dataclasses import dataclass, field
-from typing import Dict, Any
+import warnings
+from typing import Dict, Any, Optional
 
-# Import Logger here to avoid circular dependency with __init__.py
-# Logger is configured by __init__.py after Env is initialized.
-from fbpyutils.logging import Logger
+from pydantic import BaseModel, Field
 
-@dataclass(frozen=True)
+# Pydantic models for configuration validation
+class AppConfig(BaseModel):
+    name: str = "fbpyutils"
+    version: str = "1.6.6"
+    environment: str = "dev"
+    appcode: str = "FBPYUTILS"
+    year: int = 2025
+
+class LoggingConfig(BaseModel):
+    log_level: str = Field("INFO", alias="log_level")
+    log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    log_file_path: Optional[str] = None
+    log_text_size: int = 256
+
+class RootConfig(BaseModel):
+    app: AppConfig = Field(default_factory=AppConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
+
+
 class Env:
     """
-    Configuration class for the application environment variables.
-    This class is designed to be a singleton and immutable.
+    Configuration class for the application environment.
+    This class is a singleton and is immutable after initialization.
     """
-    _instance = None
+    _instance: Optional['Env'] = None
 
-    app_config: Dict[str, Any] = field(default_factory=dict)
+    APP: AppConfig
+    USER_FOLDER: str
+    USER_APP_FOLDER: str
+    LOG_LEVEL: str
+    LOG_FORMAT: str
+    LOG_FILE: str
+    LOG_TEXT_SIZE: int
 
-    APP: Dict[str, Any] = field(init=False)
-    USER_FOLDER: str = field(init=False)
-    USER_APP_FOLDER: str = field(init=False)
-    LOG_LEVEL: str = field(init=False)
-    LOG_TEXT_SIZE: int = field(init=False)
-    LOG_FILE: str = field(init=False)
+    def __new__(cls, config: Optional[Dict[str, Any]] = None):
+        if cls._instance is None:
+            instance = super().__new__(cls)
+            cls._instance = instance
+            instance._initialize(config)
+        return cls._instance
 
-    def __post_init__(self):
-        # Set APP values from app_config, with defaults
-        object.__setattr__(self, 'APP', {
-            "appcode": self.app_config.get("app", {}).get("appcode", "FBPYUTILS"),
-            "name": self.app_config.get("app", {}).get("name", "fbpyutils"),
-            "version": self.app_config.get("app", {}).get("version", "1.6.3"),
-            "year": self.app_config.get("app", {}).get("year", "2025")
-        })
-
-        # Construct USER_FOLDER and USER_APP_FOLDER
-        object.__setattr__(self, 'USER_FOLDER', os.path.expanduser('~'))
-        object.__setattr__(self, 'USER_APP_FOLDER', os.path.sep.join([self.USER_FOLDER, f".{self.APP['name'].lower()}"]))
-
-        # Configure other properties with precedence: environment variable, dictionary value, default value
-        object.__setattr__(self, 'LOG_LEVEL', os.getenv('LOG_LEVEL', self.app_config.get("logging", {}).get("log_level", 'INFO')))
-        object.__setattr__(self, 'LOG_TEXT_SIZE', int(os.getenv('LOG_TEXT_SIZE', self.app_config.get("logging", {}).get("log_text_size", 256))))
-        
-        log_file_path_from_config = self.app_config.get("logging", {}).get("log_file_path")
-        if log_file_path_from_config:
-            # If log_file_path is provided in app.json, use it directly
-            object.__setattr__(self, 'LOG_FILE', log_file_path_from_config)
+    def _initialize(self, config: Optional[Dict[str, Any]] = None):
+        """Initializes the Env instance attributes."""
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+            
+        if config is None:
+            # If no config is provided, load from the default app.json
+            current_dir = os.path.dirname(__file__)
+            default_config_path = os.path.join(current_dir, 'app.json')
+            try:
+                with open(default_config_path, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                config_data = {}
         else:
-            # Otherwise, use the existing logic with USER_APP_FOLDER
-            object.__setattr__(self, 'LOG_FILE', os.path.sep.join([
-                os.getenv('LOG_PATH', self.USER_APP_FOLDER), 'fbpyutils.log']))
+            config_data = config
+
+        # Validate and parse the configuration using Pydantic models
+        parsed_config = RootConfig.model_validate(config_data)
+
+        self.APP = parsed_config.app
+        self.USER_FOLDER = os.path.expanduser('~')
+        self.USER_APP_FOLDER = os.path.join(self.USER_FOLDER, f".{self.APP.name.lower()}")
+
+        # Configure logging properties with precedence: environment variable -> config file -> default
+        self.LOG_LEVEL = os.getenv('LOG_LEVEL', parsed_config.logging.log_level)
+        self.LOG_FORMAT = parsed_config.logging.log_format
+        self.LOG_TEXT_SIZE = int(os.getenv('LOG_TEXT_SIZE', parsed_config.logging.log_text_size))
+        
+        log_file_from_config = parsed_config.logging.log_file_path
+        if log_file_from_config:
+            self.LOG_FILE = log_file_from_config
+        else:
+            default_log_path = os.getenv('LOG_PATH', self.USER_APP_FOLDER)
+            self.LOG_FILE = os.path.join(default_log_path, 'fbpyutils.log')
 
         # Ensure USER_APP_FOLDER exists
         if not os.path.exists(self.USER_APP_FOLDER):
             os.makedirs(self.USER_APP_FOLDER)
-            # Log this action using the Logger class
-            Logger.info(f"Created user application folder: {self.USER_APP_FOLDER}")
+        
+        self._initialized = True
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(Env, cls).__new__(cls)
-        return cls._instance
+    @classmethod
+    def load_config_from(cls, app_conf_file: str) -> 'Env':
+        """
+        Loads configuration from a specified JSON file and returns a configured Env instance.
+        This will replace the existing singleton instance.
+        """
+        try:
+            with open(app_conf_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            cls._instance = None  # Reset singleton to allow re-initialization
+            return cls(config=config)
+        except FileNotFoundError:
+            logging.error(f"Configuration file '{app_conf_file}' not found. Cannot create Env instance.")
+            raise
+        except json.JSONDecodeError:
+            logging.error(f"Error decoding JSON from '{app_conf_file}'.")
+            raise
 
-# Load configuration from app.json
 def load_config(file_name: str = 'app.json') -> Dict[str, Any]:
-    """Loads configuration from a JSON file."""
-    # Construct the path relative to the current file (fbpyutils/env.py)
+    """
+    DEPRECATED: This function is obsolete and will be removed in a future version.
+    Use Env.load_config_from(path) or pass a config dict to the Env constructor instead.
+    """
+    warnings.warn(
+        "load_config is deprecated. Use fbpyutils.setup() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     current_dir = os.path.dirname(__file__)
     file_path = os.path.join(current_dir, file_name)
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
         logging.warning(f"Configuration file '{file_path}' not found. Using default settings.")
