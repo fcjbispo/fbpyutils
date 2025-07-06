@@ -964,4 +964,3 @@ class SessionProcess(Process):
             raise
 
 
-Logger.info(f"Process Module initialized - Parallelizable: {Process.is_parallelizable()}, CPU Count: {Process.get_available_cpu_count()}")
