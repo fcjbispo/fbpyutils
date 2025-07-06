@@ -118,9 +118,9 @@ def test_env_initialization_with_config(mock_file_operations, mock_makedirs, moc
         Env._instance = None # Reset singleton instance
         env = Env(temp_app_json_content)
 
-        assert env.APP['name'] == "TestApp"
-        assert env.APP['appcode'] == "TEST"
-        assert env.APP['year'] == 2024
+        assert env.APP.name == "TestApp"
+        assert env.APP.appcode == "TEST"
+        assert env.APP.year == 2024
         assert env.LOG_LEVEL == "DEBUG"
         assert os.path.normpath(env.LOG_FILE) == os.path.normpath("test_logs/test_app.log")
         assert os.path.normpath(env.USER_FOLDER) == os.path.normpath("/mock/home/user")
@@ -153,7 +153,7 @@ def test_env_precedence_default_if_not_in_config_or_env(mock_file_operations, mo
             Env._instance = None
             env = Env({})
 
-            assert env.APP['appcode'] == "FBPYUTILS" # Default
+            assert env.APP.appcode == "FBPYUTILS" # Default
             assert env.LOG_LEVEL == "INFO" # Default
             assert env.LOG_TEXT_SIZE == 256 # Default
             # LOG_FILE should use USER_APP_FOLDER default if not in config
@@ -207,24 +207,9 @@ def test_logger_configure_with_defaults(mock_file_operations, mock_makedirs, moc
     Logger.log(Logger.INFO, "Default test message")
     assert "Default test message" in caplog.text
 
-def test_logger_log_before_explicit_configure(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, caplog):
-    mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
-    user_app_folder = os.path.normpath(os.path.join('/mock/home/user', '.fbpyutils'))
-    _directory_paths.add(user_app_folder)
-    _existing_paths.add(user_app_folder)
 
-    # Ensure logger is not configured initially
-    Logger._is_configured = False
-    Logger._logger.handlers.clear()
-
-    caplog.set_level(logging.INFO)
-    Logger.log(Logger.INFO, "Message before explicit configure")
-
-    assert Logger._is_configured is True # Should be configured with defaults
-    assert Logger._logger.level == logging.INFO
-    assert "Message before explicit configure" in caplog.text
-
-def test_logger_file_path_creation_failure(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, caplog):
+@patch('builtins.print')
+def test_logger_file_path_creation_failure(mock_print, mock_makedirs, mock_path_exists_and_isdir):
     mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
     
     # Simulate that the directory for the log file does not exist and cannot be created
@@ -233,8 +218,6 @@ def test_logger_file_path_creation_failure(mock_file_operations, mock_makedirs, 
     _directory_paths.discard(log_file_dir) # Ensure it's not considered a directory
     mock_makedirs.side_effect = OSError("Permission denied")
 
-    caplog.set_level(logging.ERROR)
-
     config = {
         "log_level": "INFO",
         "log_format": "%(message)s",
@@ -242,7 +225,7 @@ def test_logger_file_path_creation_failure(mock_file_operations, mock_makedirs, 
     }
     Logger.configure(config_dict=config)
 
-    assert "Error setting up file logger" in caplog.text
+    mock_print.assert_called_with("Error setting up file logger at /no/permission/logs/app.log: Permission denied")
     # Should still have console handler
     assert any(isinstance(h, logging.StreamHandler) for h in Logger._logger.handlers)
     # Should not have file handler

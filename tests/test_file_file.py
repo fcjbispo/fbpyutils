@@ -62,15 +62,24 @@ def test_contents(tmpdir):
 
 
 def test_mime_type(tmpdir):
+    # Test known file type
     text_file = tmpdir.join("test.txt")
     text_file.write("content")
     assert file.mime_type(str(text_file)) == "text/plain"
 
-    # dir_path = str(tmpdir.mkdir("test_dir")) # Temporarily disabled due to PermissionError
-    # assert file.mime_type(dir_path) == 'directory' # Temporarily disabled due to PermissionError
+    # Test unknown file type
+    unknown_file = tmpdir.join("test.xyz")
+    unknown_file.write("content")
+    assert file.mime_type(str(unknown_file)) == "application/octet-stream"
 
+    # Test non-existent file
     non_existent_file = str(tmpdir.join("non_existent.file"))
     assert file.mime_type(non_existent_file) == "file_not_found"
+
+    # Test directory
+    dir_path = str(tmpdir.mkdir("test_dir"))
+    assert file.mime_type(dir_path) == 'directory'
+
 
 
 def test_build_platform_path():

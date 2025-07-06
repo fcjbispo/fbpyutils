@@ -109,17 +109,68 @@ pytest tests
 ## License
 This project is licensed under the MIT License. For the full text of the license, see [the official MIT License](https://opensource.org/licenses/MIT).
 
-## Logging System
+## Initialization and Logging
 
-The `fbpyutils` library includes a global logging system configured to write logs to a file with automatic rotation.
+The `fbpyutils` library requires initialization before most of its modules can be used. This is done via the `setup()` function, which configures the environment and the global logging system.
 
-- **Log File Location**: Logs are stored in a `.fbpyutils` folder within the user's HOME directory (e.g., `C:\Users\<username>\.fbpyutils\fbpyutils.log` on Windows, or `~/.fbpyutils/fbpyutils.log` on Linux/macOS).
-- **Rotation Policy**: Log files are rotated when they reach 256 KB, keeping up to 5 backup files. This ensures that log files do not grow indefinitely and consume excessive disk space.
-- **Usage**: To use the logger in any module within `fbpyutils`, simply import it:
-    ```python
-    from fbpyutils.logging import logger
-    ```
-    Then, use the `logger` object for logging messages (e.g., `logger.info("Your message here")`, `logger.debug("Debug message")`).
+### Basic Setup
+
+To initialize the library with default settings (loading from `fbpyutils/app.json`), call `setup()` at the beginning of your application:
+
+```python
+import fbpyutils
+
+# Initialize the library
+fbpyutils.setup()
+
+# Now you can get the logger instance
+logger = fbpyutils.get_logger()
+logger.info("Library is ready to use.")
+```
+
+### Advanced Configuration
+
+You can provide a custom configuration by passing a dictionary or a file path to the `setup` function.
+
+#### 1. From a Dictionary
+
+```python
+import fbpyutils
+
+my_config = {
+    "app": {"name": "MyAwesomeApp"},
+    "logging": {"log_level": "DEBUG", "log_file_path": "logs/my_app.log"}
+}
+
+fbpyutils.setup(config=my_config)
+logger = fbpyutils.get_logger()
+logger.debug("Using custom configuration from a dictionary.")
+```
+
+#### 2. From a JSON File
+
+```python
+import fbpyutils
+
+# Path to your custom config file
+config_path = "path/to/your/config.json"
+
+fbpyutils.setup(config=config_path)
+logger = fbpyutils.get_logger()
+logger.info("Using custom configuration from a file.")
+```
+
+After initialization, you can access the environment and logger instances anywhere in your application:
+
+```python
+import fbpyutils
+
+# Get the already configured instances
+env = fbpyutils.get_env()
+logger = fbpyutils.get_logger()
+
+logger.info(f"Running {env.APP.name} version {env.APP.version}")
+```
 
 ---
 ## MIT License Disclaimer

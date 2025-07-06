@@ -11,7 +11,7 @@ Francisco Bispo's Utilities for Python. This library provides a collection of ut
 - `datetime`: Utility functions to manipulate date and time.
 - `debug`: Functions to support code debugging.
 - `file`: Functions to read and/or process files and directories on the operating system.
-- `logging`: Global logging system for the library.
+- `logging`: Global logging system for the library. See Initialization section.
 - `ofx`: Reads and processes OFX (Open Financial Exchange) files and data.
 - `string`: Several functions to manipulate and process strings and/or produce strings from any kind of data.
 - `xlsx`: Functions to read and MS Excel Spreadsheet files in xls or xlsx formats.
@@ -23,6 +23,24 @@ pip install fbpyutils
 ```
 
 ## Usage
+
+### Initialization and Configuration
+
+The `fbpyutils` library must be initialized before use. This is done via the `setup()` function.
+
+#### `setup(config: Optional[Union[Dict[str, Any], str]] = None)`
+Initializes the global environment and logging system. This function should be called once when your application starts.
+
+- **Args**:
+    - `config`: Can be a dictionary containing configuration, a string path to a JSON configuration file, or `None` to use the default `app.json`.
+
+#### `get_env() -> Env`
+Returns the singleton `Env` instance after setup.
+
+#### `get_logger() -> Logger`
+Returns the singleton `Logger` instance after setup.
+
+---
 
 ### calendar Module
 
