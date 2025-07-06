@@ -88,6 +88,19 @@ class Logger:
         return cls()
 
     @staticmethod
+    def configure_from_env(env: 'Env') -> None:
+        """
+        Public method to re-configure the logger at runtime from an Env object, if needed.
+        """
+        config_dict = {
+            "log_level": env.LOG_LEVEL,
+            "log_format": env.LOG_FORMAT,
+            "log_file_path": env.LOG_FILE,
+        }
+        Logger._configure_internal(config_dict)
+        Logger._logger.info("Logging system re-configured from Env.")
+
+    @staticmethod
     def configure(config_dict: Dict[str, Any]) -> None:
         """
         Public method to re-configure the logger at runtime if needed.
