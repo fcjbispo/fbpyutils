@@ -33,6 +33,10 @@ class Logger:
         Internal method to configure the logging system.
         This can be called multiple times to reconfigure the logger.
         """
+        app_name = config_dict.get("app_name")
+        if app_name and isinstance(app_name, str):
+            Logger._logger = logging.getLogger(app_name.lower())
+
         log_level_str = config_dict.get("log_level", "INFO").upper()
         log_format = config_dict.get("log_format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         log_file_path = config_dict.get("log_file_path")
@@ -83,6 +87,7 @@ class Logger:
             "log_level": env.LOG_LEVEL,
             "log_format": env.LOG_FORMAT,
             "log_file_path": env.LOG_FILE,
+            "app_name": getattr(env, 'APP_NAME', None)
         }
         cls._configure_internal(config)
         return cls()
@@ -96,6 +101,7 @@ class Logger:
             "log_level": env.LOG_LEVEL,
             "log_format": env.LOG_FORMAT,
             "log_file_path": env.LOG_FILE,
+            "app_name": getattr(env, 'APP_NAME', None)
         }
         Logger._configure_internal(config_dict)
         Logger._logger.info("Logging system re-configured from Env.")
