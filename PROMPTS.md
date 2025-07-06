@@ -1,4 +1,50 @@
 
+## FIX RELEASE V1.6.6
+O sistema de logging bem como a classe global Env não estão se comportando conforme esperado quando utilizada por clientes desta biblioteca. Ele está usando sempre por padrão e de forma automática o arquivo `fbpyutils/app.json` como fonte das informações para inicialização da aplicação e do sistema de logging. Como solução, preciso planejar uma release de fix, a v1.6.6 contendo os seguintes objetivos:
+
+    *Classe Env*:
+
+        - Refatorar a classe Env para adicionar um construtor que receberá um parâmetro opcional para um dict python com a estrutura baixo que servirá para inicialização da classe. Caso o parâmetro não seja fornecido, o arquivo `app.json` deverá ser lido, conforme atualmente.
+            ```json
+            {
+                "app": {
+                    "name": "FBPyUtils",
+                    "version": "1.6.3",
+                    "environment": "dev",
+                    "appcode": "FBPYUTILS",
+                    "year": 2025
+                },
+                "logging": {
+                    "log_level": "INFO",
+                    "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    "log_file_path": "logs/app.log"
+                }
+            }
+            ```
+        - Adicionar um método estático load_config_from(str: app_conf_file) que retornará a classe Env devidamente configurada com o conteúdo do arquivo.
+        - A classe Env deverá continuar sendo um singleton de instância única e imutável para a aplicação.
+        - Marque a função `load_config` como obsoleta, devendo ser utilizado o método estático de Env em seu lugar.
+        - As demais funcionalidades da classe Env deverão permanecer as mesmas.
+        - Usar pydantic classes adequadas para gerenciar os dados de app.json.
+
+    *Classe Logging*:
+
+        - Refatorar a classe Logger para também se comportar como um singleton único na aplicação e utilizar uma instância da classe Env para configurar seus atributos e comportamentos.
+        - Adicionar um método estático `get_from_env` que deverá receber a instância da classe Env como argumento e retornar a instância singleton da classe Logger devidamente configurada.
+        - A reconfiguração em tempo de execução da classe Logger, deverá ser permitida via método estático `configure`.
+
+- Elabore um plano de execução para o desenvolvimento destas features utilizando o formato prévio estabelecido, gravando-o no arquivo markdown específico e solicite aprovação. Uma vez aprovado, altere para o modo code e solicite o início do desenvolvimento.
+
+- Questione quaisquer pontos necessários para cobrir seu entendimento e/ou sanar dúvidas. Instrua os agentes de codificação a fazer o mesmo.
+
+- Ao gerar/atualizar os testes unitários, foque em cada uma das classes por vez ao executar e depurar. Use o comando `uv run pytest` para executar os testes específicos.
+
+- Ignore a restrição de cobertura de 90% do código por enquanto.
+
+- Após o final do desenvolvimento e aprovação da release, execute o prompt APPLY_CHECKPOINT
+
+UTILIZE SEMPRE AS ORIENTAÇÕES EM VIBE_GUIDE.md para execução das tarefas.
+
 ## FIX RELEASE V1.6.5
 Estou com problemas no clientes da biblioteca fbpyutils.file especificamente com a função `mime_type` que não está sendo executada corretamente devido a problemas com a biblioteca `magic`.
 
