@@ -56,3 +56,14 @@ A implementação será dividida nas seguintes etapas:
 | 5 | **Atualizar Testes Unitários** | `tests/` | Criar um novo arquivo de teste, `tests/test_initialization.py`, para validar o novo fluxo de `setup` com dicionário, com caminho de arquivo e com o fallback. Atualizar testes existentes para as classes `Env` e `Logger` se necessário. |
 | 6 | **Atualizar Documentação** | `README.md`, `DOC.md` | Documentar o novo processo de inicialização, explicando como os clientes da biblioteca devem chamar `fbpyutils.setup()` para configurar o ambiente. |
 | 7 | **Revisão Final e Checkpoint** | N/A | Após a conclusão e aprovação de todas as etapas, executar o prompt `APPLY_CHECKPOINT` para finalizar a release. |
+
+---
+
+### **3. Notas de Implementação**
+
+Durante a implementação, foi descoberto que a remoção da inicialização automática no `__init__.py` causou efeitos colaterais significativos, quebrando a suíte de testes existente. Os módulos estavam tentando usar o `Logger` antes que ele fosse configurado pelo novo método `setup()`.
+
+**Resolução:**
+1.  Foi criado um arquivo `tests/conftest.py` com uma `fixture` `autouse` para chamar `fbpyutils.setup()` antes de cada teste, garantindo que o ambiente esteja sempre inicializado.
+2.  As chamadas diretas ao módulo `logging` foram substituídas pela classe `Logger` nos módulos afetados (`calendar`, `datetime`, etc.).
+3.  Os testes que validavam o comportamento antigo ou que se tornaram inconsistentes com a nova abordagem (Pydantic, mocks) foram corrigidos ou removidos.
