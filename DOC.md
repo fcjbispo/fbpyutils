@@ -5,16 +5,21 @@
 
 ## Overview
 
-Francisco Bispo's Utilities for Python. This library provides a collection of utility functions for Python, including modules for:
+Francisco Bispo's Utilities for Python. This library provides a comprehensive collection of utility functions for Python applications, designed to simplify common development tasks across multiple domains.
 
-- `calendar`: Functions to manipulate calendars.
-- `datetime`: Utility functions to manipulate date and time.
-- `debug`: Functions to support code debugging.
-- `file`: Functions to read and/or process files and directories on the operating system.
-- `logging`: Global logging system for the library. See Initialization section.
-- `ofx`: Reads and processes OFX (Open Financial Exchange) files and data.
-- `string`: Several functions to manipulate and process strings and/or produce strings from any kind of data.
-- `xlsx`: Functions to read and MS Excel Spreadsheet files in xls or xlsx formats.
+### Core Modules
+
+- **`calendar`**: Advanced calendar manipulation and time dimension creation
+- **`datetime`**: Enhanced date/time utilities with timezone support
+- **`debug`**: Debugging tools and decorators for development
+- **`env`**: Environment configuration and management system
+- **`file`**: Comprehensive file system operations and metadata extraction
+- **`image`**: Image processing and manipulation utilities
+- **`logging`**: Configurable logging system with rotation
+- **`ofx`**: OFX (Open Financial Exchange) file parser
+- **`process`**: Parallel and serial processing with session management
+- **`string`**: Advanced string manipulation and hashing utilities
+- **`xlsx`**: Excel file operations with pandas integration
 
 ## Installation
 
@@ -22,1013 +27,753 @@ Francisco Bispo's Utilities for Python. This library provides a collection of ut
 pip install fbpyutils
 ```
 
-## Usage
+## Quick Start
+
+```python
+from fbpyutils import setup
+
+# Initialize the library
+setup()
+
+# Access global instances
+from fbpyutils import get_env, get_logger
+env = get_env()
+logger = get_logger()
+```
+
+## Usage Guide
 
 ### Initialization and Configuration
 
-The `fbpyutils` library must be initialized before use. This is done via the `setup()` function.
+The `fbpyutils` library must be initialized before use via the `setup()` function.
 
-#### `setup(config: Optional[Union[Dict[str, Any], str]] = None)`
+#### `setup(config: Optional[Union[Dict[str, Any], str]] = None) -> None`
 Initializes the global environment and logging system. This function should be called once when your application starts.
 
-- **Args**:
-    - `config`: Can be a dictionary containing configuration, a string path to a JSON configuration file, or `None` to use the default `app.json`.
+**Parameters:**
+- `config`: Configuration source - can be a dictionary, JSON file path, or None for defaults
+
+**Example:**
+```python
+# Using default configuration
+setup()
+
+# Using custom configuration dict
+setup({
+    "app": {
+        "name": "MyApp",
+        "version": "1.0.0"
+    },
+    "logging": {
+        "level": "DEBUG"
+    }
+})
+
+# Using configuration file
+setup("config/app.json")
+```
 
 #### `get_env() -> Env`
-Returns the singleton `Env` instance after setup.
+Returns the singleton `Env` instance containing all configuration.
 
 #### `get_logger() -> Logger`
-Returns the singleton `Logger` instance after setup.
+Returns the singleton `Logger` instance for application-wide logging.
 
 ---
 
 ### calendar Module
 
+Advanced calendar operations for time dimension creation and date analysis.
+
 #### Functions
 
-##### `add_markers`
+##### `get_calendar(start_date: date, end_date: date) -> List[Dict[str, Any]]`
+Creates a comprehensive calendar between two dates with detailed time attributes.
 
+**Parameters:**
+- `start_date`: Starting date
+- `end_date`: Ending date (must be > start_date)
+
+**Returns:** List of dictionaries with calendar attributes:
+- `date`: Date object
+- `date_time`: Datetime object
+- `year`: Year as integer
+- `half`: Half of year (1 or 2)
+- `quarter`: Quarter (1-4)
+- `month`: Month (1-12)
+- `day`: Day of month
+- `week_day`: Day of week (0=Monday, 6=Sunday)
+- `week_of_year`: ISO week number
+- `date_iso`: ISO format string
+- `date_str`: Formatted date string
+- `week_day_name`: Full weekday name
+- `week_day_name_short`: Abbreviated weekday
+- `week_month_name`: Full month name
+- `week_month_name_short`: Abbreviated month
+- `year_str`: Year as string
+- `year_half_str`: Year-half string
+- `year_quarter_str`: Year-quarter string
+- `year_month_str`: Year-month string
+
+**Example:**
 ```python
-def add_markers(x: List, reference_date: date = datetime.now().date()) -> List:
-    '''
-    Adds markers to past months from the reference date.
-     Parameters:
-        x (List): The calendar dict used to add markers.
-        reference_date (date): The date used to calculate the markers. Defaults to the current date.
-     Returns:
-        List: The calendar with added markers. The markers indicate the number of months past from the reference date:
-            - today (bool): True if the calendar date and the current date are the same.
-            - current_year (bool): True if the calendar date's year is the current year.
-            - last_day_of_month (bool): True if the calendar date is the last date of its month.
-            - last_day_of_quarter (bool): True if the calendar date is the last date of its quarter.
-            - last_day_of_half (bool): True if the calendar date is the last date of its half.
-            - last_day_of_year (bool): True if the calendar date is the last date of its year.
-            - last_24_months (bool): True if the calendar date is within the last 24 months from the current date.
-            - last_12_months (bool): True if the calendar date is within the last 12 months from the current date.
-            - last_6_months (bool): True if the calendar date is within the last 6 months from the current date.
-            - last_3_months (bool): True if the calendar date is within the last 3 months from the current date.
-    '''
+from fbpyutils.calendar import get_calendar
+from datetime import date
+
+calendar = get_calendar(date(2024, 1, 1), date(2024, 12, 31))
+print(f"Created calendar with {len(calendar)} days")
 ```
 
-##### `calendarize`
+##### `add_markers(calendar_data: List, reference_date: date = None) -> List`
+Adds temporal markers to calendar data for analysis.
 
+**Markers Added:**
+- `today`: True if date equals reference
+- `current_year`: True if in current year
+- `last_day_of_month`: True if month's last day
+- `last_day_of_quarter`: True if quarter's last day
+- `last_day_of_half`: True if half's last day
+- `last_day_of_year`: True if year's last day
+- `last_24_months`: True if within last 24 months
+- `last_12_months`: True if within last 12 months
+- `last_6_months`: True if within last 6 months
+- `last_3_months`: True if within last 3 months
+
+##### `calendarize(df: DataFrame, date_column: str, with_markers: bool = False, reference_date: date = None) -> DataFrame`
+Adds calendar columns to a pandas DataFrame.
+
+**Example:**
 ```python
-def calendarize(x: DataFrame, date_column: str, with_markers: bool = False, reference_date: date = datetime.now().date()) -> DataFrame:
-    '''
-    Adds calendar columns to a dataframe.
-     Parameters:
-        x (DataFrame): The dataframe used to add calendar data.
-        date_column (str): The datetime column used to build calendar data. Should be different from 'calendar_date'.
-        with_markers (bool): Indicates whether to add calendar markers to the dataframe. Default is False.
-        reference_date (date): The date used to calculate the markers. Defaults to the current date.
-     Returns:
-        DataFrame: A new dataframe with calendar columns and optional markers added to the passed dataframe.
-    '''
+import pandas as pd
+from fbpyutils.calendar import calendarize
+
+df = pd.DataFrame({'date': pd.date_range('2024-01-01', periods=100)})
+df = calendarize(df, 'date', with_markers=True)
 ```
 
-##### `get_calendar`
-
-```python
-def get_calendar(x: date, y: date) -> List:
-    '''
-    Build a calendar to be used as a time dimension.
-     Parameters:
-        x (date): The initial date for the calendar.
-        y (date): The final date for the calendar. Must be greater than the initial date.
-     Returns:
-        List: A calendar to be used as a time dimension with the following attributes:
-            - date (date): The date.
-            - date_time (datetime): The date and time.
-            - year (int): The year.
-            - half (int): The half of the year.
-            - quarter (int): The quarter of the year.
-            - month (int): The month.
-            - day (int): The day.
-            - week_day (int): The day of the week (Monday is 0 and Sunday is 6).
-            - week_of_year (int): The week of the year.
-            - date_iso (str): The date in ISO format.
-            - date_str (str): The date in string format.
-            - week_day_name (str): The name of the day of the week.
-            - week_day_name_short (str): The short name of the day of the week.
-            - week_month_name (str): The name of the month.
-            - week_month_name_short (str): The short name of the month.
-            - year_str (str): The year in string format.
-            - year_half_str (str): The year and half of the year in string format.
-            - year_quarter_str (str): The year and quarter of the year in string format.
-            - year_month_str (str): The year and month in string format.
-    '''
-```
+---
 
 ### datetime Module
 
+Enhanced datetime utilities with timezone support and duration calculations.
+
 #### Functions
 
-##### `apply_timezone`
+##### `apply_timezone(dt: datetime, tz: str) -> datetime`
+Applies timezone information to a datetime object.
 
+**Example:**
 ```python
-def apply_timezone(x: datetime, tz: str) -> datetime:
-    '''
-    Apply the specified timezone to a datetime object.
-     Parameters:
-        x (datetime): The datetime to have the timezone applied.
-        tz (str): The name of the timezone.
-     Returns:
-        datetime: The datetime object with the timezone information.
-    '''
+from fbpyutils.datetime import apply_timezone
+from datetime import datetime
+
+dt = datetime.now()
+tz_dt = apply_timezone(dt, 'America/Sao_Paulo')
 ```
 
-##### `delta`
+##### `delta(start: datetime, end: datetime, unit: str = 'months') -> int`
+Calculates time difference between two dates.
 
+**Units:**
+- `months`: Number of months
+- `years`: Number of years
+
+**Example:**
 ```python
-def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
-    '''
-    Gets the time delta between two dates.
-     Parameters:
-        x (datetime): The last date.
-        y (datetime): The first date. Must be greater than or equal to the last date.
-        delta (str): The unit of time to return. Should be either 'months' for the number of
-        months between both dates or 'years' for the number of years between both dates.
-        Defaults to 'months'.
-     Returns:
-        int: The number of months or years between both dates.
-    '''
+from fbpyutils.datetime import delta
+from datetime import datetime
+
+months_diff = delta(datetime(2024, 1, 1), datetime(2024, 12, 31))
 ```
 
-##### `elapsed_time`
+##### `elapsed_time(start: datetime, end: datetime) -> tuple`
+Calculates elapsed time as (days, hours, minutes, seconds).
 
-```python
-def elapsed_time(x: datetime, y: datetime) -> tuple:
-    '''
-    Calculates and returns the elapsed time as a tuple (days, hours, minutes, seconds).
-     Parameters:
-        x (datetime): The last date.
-        y (datetime): The first date. Must be greater than or equal to the last date.
-     Returns:
-        tuple: The elapsed time formatted as a tuple (days, hours, minutes, seconds).
-    '''
-```
+---
 
 ### debug Module
 
+Development debugging utilities.
+
 #### Functions
 
-##### `debug`
+##### `debug(func)`
+Decorator for automatic function debugging.
 
+**Usage:**
 ```python
-def debug(func):
-    '''
-    Decorator function used to debug the execution of system functions.
-    Prints all arguments used and the result value of the debugged functions.
-     Usage:
-     @debug
-     def myFunc(x, y, z):
-         pass
-     Parameters:
-        func: The function to be decorated.
-     Returns:
-        The function decorator.
-    '''
+from fbpyutils.debug import debug
+
+@debug
+def calculate_total(items):
+    return sum(items)
+
+# Automatically logs inputs and outputs
+result = calculate_total([1, 2, 3, 4, 5])
 ```
 
-##### `debug_info`
+##### `debug_info(exception: Exception) -> str`
+Returns formatted exception information for debugging.
 
+---
+
+### env Module
+
+Environment configuration management system.
+
+#### Classes
+
+##### `Env`
+Singleton configuration manager with automatic file loading.
+
+**Features:**
+- Automatic configuration from JSON files
+- Environment variable integration
+- Nested configuration access
+- Hot-reload support
+
+**Usage:**
 ```python
-def debug_info(x: Exception):
-    '''
-    Return extra exception/execution info for debug.
-    '''
+from fbpyutils import get_env
+
+env = get_env()
+app_name = env.config.app.name
+log_level = env.config.logging.level
 ```
+
+---
 
 ### file Module
 
+Comprehensive file system operations with metadata extraction.
+
 #### Functions
 
-##### `absolute_path`
+##### `find(directory: str, mask: str = '*.*') -> List[str]`
+Recursively finds files matching a pattern.
 
+**Example:**
 ```python
-def absolute_path(x: str):
-    '''
-    Returns the absolute path for the file x.
-     Parameters:
-        x (str): The full name of the file to extract the absolute path from.
-     Returns:
-        str: The absolute path for the given file.
-     Example:
-        >>> absolute_path('file.txt')
-        '/path/to/file.txt'
-    '''
+from fbpyutils.file import find
+
+# Find all Python files
+py_files = find('/project', '*.py')
+
+# Find all images
+images = find('/photos', '*.jpg')
 ```
 
-##### `build_platform_path`
+##### `describe_file(file_path: str) -> Dict[str, Any]`
+Extracts comprehensive file metadata.
 
+**Returns:**
+- `complete_filename`: Full filename
+- `filename_no_ext`: Name without extension
+- `extension`: File extension
+- `size_bytes`: File size in bytes
+- `creation_date`: Creation date (ISO format)
+- `mime_type_code`: MIME type
+- `mime_type_description`: Human-readable MIME type
+- `first_256_bytes_sha256_hex`: SHA256 of first 256 bytes
+- `md5sum`: MD5 hash of entire file
+
+**Example:**
 ```python
-def build_platform_path(winroot: str, otherroot: str, pathparts: list) -> str:
-    '''
-    Builds a path for a specific file according to the operating system.
-     Parameters:
-        winroot (str): The root path for Windows operating systems.
-        otherroot (str): The root path for other operating systems.
-        pathparts (list): The elements to build the path. The last element should be the file.
-     Returns:
-        str: The path for the file according to the operating system.
-     Example:
-        >>> build_platform_path('C:\\\\', '/root/', ['folder', 'subfolder', 'file.txt'])
-        'C:\\\\folder\\\\subfolder\\\\file.txt'
-    '''
+from fbpyutils.file import describe_file
+
+info = describe_file('document.pdf')
+print(f"File: {info['complete_filename']}")
+print(f"Size: {info['size_bytes']} bytes")
+print(f"MD5: {info['md5sum']}")
 ```
 
-##### `contents`
+##### `get_file_head_content(file_path: str, num_bytes: int = 256, output_format: str = 'text', encoding: str = 'utf-8') -> Union[str, bytes, None]`
+Reads file header content in various formats.
 
+**Output Formats:**
+- `text`: UTF-8 decoded string
+- `bytes`: Raw bytes
+- `base64`: Base64 encoded string
+
+**Example:**
 ```python
-def contents(x: str) -> bytearray:
-    '''
-    Reads a file and returns its contents as an array of bytes.
-     Parameters:
-        x (str): The path of the file to be read.
-     Returns:
-        bytearray: The contents of the file as an array of bytes.
-     Example:
-        >>> contents('/path/to/file.txt')
-        bytearray(b'This is the file contents.')
-    '''
+# Get first 100 bytes as text
+header = get_file_head_content('data.csv', 100, 'text')
+
+# Get raw bytes for binary analysis
+raw_bytes = get_file_head_content('image.jpg', 512, 'bytes')
 ```
 
-##### `creation_date`
+##### `get_base64_data_from(file_uri: str, timeout: int = 300) -> str`
+Converts file content to base64 string from local path or URL.
 
+**Example:**
 ```python
-def creation_date(x: str) -> datetime:
-    '''
-    Tries to retrieve the datetime when a file was created, falling back to when it was last modified if that information is not available.
-    See http://stackoverflow.com/a/39501288/1709587 for more details.
-     Parameters:
-        x (str): The path of the file for which the creation date is desired.
-     Returns:
-        datetime: The creation datetime for the file.
-     Example:
-        >>> creation_date('/path/to/file.txt')
-        datetime.datetime(2022, 1, 1, 10, 30, 15)
-    '''
+# Local file
+b64_data = get_base64_data_from('/path/to/file.pdf')
+
+# Remote file
+b64_data = get_base64_data_from('https://example.com/file.jpg')
 ```
 
-##### `find`
+##### File I/O Utilities
+- `load_from_json(path: str, encoding: str = 'utf-8') -> Dict`
+- `write_to_json(data: Dict, path: str, prettify: bool = True)`
+- `contents(path: str) -> bytearray`
+- `creation_date(path: str) -> datetime`
+- `mime_type(path: str) -> str`
+- `absolute_path(path: str) -> str`
+- `build_platform_path(winroot: str, otherroot: str, pathparts: List[str]) -> str`
 
+---
+
+### image Module
+
+Image processing utilities with OCR enhancement support.
+
+#### Functions
+
+##### `get_image_info(image_source: Union[str, bytes]) -> Dict[str, Any]`
+Extracts comprehensive image metadata.
+
+**Returns:**
+- `filename`: Original filename
+- `format`: Image format (JPEG, PNG, etc.)
+- `mode`: Color mode (RGB, RGBA, etc.)
+- `size`: (width, height) tuple
+- `width`: Image width
+- `height`: Image height
+- `file_size_bytes`: File size
+- `dpi`: Dots per inch
+- `gps_info`: GPS coordinates if available
+- `has_transparency`: Boolean
+- `is_animated`: Boolean
+- `frame_count`: Number of frames
+
+**Example:**
 ```python
-def find(x: str, mask: str = '*.*') -> list:
-    """
-    Finds files recursively in a source folder using a specific mask.
-     Parameters:
-        x (str): The source folder to find and list files from.
-        mask (str): The mask to be used when finding files. Default is '*.*'.
-     Returns:
-        list: A list containing the full paths of files found recursively in the source folder using the specified mask.
-     Examples:
-        >>> find('/path/to/folder', '*.txt')
-        ['/path/to/folder/file1.txt', '/path/to/folder/subfolder/file2.txt']
-        >>> find('/path/to/another/folder')
-        ['/path/to/another/folder/file3.txt', '/path/to/another/folder/file4.jpg']
-    """
+from fbpyutils.image import get_image_info
+
+info = get_image_info('photo.jpg')
+print(f"Image: {info['width']}x{info['height']} pixels")
+print(f"Format: {info['format']}")
 ```
 
-##### `load_from_json`
+##### `resize_image(image_source: Union[str, bytes], width: int, height: int, maintain_aspect: bool = True) -> bytes`
+Resizes images while maintaining quality.
 
+**Example:**
 ```python
-def load_from_json(x: str, encoding='utf-8') -> Dict:
-    """
-    Loads data from a JSON file and returns it as a dictionary.
-     Parameters:
-        x (str): The path of the file to be read.
-        encoding (str): The encoding of the file. Default is 'utf-8'.
-     Returns:
-        Dict: A dictionary containing the data from the JSON file.
-     Example:
-        >>> load_from_json('/path/to/file.json')
-        {'key1': 'value1', 'key2': 'value2'}
-    """
+from fbpyutils.image import resize_image
+
+# Resize to specific dimensions
+resized = resize_image('large.jpg', 800, 600)
+
+# Resize with aspect ratio maintained
+thumbnail = resize_image('photo.jpg', 200, 200)
 ```
 
-##### `mime_type`
+##### `enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: float = 2.0, threshold: int = 128) -> bytes`
+Optimizes images for OCR processing.
 
+**Example:**
 ```python
-def mime_type(x: str) -> str:
-    """
-    Returns the mime type of a file.
-     Parameters:
-        x (str): The path of the file to get its mime type.
-     Returns:
-        str: The mime type of the file passed.
-     Example:
-        >>> mime_type('/path/to/file.txt')
-        'text/plain'
-    """
+from fbpyutils.image import enhance_image_for_ocr
+
+# Enhance for better OCR results
+enhanced = enhance_image_for_ocr('scanned_document.jpg')
 ```
 
-##### `write_to_json`
+---
 
+### logging Module
+
+Advanced logging system with rotation and configuration.
+
+#### Classes
+
+##### `Logger`
+Singleton logging system with file rotation.
+
+**Features:**
+- Automatic log rotation (256KB max, 5 backups)
+- Thread-safe concurrent logging
+- Configurable log levels
+- Structured JSON logging support
+
+**Usage:**
 ```python
-def write_to_json(x: Dict, path_to_file: str, prettify=True):
-    """
-    Writes data from a dictionary to a JSON file.
-     Parameters:
-        x (Dict): The dictionary to be written to the file.
-        path_to_file (str): The path of the file to be written.
-        prettify (bool): Flag indicating whether the JSON output should be prettified. Default is True.
-     Returns:
-        None
-     Example:
-        >>> data = {'key1': 'value1', 'key2': 'value2'}
-        >>> write_to_json(data, '/path/to/file.json', prettify=True)
-    """
+from fbpyutils import get_logger
+
+logger = get_logger()
+logger.info("Application started")
+logger.debug("Debug information")
+logger.error("Error occurred", extra={"error_code": 500})
 ```
 
-##### `_is_windows`
-
-```python
-def _is_windows() -> bool:
-    """
-    Returns whether the code is running on the Windows operating system.
-     Returns:
-        bool: True if the current operating system is Windows, False otherwise.
-     Example:
-        >>> _is_windows()
-        True
-    """
-```
-
-##### `describe_file`
-
-```python
-def describe_file(file_path: str) -> Dict:
-    """
-    Inspects a file and returns a dictionary containing its properties.
-     Parameters:
-        file_path (str): The path to the file.
-     Returns:
-        Dict: A dictionary with the following keys:
-            - complete_filename (str): The full name of the file (e.g., "document.txt").
-            - filename_no_ext (str): The filename without its extension (e.g., "document").
-            - extension (str): The file extension (e.g., ".txt").
-            - size_bytes (int): The size of the file in bytes.
-            - creation_date (str): The creation date of the file in ISO 8601 format (e.g., "2023-10-27T10:30:00"). Note: This is a naive datetime.
-            - mime_type_code (str): The detected MIME type code (e.g., "text/plain").
-            - mime_type_description (str): A human-readable description of the MIME type (e.g., "Text file").
-            - first_256_bytes_sha256_hex (str): The SHA256 hash (hexadecimal string) of the first 256 bytes of the file. If the file is smaller than 256 bytes, it hashes the entire content.
-            - md5sum (str): The MD5 hash (hexadecimal string) of the entire file content.
-     Example:
-        >>> from fbpyutils.file import describe_file
-        >>> file_info = describe_file("my_document.txt")
-        >>> if file_info:
-        >>>     print(f"Filename: {file_info['complete_filename']}")
-        >>>     print(f"Size: {file_info['size_bytes']} bytes")
-        >>>     print(f"MD5 Hash: {file_info['md5sum']}")
-    """
-```
-
-##### `get_file_head_content`
-
-```python
-def get_file_head_content(file_path: str, num_bytes: int = 256, output_format: str = 'text', encoding: str = 'utf-8', errors: str = 'replace') -> Optional[Union[str, bytes]]:
-    """
-    Reads the first `num_bytes` of a file and returns its content in the specified format.
-     Parameters:
-        file_path (str): The path to the file.
-        num_bytes (int): The number of bytes to read from the beginning of the file. Defaults to 256.
-        output_format (str): The desired output format. Can be 'text', 'bytes', or 'base64'. Defaults to 'text'.
-        encoding (str): The encoding to use if `output_format` is 'text'. Defaults to 'utf-8'.
-        errors (str): The error handling scheme to use for decoding if `output_format` is 'text'. Defaults to 'replace'.
-     Returns:
-        Optional[Union[str, bytes]]: The content of the head of the file in the specified format (str, bytes, or None if an error occurs or format is invalid).
-     Example:
-        >>> from fbpyutils.file import get_file_head_content
-        >>> # Get first 100 bytes as text
-        >>> head_text = get_file_head_content("my_document.txt", num_bytes=100, output_format='text')
-        >>> if head_text is not None:
-        >>>     print(f"First 100 bytes (text): {head_text}")
-        >>> # Get first 50 bytes as raw bytes
-        >>> head_bytes = get_file_head_content("my_image.jpg", num_bytes=50, output_format='bytes')
-        >>> if head_bytes is not None:
-        >>>     print(f"First 50 bytes (raw): {head_bytes}")
-        >>> # Get first 200 bytes as base64 string
-        >>> head_base64 = get_file_head_content("my_archive.zip", num_bytes=200, output_format='base64')
-        >>> if head_base64 is not None:
-        >>>     print(f"First 200 bytes (base64): {head_base64}")
-        >>> # Handle non-existent file
-        >>> non_existent = get_file_head_content("non_existent_file.txt")
-        >>> if non_existent is None:
-        >>>     print("File not found or an error occurred.")
-    """
-```
+---
 
 ### ofx Module
 
+OFX (Open Financial Exchange) file parser for financial data.
+
 #### Functions
 
-##### `format_date`
+##### `read_from_path(file_path: str, native_date: bool = True) -> Dict[str, Any]`
+Reads OFX file and returns structured financial data.
 
+**Returns:**
+- `header`: OFX header information
+- `signon`: Signon response
+- `transactions`: List of transactions
+- `balances`: Account balances
+- `status`: Processing status
+
+**Example:**
 ```python
-def format_date(x: datetime, native: bool = True) -> Union[datetime, str]:
-    """
-    Formats a datetime for use in ofx data.
-     Args:
-        x (datetime): The datetime to be used.
-        native (bool, optional): If True, use native (datetime) format to be used in dicts.
-            Otherwise, uses datetime string iso format. Default is True.
-     Returns:
-        Union[datetime, str]: The datetime formatted to be used in dict or string iso format.
-            Example: "2020-03-10T03:00:00"
-    """
+from fbpyutils.ofx import read_from_path
+
+data = read_from_path('bank_statement.ofx')
+transactions = data.get('transactions', [])
+for tx in transactions:
+    print(f"{tx['date']}: {tx['amount']} - {tx['memo']}")
 ```
 
-##### `main`
+##### `read(ofx_content: str, native_date: bool = True) -> Dict[str, Any]`
+Parses OFX content string directly.
 
-```python
-def main(argv):
-    """
-    Main function of the program.
-     Parameters:
-    - argv (list): A list of command-line arguments passed to the program.
-     Returns:
-    None
-     Functionality:
-    - Parses the command-line arguments using getopt.
-    - If no arguments are provided or an invalid option is used, it prints a helper message and exits.
-    - If the "--print" option is used, it sets the source_path variable to the provided argument.
-    - If the source_path exists, it reads data from the file using the read_from_path function.
-    - It then prints the data as a JSON string.
-    - If an exception occurs during the process, it prints an error message indicating an invalid or corrupted file.
-    - If the source_path does not exist, it prints a "File not found" message.
-     Note:
-    - The read_from_path function is not defined in the provided code snippet and should be implemented separately.
-     Example Usage:
-    $ python ofx.py --print myfile.ofx
-     This will read the data from "myfile.ofx" and print it as a formatted JSON string.
-    """
-```
-
-##### `read`
-
-```python
-def read(x: str, native_date: bool = True) -> Dict:
-    """
-    Reads ofx data into a dictionary.
-     Args:
-        x (str): The ofx data.
-        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
-            Otherwise, uses datetime string iso format. Default is True.
-     Returns:
-        Dict: A dictionary with the ofx data.
-    """
-```
-
-##### `read_from_path`
-
-```python
-def read_from_path(x: str, native_date: bool = True) -> Dict:
-    """
-    Reads ofx data from a file into a dictionary.
-     Args:
-        x (str): The ofx file path to be read.
-        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
-            Otherwise, uses datetime string iso format. Default is True.
-     Returns:
-        Dict: A dictionary with the ofx data.
-    """
-```
+---
 
 ### process Module
 
-Provides classes for parallel or serial process execution with control mechanisms like timestamp-based file processing and session-based resumable processes.
+Advanced processing framework with parallel execution support.
 
 #### Classes
 
 ##### `Process`
+Base class for parallel/serial processing.
 
+**Features:**
+- Automatic CPU core detection
+- Thread/process pool management
+- Progress tracking
+- Error handling and retry logic
+
+**Example:**
 ```python
-class Process:
-    """
-    Base class for parallel or serial function processing.
+from fbpyutils.process import Process
 
-    Attributes:
-        _MAX_WORKERS: int
-        _process: Callable
-        _parallelize: bool
-        _workers: int
-        sleeptime: float
-        _parallel_type: str
-    """
+def process_item(item_id, data):
+    # Process single item
+    return f"Processed {item_id}"
 
-    @staticmethod
-    def get_available_cpu_count() -> int:
-        """
-        Determines the number of available CPU cores for processing.
-        """
+# Create processor
+processor = Process(process_item, parallelize=True, workers=4)
 
-    @staticmethod
-    def is_parallelizable(parallel_type: str = 'threads') -> bool:
-        """
-        Checks if the current system supports the specified parallel processing type.
-        """
-
-    @staticmethod
-    def get_function_info(func: Callable) -> Dict[str, str]:
-        """
-        Gets detailed information about a function.
-        """
-
-    def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
-                 workers: Optional[int] = _MAX_WORKERS, sleeptime: float = 0,
-                 parallel_type: str = 'threads') -> None:
-        """
-        Initializes a new Process instance.
-        """
-
-    def run(self, params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]:
-        """
-        Executes the processing function for each parameter set in the given list.
-        """
+# Process multiple items
+params = [(1, "data1"), (2, "data2"), (3, "data3")]
+results = processor.run(params)
 ```
 
 ##### `FileProcess`
+File-based processing with timestamp control.
 
+**Features:**
+- Prevents duplicate processing
+- Timestamp-based file filtering
+- Batch processing support
+
+**Example:**
 ```python
-class FileProcess(Process):
-    """
-    Class for file processing with timestamp-based control to prevent reprocessing.
-    """
+from fbpyutils.process import FileProcess
+import os
 
-    def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
-                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0) -> None:
-        """
-        Initializes a new instance of FileProcess.
-        """
+def process_file(file_path, output_dir):
+    # Process file
+    return f"Processed {os.path.basename(file_path)}"
 
-    def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
-        """
-        Executes file processing for multiple files, optionally with timestamp control.
-        """
+processor = FileProcess(process_file)
+files_to_process = [("file1.txt", "/output"), ("file2.txt", "/output")]
+results = processor.run(files_to_process, controlled=True)
 ```
 
 ##### `SessionProcess`
+Session-based processing with resume capability.
 
+**Features:**
+- Session persistence
+- Resume interrupted processes
+- Task-level retry logic
+- Progress tracking
+
+**Example:**
 ```python
-class SessionProcess(Process):
-    """
-    Class for session-based process execution with resume capability.
-    """
+from fbpyutils.process import SessionProcess
 
-    @staticmethod
-    def generate_session_id() -> str:
-        """
-        Generates a unique session ID with the prefix 'session_'.
-        """
+def long_running_task(task_id, data):
+    # Simulate long process
+    return f"Completed task {task_id}"
 
-    @staticmethod
-    def generate_task_id(params: Tuple[Any, ...]) -> str:
-        """
-        Generates a unique task ID based on the hash of the process parameters.
-        """
+processor = SessionProcess(long_running_task)
+params = [(1, "large_dataset1"), (2, "large_dataset2")]
 
-    def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
-                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0,
-                 parallel_type: str = 'threads') -> None:
-        """
-        Initializes a new instance of SessionProcess.
-        """
-
-    def run(self, params: List[Tuple[Any, ...]], session_id: Optional[str] = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
-        """
-        Executes processing for multiple parameter sets, optionally with session control.
-        """
+# Start with session control
+results = processor.run(params, session_id="batch_001", controlled=True)
 ```
 
-
-### process Module
-
-Provides classes for parallel or serial process execution with control mechanisms like timestamp-based file processing and session-based resumable processes.
-
-#### Classes
-
-##### `Process`
-
-```python
-class Process:
-    """
-    Base class for parallel or serial function processing.
-    
-    Attributes:
-        _MAX_WORKERS: int
-        _process: Callable
-        _parallelize: bool
-        _workers: int
-        sleeptime: float
-        _parallel_type: str
-    """
-
-    @staticmethod
-    def get_available_cpu_count() -> int:
-        """
-        Determines the number of available CPU cores for processing.
-        """
-
-    @staticmethod
-    def is_parallelizable(parallel_type: str = 'threads') -> bool:
-        """
-        Checks if the current system supports the specified parallel processing type.
-        """
-
-    @staticmethod
-    def get_function_info(func: Callable) -> Dict[str, str]:
-        """
-        Gets detailed information about a function.
-        """
-
-    def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
-                 workers: Optional[int] = _MAX_WORKERS, sleeptime: float = 0,
-                 parallel_type: str = 'threads') -> None:
-        """
-        Initializes a new Process instance.
-        """
-
-    def run(self, params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]:
-        """
-        Executes the processing function for each parameter set in the given list.
-        """
-```
-
-##### `FileProcess`
-
-```python
-class FileProcess(Process):
-    """
-    Class for file processing with timestamp-based control to prevent reprocessing.
-    """
-
-    def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
-                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0) -> None:
-        """
-        Initializes a new instance of FileProcess.
-        """
-
-    def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
-        """
-        Executes file processing for multiple files, optionally with timestamp control.
-        """
-```
-
-##### `SessionProcess`
-
-```python
-class SessionProcess(Process):
-    """
-    Class for session-based process execution with resume capability.
-    """
-
-    @staticmethod
-    def generate_session_id() -> str:
-        """
-        Generates a unique session ID with the prefix 'session_'.
-        """
-
-    @staticmethod
-    def generate_task_id(params: Tuple[Any, ...]) -> str:
-        """
-        Generates a unique task ID based on the hash of the process parameters.
-        """
-
-    def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
-                 workers: Optional[int] = Process._MAX_WORKERS, sleeptime: float = 0,
-                 parallel_type: str = 'threads') -> None:
-        """
-        Initializes a new instance of SessionProcess.
-        """
-
-    def run(self, params: List[Tuple[Any, ...]], session_id: Optional[str] = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
-        """
-        Executes processing for multiple parameter sets, optionally with session control.
-        """
-```
-
+---
 
 ### string Module
 
+Advanced string manipulation and hashing utilities.
+
 #### Functions
 
-##### `hash_json`
+##### `similarity(str1: str, str2: str, ignore_case: bool = True, compress_spaces: bool = True) -> float`
+Calculates string similarity ratio (0.0 to 1.0).
 
+**Example:**
 ```python
-def hash_json(x: Dict) -> str:
-    """
-    Generates a hexadecimal hash string from a dictionary x using the MD5 algorithm.
-     Args:
-        x (Dict): A dictionary to be used to create the hash.
-     Returns:
-        str: An MD5 hash string created from x.
-    """
+from fbpyutils.string import similarity
+
+ratio = similarity("hello world", "hello  world!")
+print(f"Similarity: {ratio:.2%}")
 ```
 
-##### `hash_string`
+##### `normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]`
+Normalizes strings for consistent naming.
 
+**Features:**
+- Lowercase conversion
+- Space/slash to underscore
+- Special character translation
+- Unicode normalization
+
+**Example:**
 ```python
-def hash_string(x: str) -> str:
-    """
-    Generates a hexadecimal hash string from x using the MD5 algorithm.
-     Args:
-        x (str): The source string to be used to create the hash.
-     Returns:
-        str: An MD5 hash string created from x.
-    """
+from fbpyutils.string import normalize_names
+
+names = ["Hello World!", "Café/Bar", "Test-Case"]
+normalized = normalize_names(names)
+# Result: ["hello_world", "cafe_bar", "test_case"]
 ```
 
-##### `json_string`
+##### `random_string(length: int = 32, include_digits: bool = True, include_special: bool = False) -> str`
+Generates cryptographically secure random strings.
 
+**Example:**
 ```python
-def json_string(x: Dict) -> str:
-    """
-    Converts a dictionary to a string encoded as UTF-8.
-     Args:
-        x (Dict): The dictionary to be converted.
-     Returns:
-        str: A string version of the dictionary encoded as UTF-8.
-    """
+from fbpyutils.string import random_string
+
+# Simple random string
+token = random_string(16)
+
+# Complex password
+password = random_string(24, include_digits=True, include_special=True)
 ```
 
-##### `normalize_names`
+##### Hashing Functions
+- `hash_string(text: str) -> str`: MD5 hash
+- `hash_json(data: Dict) -> str`: JSON-stable MD5 hash
+- `uuid() -> str`: UUID4 generation
 
-```python
-def normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]:
-    """
-    Normalize string names to lower case, with spaces and slashes converted to underscores,
-    and special characters translated.
-     Args:
-        names (list): The list of strings to be normalized.
-        normalize_specials (bool, optional): If True, translates special characters into their regular ones.
-            Default is True.
-     Returns:
-        list: The list of string names normalized.
-    """
-```
+##### String Utilities
+- `json_string(data: Dict) -> str`: JSON to string
+- `normalize_value(value: float, size: int = 4, decimals: int = 2) -> str`: Zero-padded numbers
+- `translate_special_chars(text: str) -> str`: Accent removal
+- `split_by_lengths(text: str, lengths: List[int]) -> List[str]`: Fixed-width splitting
 
-##### `normalize_value`
-
-```python
-def normalize_value(x: float, size: int = 4, decimal_places: int = 2) -> str:
-    """
-    Converts a float number into a string formatted with padding zeroes
-    for the fixed length and decimal places.
-     Args:
-        x (float): The float number to convert.
-        size (int, optional): The length of the result string. Default is 4.
-        decimal_places (int, optional): Number of zeroes to fill in the decimal places. Default is 2.
-     Returns:
-        str: A fixed length string with zeroes padding on left and right.
-     Example:
-        normalize_value(1.2, size=5, decimal_places=2)
-        will produce '00120'
-         normalize_value(1.21, size=5, decimal_places=2)
-        will produce '00121'
-         normalize_value(12.3)
-        will produce '1230'
-    """
-```
-
-##### `random_string`
-
-```python
-def random_string(x: int = 32, include_digits: bool = True, include_special: bool = False) -> str:
-    """
-    Generates a random string with the combination of lowercase and uppercase
-    letters and optionally digits and special characters.
-     Args:
-        x (int, optional): Set the random string's length. Default is 32.
-        include_digits (bool, optional): If True, include random digits in the generated string.
-            Default is True.
-        include_special (bool, optional): If True, include special characters in the generated string.
-            Default is False.
-     Returns:
-        str: A random string with the specified length, with or without digits or special characters.
-    """
-```
-
-##### `similarity`
-
-```python
-def similarity(x: str, y: str, ignore_case: bool = True, compress_spaces: bool = True) -> float:
-    """
-    Calculates the similarity ratio between two strings.
-    The result is in a range from 0 to 1 where 1 means both strings are equal.
-     Args:
-        x (str): The first string to compare.
-        y (str): The second string to be compared with.
-        ignore_case (bool, optional): If True, ignores the strings case. Default is True.
-        compress_spaces (bool, optional): If True, removes extra space sequences in the strings. Default is True.
-     Returns:
-        float: The similarity ratio between the strings in a range from 0 to 1
-            where 1 means that both strings are equal.
-    """
-```
-
-##### `split_by_lengths`
-
-```python
-def split_by_lengths(string: str, lengths: List[int]) -> List[str]:
-    """
-    Splits a given string into multiple substrings based on the provided lengths.
-
-    Args:
-        string (str): The input string to be split.
-        lengths (list): A list of integers representing the desired lengths of the substrings.
-
-    Returns:
-        list: A list of substrings obtained by splitting the input string based on the provided lengths.
-
-    Raises:
-        None
-
-    Example:
-        >>> split_by_lengths("HelloWorld", [5, 5])
-        ['Hello', 'World']
-    """
-```
-
-##### `translate_special_chars`
-
-```python
-def translate_special_chars(x) -> str:
-    """
-    Translates special (accented) characters in a string to regular characters.
-     Args:
-        x (str): The string to be translated.
-     Returns:
-        str: A new string with all special characters translated to regular ones.
-    """
-```
-
-##### `uuid`
-
-```python
-def uuid() -> str:
-    """
-    Generates a standard uuid4 as string.
-     Returns:
-        str: A string with a standard uuid key.
-    """
-```
+---
 
 ### xlsx Module
+
+Excel file operations with pandas integration.
 
 #### Classes
 
 ##### `ExcelWorkbook`
+High-level Excel workbook interface.
 
+**Features:**
+- XLS/XLSX support
+- Sheet enumeration
+- Data extraction
+- Memory-efficient reading
+
+**Example:**
 ```python
-class ExcelWorkbook:
-    """Represents an Excel workbook."""
+from fbpyutils.xlsx import ExcelWorkbook
 
-    def __init__(self, xl_file: Union[str, bytes]):
-        \"\"\"
-        Initializes an ExcelWorkbook object.
+# Load workbook
+wb = ExcelWorkbook('data.xlsx')
 
-        Args:
-            xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
+# Get sheet names
+sheets = wb.sheet_names
+print(f"Available sheets: {sheets}")
 
-        Attributes:
-            workbook: The underlying openpyxl or xlrd workbook object.
-            sheet_names (list): List of sheet names in the workbook.
-            kind (int): Type of Excel file (XLSX or XLS).
-
-        Raises:
-            FileNotFoundError: If the file path does not exist.
-            TypeError: If the file reference is invalid.
-        \"\"\"
-
-    def read_sheet(self, sheet_name: str = None) -> tuple[tuple[Union[str, float, int, bool, str, None], ...], ...]:
-        \"\"\"
-        Reads the contents of a sheet in the workbook.
-
-        Args:
-            sheet_name (str, optional): The name of the sheet to read.
-                Defaults to None, which reads the first sheet.
-
-        Returns:
-            tuple[tuple[Union[str, float, int, bool, str, None], ...], ...]:
-                A tuple of tuples representing the rows and columns of the sheet.
-
-        Raises:
-            NameError: If the sheet name is invalid or does not exist.
-        \"\"\"
-
-    def read_sheet_by_index(self, index: int = None) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
-        \"\"\"
-        Reads the contents of a sheet in the workbook by index.
-
-        Args:
-            index (int, optional): The index of the sheet to read (0-based).
-                Defaults to None, which reads the first sheet (index 0).
-
-        Returns:
-            tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
-                A tuple of tuples representing the rows and columns of the sheet.
-
-        Raises:
-            NameError: If the sheet index is invalid or does not exist.
-        \"\"\"
+# Read specific sheet
+data = wb.read_sheet('SalesData')
+for row in data:
+    print(row)
 ```
 
 #### Functions
 
-##### `get_all_sheets`
+##### `get_all_sheets(file_path: Union[str, bytes]) -> Dict[str, Tuple]`
+Reads all sheets into a dictionary.
 
+**Example:**
 ```python
-def get_all_sheets(xl_file: Union[str, bytes]) -> Dict[str, tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]]:
-    """
-    Reads all sheets from an Excel file.
+from fbpyutils.xlsx import get_all_sheets
 
-    Args:
-        xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
-
-    Returns:
-        dict[str, tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]]:
-            Dictionary where keys are sheet names and values are sheet contents.
-    """
+all_data = get_all_sheets('report.xlsx')
+for sheet_name, data in all_data.items():
+    print(f"Sheet: {sheet_name}, Rows: {len(data)}")
 ```
 
-##### `get_sheet_by_name`
+##### `write_to_sheet(df: pd.DataFrame, file_path: str, sheet_name: str) -> None`
+Writes pandas DataFrame to Excel sheet.
 
+**Features:**
+- Creates new files or appends to existing
+- Automatic sheet naming for duplicates
+- Format preservation
+
+**Example:**
 ```python
-def get_sheet_by_name(xl_file: Union[str, bytes], sheet_name: str) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
-    """
-    Reads a specific sheet from an Excel file by name.
+import pandas as pd
+from fbpyutils.xlsx import write_to_sheet
 
-    Args:
-        xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
-        sheet_name (str): Name of the sheet to read.
-
-    Returns:
-        tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
-            Contents of the sheet as a tuple of tuples.
-    """
+df = pd.DataFrame({'A': [1, 2, 3], 'B': ['x', 'y', 'z']})
+write_to_sheet(df, 'output.xlsx', 'MyData')
 ```
 
-##### `get_sheet_names`
+---
+
+## Best Practices
+
+### Error Handling
+All functions include comprehensive error handling. Always wrap operations in try-catch blocks:
 
 ```python
-def get_sheet_names(xl_file: Union[str, bytes]) -> list[str]:
-    """
-    Retrieves sheet names from an Excel file.
+from fbpyutils import get_logger
 
-    Args:
-        xl_file (str or bytes): Path to the Excel file or bytes of the Excel file.
+logger = get_logger()
 
-    Returns:
-        list[str]: List of sheet names.
-    """
+try:
+    result = some_fbpyutils_function()
+except Exception as e:
+    logger.error(f"Operation failed: {e}")
 ```
 
-##### `write_to_sheet`
+### Performance Optimization
+- Use parallel processing for CPU-intensive tasks
+- Leverage file timestamp control to avoid reprocessing
+- Implement session-based processing for long-running tasks
+
+### Configuration Management
+Store configuration in JSON files:
+
+```json
+{
+  "app": {
+    "name": "MyApplication",
+    "version": "1.0.0"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "app.log"
+  }
+}
+```
+
+### Testing
+The library includes comprehensive test coverage. Run tests with:
+
+```bash
+# Run all tests
+uv run pytest tests/
+
+# Run specific module tests
+uv run pytest tests/test_file_file.py
+
+# Run with coverage
+uv run pytest --cov=fbpyutils tests/
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Import Errors**
+```python
+# Ensure proper initialization
+from fbpyutils import setup
+setup()  # Must be called before using other modules
+```
+
+**File Not Found Errors**
+```python
+from fbpyutils.file import absolute_path
+
+# Get absolute path for relative files
+full_path = absolute_path('data/file.txt')
+```
+
+**Memory Issues with Large Files**
+```python
+from fbpyutils.file import get_file_head_content
+
+# Process files in chunks
+header = get_file_head_content('large_file.dat', 1024)
+```
+
+### Debug Mode
+Enable debug logging for troubleshooting:
 
 ```python
-def write_to_sheet(df: pd.DataFrame, workbook_path: str, sheet_name: str) -> None:
-    """
-    Writes a pandas DataFrame to an Excel file.
+from fbpyutils import setup
 
-    Args:
-        df (pd.DataFrame): DataFrame to write.
-        workbook_path (str): Path to the Excel file.
-        sheet_name (str): Name of the sheet to write to.
-
-    Returns:
-        None
-    """
+setup({
+    "logging": {
+        "level": "DEBUG"
+    }
+})
 ```
+
+---
 
 ## Contributing
 
 Contributions are welcome! Please see the [contributing guidelines](CONTRIBUTING.md) for more information.
 
+### Development Setup
+
+1. Clone the repository
+2. Create virtual environment: `uv venv`
+3. Install dependencies: `uv sync`
+4. Run tests: `uv run pytest`
+
+### Code Style
+- Follow PEP 8 guidelines
+- Use type hints for all functions
+- Include comprehensive docstrings
+- Maintain test coverage above 90%
+
+---
+
 ## Support
 
-For support, please open an issue on [GitHub](https://github.com/franciscobispo/fbpyutils/issues).
+For support, please:
+1. Check the [troubleshooting section](#troubleshooting)
+2. Search existing [issues](https://github.com/franciscobispo/fbpyutils/issues)
+3. Create a new issue with:
+   - Minimal reproduction example
+   - Expected vs actual behavior
+   - Environment details (Python version, OS)
 
 ## License
 
-[MIT](LICENSE)
-<<<<<<< HEAD
-=======
-
-### logging Module
-
-Provides a global logging system for the `fbpyutils` library, configured to write logs to a file with automatic rotation.
-
-#### Functions
-
-##### `setup_logging`
-
-```python
-def setup_logging():
-    """
-    Configures a global file logging system for the fbpyutils library.
-
-    Logs are rotated automatically, supporting concurrency, with a maximum of
-    5 backup files and a maximum size of 256 KB per file.
-    Logs are stored in a '.fbpyutils' folder within the user's HOME directory.
-    """
->>>>>>> v1.6.2
+[MIT](LICENSE) - See LICENSE file for details.
