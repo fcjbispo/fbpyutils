@@ -1,9 +1,46 @@
 '''
 Reads and processes OFX (Open Financial Exchange) files and data.
 
-Can be used as runable module to read and print out an ofx file content
-as json output:
-    python -m utils.ofx --print <ofx_file_path>
+This module provides functionalities to parse OFX files from a file path or a
+string, converting the financial data into a structured dictionary. It can also
+be used as a runnable module to read and print an OFX file's content as a JSON
+output.
+
+Usage Examples:
+
+1. Read OFX file from Command Line:
+   Outputs the content of an OFX file as a JSON object.
+
+   $ python -m fbpyutils.ofx --print /path/to/your/file.ofx
+
+2. Programmatic Processing of OFX Data:
+   Reads an OFX file and processes its data within a Python script.
+
+   from fbpyutils.ofx import read_from_path
+   
+   ofx_file = '/path/to/your/file.ofx'
+   data = read_from_path(ofx_file)
+   
+   if data:
+       print(f"Account ID: {data.get('id')}")
+       for transaction in data.get('statement', {}).get('transactions', []):
+           print(
+               f"  - Date: {transaction['date']}, "
+               f"Amount: {transaction['amount']}, "
+               f"Memo: {transaction['memo']}"
+           )
+
+3. Date Conversion for Different Formats:
+   The `read` and `read_from_path` functions can return dates as native
+   `datetime` objects or as ISO-formatted strings.
+
+   from fbpyutils.ofx import read_from_path
+   
+   # Get dates as datetime objects (default)
+   data_native = read_from_path('/path/to/your/file.ofx', native_date=True)
+   
+   # Get dates as ISO-formatted strings
+   data_string = read_from_path('/path/to/your/file.ofx', native_date=False)
 '''
 from os import path
 from ofxparse import OfxParser
@@ -23,18 +60,26 @@ import codecs
 
 
 account_types = ['UNKNOWN', 'BANK', 'CREDIT_CARD', 'INVESTMENT']
+"""
+list: Maps OFX account type codes to human-readable strings.
+- 0: UNKNOWN
+- 1: BANK
+- 2: CREDIT_CARD
+- 3: INVESTMENT
+"""
 
 
 def format_date(x: datetime, native: bool = True) -> Union[datetime, str]:
-    """
-    Formats a datetime for use in ofx data.
-     Args:
-        x (datetime): The datetime to be used.
-        native (bool, optional): If True, use native (datetime) format to be used in dicts.
-            Otherwise, uses datetime string iso format. Default is True.
-     Returns:
-        Union[datetime, str]: The datetime formatted to be used in dict or string iso format.
-            Example: "2020-03-10T03:00:00"
+    """Formats a datetime object into a desired output format.
+
+    Args:
+        x (datetime): The datetime object to format.
+        native (bool, optional): If True, returns the native datetime object.
+            If False, returns an ISO-formatted string. Defaults to True.
+
+    Returns:
+        Union[datetime, str]: The formatted datetime object or string.
+            Example (string): "2023-10-27T10:00:00"
     """
     if native:
         return x
@@ -43,14 +88,17 @@ def format_date(x: datetime, native: bool = True) -> Union[datetime, str]:
 
 
 def read(x: str, native_date: bool = True) -> Dict:
-    """
-    Reads ofx data into a dictionary.
-     Args:
-        x (str): The ofx data.
-        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
-            Otherwise, uses datetime string iso format. Default is True.
-     Returns:
-        Dict: A dictionary with the ofx data.
+    """Parses OFX data from a string into a dictionary.
+
+    Args:
+        x (str): A string containing the OFX data.
+        native_date (bool, optional): If True, dates are returned as native
+            datetime objects. If False, they are returned as ISO-formatted
+            strings. Defaults to True.
+
+    Returns:
+        Dict: A dictionary containing the parsed OFX data, or an empty
+              dictionary if parsing fails.
     """
     logging.Logger.debug(f"Starting read OFX data. native_date: {native_date}")
     try:
@@ -117,14 +165,17 @@ def read(x: str, native_date: bool = True) -> Dict:
 
 
 def read_from_path(x: str, native_date: bool = True) -> Dict:
-    """
-    Reads ofx data from a file into a dictionary.
-     Args:
-        x (str): The ofx file path to be read.
-        native_date (bool, optional): If True, use native (datetime) format to be used in dicts.
-            Otherwise, uses datetime string iso format. Default is True.
-     Returns:
-        Dict: A dictionary with the ofx data.
+    """Reads and parses an OFX file from a given path.
+
+    Args:
+        x (str): The file path of the OFX file.
+        native_date (bool, optional): If True, dates are returned as native
+            datetime objects. If False, they are returned as ISO-formatted
+            strings. Defaults to True.
+
+    Returns:
+        Dict: A dictionary with the parsed OFX data, or an empty dictionary
+              if the file is not found or an error occurs.
     """
     logging.Logger.debug(f"Starting read_from_path for file: {x}, native_date: {native_date}")
     try:
@@ -145,28 +196,21 @@ def read_from_path(x: str, native_date: bool = True) -> Dict:
 # ----
 
 def main(argv):
-    """
-    Main function of the program.
-     Parameters:
-    - argv (list): A list of command-line arguments passed to the program.
-     Returns:
-    None
-     Functionality:
-    - Parses the command-line arguments using getopt.
-    - If no arguments are provided or an invalid option is used, it prints a helper message and exits.
-    - If the "--print" option is used, it sets the source_path variable to the provided argument.
-    - If the source_path exists, it reads data from the file using the read_from_path function.
-    - It then prints the data as a JSON string.
-    - If an exception occurs during the process, it prints an error message indicating an invalid or corrupted file.
-    - If the source_path does not exist, it prints a "File not found" message.
-     Note:
-    - The read_from_path function is not defined in the provided code snippet and should be implemented separately.
-     Example Usage:
-    $ python ofx.py --print myfile.ofx
-     This will read the data from "myfile.ofx" and print it as a formatted JSON string.
+    """Main function to handle command-line execution.
+
+    Parses command-line arguments to read an OFX file and print its
+    contents as a JSON object.
+
+    Args:
+        argv (list): A list of command-line arguments.
+                     Expected: ['--print', '/path/to/file.ofx']
+    
+    Usage:
+        python -m fbpyutils.ofx --print <file_path>
+        python -m fbpyutils.ofx --help
     """
     logging.Logger.info("OFX module main function started.")
-    helper_msg = 'Use ofx.py --print <file_path>'
+    helper_msg = 'Use: python -m fbpyutils.ofx --print <file_path>'
     source_path = ''
 
     opts, args = [], []
@@ -177,45 +221,38 @@ def main(argv):
         print(helper_msg)
         sys.exit(2)
 
-    if not opts: # Se não houver opções, imprime a mensagem de ajuda e sai
+    if not opts:
         logging.Logger.warning("No options provided. Displaying helper message and exiting.")
         print(helper_msg)
         sys.exit(2)
-        return # Garante que o código não continue
 
     for opt, arg in opts:
         if opt == '--help':
             logging.Logger.info("Help option requested. Displaying helper message and exiting.")
             print(helper_msg)
-            sys.exit(0) # Saída com 0 para ajuda
-            return # Garante que o código não continue
+            sys.exit(0)
         elif opt == '--print':
             source_path = arg
             logging.Logger.debug(f"Print option selected. Source path: {source_path}")
 
-    # Verifica se source_path foi definido APÓS o loop de opções
-    # Se --help foi usado, o return anterior já terá saído.
-    # Se --print foi usado sem argumento, ou outra opção inválida, getopt já deu erro.
-    # Esta verificação agora cobre o caso de --print não ser a opção fornecida.
     if not source_path and not any(opt[0] == '--help' for opt in opts):
         logging.Logger.error(f"No source path provided for --print option. {helper_msg}")
         print(helper_msg)
         sys.exit(2)
-        return
 
-    if source_path: # Prossiga apenas se source_path estiver definido
+    if source_path:
         if path.exists(source_path):
             logging.Logger.info(f"Processing OFX file: {source_path}")
             try:
                 ofx_data = read_from_path(source_path, native_date=False)
                 print(json.dumps(ofx_data, sort_keys=True, indent=4))
                 logging.Logger.info(f"Successfully processed and printed OFX data from {source_path}.")
-                sys.exit(0) # Saída com 0 para sucesso
+                sys.exit(0)
             except Exception as e:
                 error_msg = 'Invalid or corrupted file: %s' % (source_path.split(path.sep)[-1])
                 logging.Logger.error(f"{error_msg}. Exception: {e}")
                 print(error_msg)
-                sys.exit(2) # Saída com 2 para erro de arquivo
+                sys.exit(2)
         else:
             logging.Logger.error(f"File not found: {source_path}")
             print('File not found.')
