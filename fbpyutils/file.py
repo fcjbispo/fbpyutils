@@ -195,12 +195,19 @@ def write_to_json(x: Dict, path_to_file: str, prettify=True):
 
 def contents(x: str) -> bytearray:
     """
-    Reads a file and returns its contents as an array of bytes.
-     Parameters:
+    Reads a file and returns its contents as a byte array.
+
+    Note:
+        This function loads the entire file into memory. For very large files,
+        consider using a streaming approach to avoid high memory consumption.
+
+    Parameters:
         x (str): The path of the file to be read.
-     Returns:
-        bytearray: The contents of the file as an array of bytes.
-     Example:
+
+    Returns:
+        bytearray: The contents of the file as a byte array.
+
+    Example:
         >>> contents('/path/to/file.txt')
         bytearray(b'This is the file contents.')
     """
@@ -328,11 +335,18 @@ def absolute_path(x: str):
 def describe_file(file_path: str) -> Dict:
     """
     Describes a file, returning a dictionary with its properties.
-     Parameters:
+
+    Note:
+        This function reads the entire file into memory to calculate hashes,
+        which may cause performance issues with very large files.
+
+    Parameters:
         file_path (str): The path of the file to describe.
-     Returns:
+
+    Returns:
         Dict: A dictionary containing the file properties.
-     Example:
+
+    Example:
         >>> describe_file('/path/to/file.txt')
         {
             'complete_filename': 'file.txt',
@@ -508,6 +522,10 @@ def get_file_head_content(
     """
     Reads the first `num_bytes` of a file and returns its content in the specified format.
 
+    Note:
+        This function is memory-efficient as it only reads the specified number of bytes
+        from the beginning of the file without loading the entire file into memory.
+
     Parameters:
         file_path (str): The path to the file.
         num_bytes (int): The number of bytes to read from the beginning of the file. Defaults to 256.
@@ -556,16 +574,19 @@ def get_base64_data_from(file_uri: str, timeout: int = 300) -> str:
     Retrieves data from a file URI (local path, remote URL, or base64 string)
     and returns it as a base64 encoded string.
 
+    Note:
+        When fetching from a URL or reading a local file, this function loads
+        the entire file content into memory. Be cautious with very large files.
+
     This function handles three types of file URIs:
     1.  A local file path: It reads the file, encodes its content to base64, and returns the result.
     2.  A remote URL (starting with 'http://' or 'https://'): It downloads the content from the URL,
         encodes it to base64, and returns the result.
     3.  A base64 encoded string: It validates if the string is a valid base64 string and returns it.
 
-    Args:
+    Parameters:
         file_uri (str): The URI of the file to process. Can be a local path, a URL, or a base64 string.
-        timeout (int, optional): The timeout in seconds for the request if the URI is a URL.
-                                 Defaults to 300.
+        timeout (int): The timeout in seconds for the request if the URI is a URL. Defaults to 300.
 
     Returns:
         str: The base64 encoded data as a string, or an empty string if an error occurs

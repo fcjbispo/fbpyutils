@@ -31,10 +31,10 @@ for i in range(len(_SPECIAL_CHARS)):
 
 
 def uuid() -> str:
-    """
-    Generates a standard uuid4 as string.
-     Returns:
-        str: A string with a standard uuid key.
+    """Generate a standard UUID4 string.
+
+    Returns:
+        A string with a standard UUID key.
     """
     generated_uuid = str(u.uuid4())
     logging.Logger.debug(f"Generated UUID: {generated_uuid}")
@@ -47,17 +47,19 @@ def similarity(
     ignore_case: bool = True,
     compress_spaces: bool = True
 ) -> float:
-    """
-    Calculates the similarity ratio between two strings.
-    The result is in a range from 0 to 1 where 1 means both strings are equal.
-     Args:
-        x (str): The first string to compare.
-        y (str): The second string to be compared with.
-        ignore_case (bool, optional): If True, ignores the strings case. Default is True.
-        compress_spaces (bool, optional): If True, removes extra space sequences in the strings. Default is True.
-     Returns:
-        float: The similarity ratio between the strings in a range from 0 to 1
-            where 1 means that both strings are equal.
+    """Calculate the similarity ratio between two strings.
+
+    The result is a float between 0 and 1, where 1.0 means the strings are
+    identical.
+
+    Args:
+        x: The first string to compare.
+        y: The second string to compare.
+        ignore_case: If True, ignores case during comparison.
+        compress_spaces: If True, removes extra space sequences.
+
+    Returns:
+        The similarity ratio (0.0 to 1.0).
     """
     logging.Logger.debug(f"Calculating similarity between '{x}' and '{y}' (ignore_case: {ignore_case}, compress_spaces: {compress_spaces})")
     def compress(z: str) -> str:
@@ -87,17 +89,18 @@ def random_string(
     include_digits: bool = True,
     include_special: bool = False
 ) -> str:
-    """
-    Generates a random string with the combination of lowercase and uppercase
-    letters and optionally digits and special characters.
-     Args:
-        x (int, optional): Set the random string's length. Default is 32.
-        include_digits (bool, optional): If True, include random digits in the generated string.
-            Default is True.
-        include_special (bool, optional): If True, include special characters in the generated string.
-            Default is False.
-     Returns:
-        str: A random string with the specified length, with or without digits or special characters.
+    """Generate a random string.
+
+    Combines lowercase and uppercase letters, and optionally digits and
+    special characters.
+
+    Args:
+        x: The length of the random string.
+        include_digits: If True, includes digits (0-9).
+        include_special: If True, includes special characters (!@#$%^&*_).
+
+    Returns:
+        A random string with the specified properties.
     """
     logging.Logger.debug(f"Generating random string of length {x} (include_digits: {include_digits}, include_special: {include_special})")
     letters = string.ascii_letters + \
@@ -114,12 +117,15 @@ def random_string(
 
 
 def json_string(x: Dict) -> str:
-    """
-    Converts a dictionary to a string encoded as UTF-8.
-     Args:
-        x (Dict): The dictionary to be converted.
-     Returns:
-        str: A string version of the dictionary encoded as UTF-8.
+    """Convert a dictionary to a JSON string.
+
+    The output string is encoded as UTF-8.
+
+    Args:
+        x: The dictionary to convert.
+
+    Returns:
+        A JSON string representation of the dictionary.
     """
     logging.Logger.debug("Converting dictionary to JSON string.")
     _default = lambda obj: obj.__str__() # Use obj instead of x to avoid shadowing
@@ -139,12 +145,15 @@ def json_string(x: Dict) -> str:
 
 
 def hash_string(x: str) -> str:
-    """
-    Generates a hexadecimal hash string from x using the MD5 algorithm.
-     Args:
-        x (str): The source string to be used to create the hash.
-     Returns:
-        str: An MD5 hash string created from x.
+    """Generate an MD5 hash from a string.
+
+    The input string is encoded as UTF-8 before hashing.
+
+    Args:
+        x: The string to hash.
+
+    Returns:
+        A hexadecimal MD5 hash string.
     """
     logging.Logger.debug(f"Hashing string (first 10 chars): '{x[:10]}...'")
     hashed_string = hashlib.md5(x.encode('utf-8')).hexdigest()
@@ -153,12 +162,15 @@ def hash_string(x: str) -> str:
 
 
 def hash_json(x: Dict) -> str:
-    """
-    Generates a hexadecimal hash string from a dictionary x using the MD5 algorithm.
-     Args:
-        x (Dict): A dictionary to be used to create the hash.
-     Returns:
-        str: An MD5 hash string created from x.
+    """Generate an MD5 hash from a dictionary.
+
+    The dictionary is first converted to a JSON string, then hashed.
+
+    Args:
+        x: The dictionary to hash.
+
+    Returns:
+        A hexadecimal MD5 hash string.
     """
     logging.Logger.debug("Hashing JSON dictionary.")
     hashed_json = hash_string(json_string(x))
@@ -169,22 +181,26 @@ def hash_json(x: Dict) -> str:
 def normalize_value(
     x: float, size: int = 4, decimal_places: int = 2
 ) -> str:
-    """
-    Converts a float number into a string formatted with padding zeroes
-    for the fixed length and decimal places.
-     Args:
-        x (float): The float number to convert.
-        size (int, optional): The length of the result string. Default is 4.
-        decimal_places (int, optional): Number of zeroes to fill in the decimal places. Default is 2.
-     Returns:
-        str: A fixed length string with zeroes padding on left and right.
-     Example:
-        normalize_value(1.2, size=5, decimal_places=2)
-        will produce '00120'
-         normalize_value(1.21, size=5, decimal_places=2)
-        will produce '00121'
-         normalize_value(12.3)
-        will produce '1230'
+    """Convert a float to a zero-padded string.
+
+    Formats a float into a string of a fixed length, with zero-padding
+    for both the integer and decimal parts.
+
+    Args:
+        x: The float number to convert.
+        size: The total length of the output string.
+        decimal_places: The number of decimal places to include.
+
+    Returns:
+        A fixed-length string with left and right zero-padding.
+
+    Example:
+        >>> normalize_value(1.2, size=5, decimal_places=2)
+        '00120'
+        >>> normalize_value(1.21, size=5, decimal_places=2)
+        '00121'
+        >>> normalize_value(12.3)
+        '1230'
     """
     logging.Logger.debug(f"Normalizing value {x} to string (size: {size}, decimal_places: {decimal_places})")
     try:
@@ -201,12 +217,13 @@ def normalize_value(
 
 
 def translate_special_chars(x: str) -> str:
-    """
-    Translates special (accented) characters in a string to regular characters.
-     Args:
-        x (str): The string to be translated.
-     Returns:
-        str: A new string with all special characters translated to regular ones.
+    """Translate special (accented) characters to their basic counterparts.
+
+    Args:
+        x: The string to translate.
+
+    Returns:
+        A new string with special characters replaced.
     """
     logging.Logger.debug(f"Translating special characters for string: '{x}'")
     x = x or ''
@@ -219,15 +236,17 @@ from typing import List
 
 
 def normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]:
-    """
-    Normalize string names to lower case, with spaces and slashes converted to underscores,
-    and special characters translated.
-     Args:
-        names (list): The list of strings to be normalized.
-        normalize_specials (bool, optional): If True, translates special characters into their regular ones.
-            Default is True.
-     Returns:
-        list: The list of string names normalized.
+    """Normalize a list of strings to a consistent format.
+
+    Converts to lowercase, replaces spaces and slashes with underscores,
+    and optionally translates special characters.
+
+    Args:
+        names: The list of strings to normalize.
+        normalize_specials: If True, translates special characters.
+
+    Returns:
+        A list of normalized strings.
     """
     logging.Logger.debug(f"Normalizing names (normalize_specials: {normalize_specials}). Input names: {names}")
     normalized_list = [
@@ -238,18 +257,15 @@ def normalize_names(names: List[str], normalize_specials: bool = True) -> List[s
 
 
 def split_by_lengths(string: str, lengths: List[int]) -> List[str]:
-    """
-    Splits a given string into multiple substrings based on the provided lengths.
+    """Split a string into substrings of specified lengths.
 
     Args:
-        string (str): The input string to be split.
-        lengths (list): A list of integers representing the desired lengths of the substrings.
+        string: The input string to split.
+        lengths: A list of integers representing the lengths of the
+            substrings.
 
     Returns:
-        list: A list of substrings obtained by splitting the input string based on the provided lengths.
-
-    Raises:
-        None
+        A list of substrings.
 
     Example:
         >>> split_by_lengths("HelloWorld", [5, 5])

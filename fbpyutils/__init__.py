@@ -13,7 +13,7 @@ from . import file
 from . import process
 from . import string
 from . import xlsx
-from .env import Env, load_config
+from .env import Env
 from .logging import Logger
 
 # Variáveis globais para armazenar as instâncias singleton
@@ -61,3 +61,6 @@ def get_logger() -> Logger:
     if _logger_instance is None:
         raise RuntimeError("fbpyutils is not initialized. Call fbpyutils.setup() first.")
     return _logger_instance
+
+
+setup()

@@ -305,7 +305,7 @@ def test_main_no_arguments(monkeypatch):
     with mock.patch("builtins.print") as mock_print, \
          mock.patch("sys.exit") as mock_exit:
         ofx.main(sys.argv[1:]) # Pass an empty list to simulate no args after script name
-        mock_print.assert_any_call('Use ofx.py --print <file_path>')
+        mock_print.assert_any_call('Use: python -m fbpyutils.ofx --print <file_path>')
         mock_exit.assert_any_call(2)
 
 def test_main_help_argument(monkeypatch):
@@ -313,7 +313,7 @@ def test_main_help_argument(monkeypatch):
     with mock.patch("builtins.print") as mock_print, \
          mock.patch("sys.exit") as mock_exit:
         ofx.main(sys.argv[1:])
-        mock_print.assert_called_with('Use ofx.py --print <file_path>')
+        mock_print.assert_called_with('Use: python -m fbpyutils.ofx --print <file_path>')
         mock_exit.assert_called_with(0)
 
 def test_main_file_not_found(monkeypatch):
