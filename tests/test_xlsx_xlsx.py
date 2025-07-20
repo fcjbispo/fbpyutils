@@ -109,7 +109,7 @@ def test_excel_workbook_read_sheet_invalid_name_xlsx():
 def test_excel_workbook_read_sheet_by_index_invalid_index_xlsx():
     # Test read_sheet_by_index with an invalid index for XLSX
     workbook = ExcelWorkbook('tests/test_xlsx_file.xlsx')
-    with pytest.raises(NameError, match="Invalid/Nonexistent sheet."):
+    with pytest.raises(IndexError, match="Sheet index out of range."):
         workbook.read_sheet_by_index(100) # Assuming there are less than 100 sheets
 
 @patch('fbpyutils.xlsx.ExcelWorkbook', side_effect=ValueError("Simulated ExcelWorkbook init error"))
