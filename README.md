@@ -41,34 +41,106 @@ pip install fbpyutils
 
 ## Documentation
 
-- **[Full Documentation](DOC.md)** - Complete API documentation and usage examples
+For complete API documentation, including all modules, classes, and functions, please see the **[Full Documentation](DOC.md)**.
+
 - **[TODO List](TODO.md)** - Implementation status and development roadmap
 - **[Project Specifications](SPEC.md)** - Detailed feature specifications
 
-## Features
+## Available Modules
 
-### Core Modules
+Below is an overview of the available modules and quick examples of their use.
 
-| Module | Description | Status |
-|--------|-------------|--------|
-| `calendar.py` | Calendar and date range utilities | ✅ Complete |
-| `datetime.py` | Date/time manipulation functions | ✅ Complete |
-| `debug.py` | Debugging utilities and decorators | ✅ Complete |
-| `file.py` | File system operations | ✅ Complete |
-| `image.py` | Image processing utilities | ✅ Complete |
-| `logging.py` | Logging configuration | ✅ Complete |
-| `ofx.py` | OFX file processing | ✅ Complete |
-| `process.py` | System and process utilities | ✅ Complete |
-| `string.py` | String manipulation utilities | ✅ Complete |
-| `xlsx.py` | Excel file operations | ✅ Complete |
+### `calendar`
+Advanced calendar operations for time dimension creation and date analysis.
+```python
+from fbpyutils.calendar import get_calendar
+from datetime import date
+calendar = get_calendar(date(2024, 1, 1), date(2024, 12, 31))
+print(f"Created calendar with {len(calendar)} days")
+```
 
-### Key Features
+### `datetime`
+Enhanced datetime utilities with timezone support and duration calculations.
+```python
+from fbpyutils.datetime import elapsed_time
+from datetime import datetime
+elapsed = elapsed_time(datetime(2024, 1, 1), datetime.now())
+print(f"Elapsed time: {elapsed[0]} days, {elapsed[1]} hours")
+```
 
-- **Type Hints**: Full type annotation support
-- **Comprehensive Testing**: 140+ tests with 90%+ coverage target
-- **Logging Integration**: Built-in logging support
-- **Error Handling**: Robust error handling throughout
-- **Cross-platform**: Windows, macOS, and Linux support
+### `debug`
+Decorators and utilities for development and debugging.
+```python
+from fbpyutils.debug import debug
+
+@debug
+def my_function(a, b):
+    return a + b
+
+my_function(1, 2)
+```
+
+### `file`
+Comprehensive file system operations with metadata extraction.
+```python
+from fbpyutils.file import describe_file
+info = describe_file("README.md")
+print(f"File size: {info['size_bytes']} bytes")
+```
+
+### `image`
+Image processing utilities, including resizing and OCR enhancement.
+```python
+from fbpyutils.image import get_image_info
+# Assuming 'logo.png' exists
+# info = get_image_info('logo.png')
+# print(f"Image dimensions: {info['width']}x{info['height']}")
+```
+
+### `logging`
+Advanced logging system with rotation and simple configuration.
+```python
+from fbpyutils import get_logger
+logger = get_logger()
+logger.info("This is an informational message.")
+```
+
+### `ofx`
+OFX (Open Financial Exchange) file parser for financial data.
+```python
+from fbpyutils.ofx import read_from_path
+# Assuming 'statement.ofx' exists
+# data = read_from_path('statement.ofx')
+# print(f"Found {len(data.get('transactions', []))} transactions.")
+```
+
+### `process`
+Advanced processing framework with parallel execution support.
+```python
+from fbpyutils.process import Process
+def task(item):
+    return item * 2
+processor = Process(task, parallelize=True)
+results = processor.run([1, 2, 3, 4])
+print(results)
+```
+
+### `string`
+Advanced string manipulation and hashing utilities.
+```python
+from fbpyutils.string import uuid
+random_uuid = uuid()
+print(f"Generated UUID: {random_uuid}")
+```
+
+### `xlsx`
+Excel file operations with pandas integration.
+```python
+from fbpyutils.xlsx import read_file
+# Assuming 'data.xlsx' exists
+# df = read_file('data.xlsx')
+# print(df.head())
+```
 
 ## Development
 
