@@ -525,40 +525,89 @@ class FileProcess(Process):
 
 class SessionProcess(Process):
     """
-    Class for session-based process execution with resume capability.
+    Extends Process to provide session-based control for resumable tasks.
 
-    This class extends Process by adding session-based control, allowing
-    processing to be resumed from the point of interruption or failure.
-    It is useful for long-running processes where it's important to avoid
-    re-executing already completed tasks in case of interruptions.
+    This class allows processing sessions to be interrupted and resumed without
+    reprocessing completed tasks. It uses a unique session ID to track the state
+    of each task, storing its completion status in a control file. This is ideal
+    for long-running workflows where fault tolerance and the ability to resume
+    are critical.
 
-    It uses session and task control files to track the execution status,
-    stored in a dedicated folder within the application's user data directory.
+    Each task within a session is assigned a unique ID based on its parameters,
+    ensuring that even if the order of tasks changes, their completion status
+    is correctly tracked.
+
+    Example:
+        >>> import time
+        >>> import shutil
+        >>> import os
+        >>> from fbpyutils.process import SessionProcess
+        >>> from fbpyutils.env import Env
+        >>>
+        >>> # Define a sample task that can fail
+        >>> def sample_task(duration: int, task_name: str):
+        ...     print(f"Running task: {task_name} for {duration}s")
+        ...     time.sleep(duration)
+        ...     # Simulate a failure for 'task2' on the first attempt
+        ...     if task_name == "task2" and not hasattr(sample_task, 'has_failed'):
+        ...         sample_task.has_failed = True
+        ...         print(f"Task {task_name} failed.")
+        ...         return False, "Simulated failure", None
+        ...     print(f"Finished task: {task_name}")
+        ...     return True, None, {"name": task_name, "duration": duration}
+        >>>
+        >>> # 1. Initialize the processor
+        >>> processor = SessionProcess(process=sample_task, parallelize=False)
+        >>> tasks = [(1, "task1"), (1, "task2"), (1, "task3")]
+        >>>
+        >>> # 2. First run: task2 will fail
+        >>> session_id = processor.generate_session_id()
+        >>> print(f"--- Starting first run with session ID: {session_id} ---")
+        >>> results1 = processor.run(params=tasks, session_id=session_id, controlled=True)
+        >>> print(f"Results (Run 1): {results1}")
+        >>> # Expected: task1 completes, task2 fails, task3 is not processed.
+        >>>
+        >>> # 3. Second run: Resume the session. task1 should be skipped.
+        >>> print(f"\\n--- Resuming run with session ID: {session_id} ---")
+        >>> results2 = processor.run(params=tasks, session_id=session_id, controlled=True)
+        >>> print(f"Results (Run 2): {results2}")
+        >>> # Expected: task1 is skipped, task2 and task3 are processed successfully.
+        >>>
+        >>> # Clean up control files
+        >>> control_folder = os.path.join(Env.USER_APP_FOLDER, f"s_{session_id}.session")
+        >>> if os.path.exists(control_folder):
+        ...     shutil.rmtree(control_folder)
+
+    Inherits from:
+        Process: Base class providing parallel/serial processing capabilities.
     """
 
     @staticmethod
     def generate_session_id() -> str:
         """
-        Generates a unique session ID.
+        Generates a unique identifier for a new processing session.
 
         Returns:
-            str: A unique UUID4 string.
+            str: A unique session ID (UUID4).
         """
-        logging.debug("Generating new session ID.")
+        Logger.debug("Generating new session ID.")
         return str(uuid.uuid4())
 
     @staticmethod
     def generate_task_id(params: Tuple[Any, ...]) -> str:
         """
-        Generates a unique task ID based on the input parameters.
+        Generates a unique, deterministic ID for a task based on its parameters.
+
+        This ensures that the same task always gets the same ID, which is crucial
+        for tracking its completion status across session resumes.
 
         Args:
-            params (Tuple[Any, ...]): The parameters for which to generate a task ID.
+            params (Tuple[Any, ...]): The parameters for the processing task.
 
         Returns:
-            str: A SHA256 hash of the string representation of the parameters.
+            str: A hash string representing the unique task ID.
         """
-        logging.debug(f"Generating task ID for parameters: {params}")
+        Logger.debug(f"Generating task ID for parameters: {params}")
         return hash_string(str(params))
 
     def _controlled_run(self, *args: Any) -> Tuple[str, bool, Optional[str], Any]:
@@ -962,5 +1011,3 @@ class SessionProcess(Process):
         except Exception as e:
             Logger.error(f"Error in session process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
-
-

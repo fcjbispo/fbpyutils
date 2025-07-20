@@ -11,17 +11,27 @@ from typing import Dict
 from fbpyutils.logging import Logger
 
 def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
-    '''
-    Gets the time delta between two dates.
-     Parameters:
-        x (datetime): The last date.
-        y (datetime): The first date. Must be greater than or equal to the last date.
-        delta (str): The unit of time to return. Should be either 'months' for the number of
-        months between both dates or 'years' for the number of years between both dates.
-        Defaults to 'months'.
-     Returns:
-        int: The number of months or years between both dates.
-    '''
+    """
+    Calculates the time delta between two dates in months or years.
+
+    Args:
+        x (datetime): The later datetime object.
+        y (datetime): The earlier datetime object.
+        delta (str): The unit for the delta ('months' or 'years').
+            Defaults to 'months'.
+
+    Returns:
+        int: The total number of months or years between the two dates.
+
+    Example:
+        >>> from datetime import datetime
+        >>> date1 = datetime(2023, 1, 1)
+        >>> date2 = datetime(2024, 3, 1)
+        >>> delta(date2, date1, 'months')
+        14
+        >>> delta(date2, date1, 'years')
+        1
+    """
     Logger.debug(f"Starting delta with x: {x}, y: {y}, delta: {delta}")
     d = relativedelta.relativedelta(x, y)
     if delta == 'months':
@@ -36,14 +46,25 @@ def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
 
 
 def apply_timezone(x: datetime, tz: str) -> datetime:
-    '''
-    Apply the specified timezone to a datetime object.
-     Parameters:
-        x (datetime): The datetime to have the timezone applied.
-        tz (str): The name of the timezone.
-     Returns:
-        datetime: The datetime object with the timezone information.
-    '''
+    """
+    Applies a specified timezone to a naive datetime object.
+
+    Args:
+        x (datetime): The naive datetime object.
+        tz (str): The string name of the timezone (e.g., 'America/Sao_Paulo').
+
+    Returns:
+        datetime: A new datetime object with the specified timezone.
+
+    Raises:
+        pytz.UnknownTimeZoneError: If the timezone name is not found.
+
+    Example:
+        >>> from datetime import datetime
+        >>> naive_dt = datetime(2024, 7, 19, 12, 0, 0)
+        >>> apply_timezone(naive_dt, 'America/New_York')
+        datetime.datetime(2024, 7, 19, 12, 0, tzinfo=<DstTzInfo 'America/New_York' EDT-1 day, 20:00:00 DST>)
+    """
     Logger.debug(f"Starting apply_timezone with datetime: {x}, timezone: {tz}")
     try:
         timezone = pytz.timezone(tz)
@@ -62,14 +83,26 @@ def apply_timezone(x: datetime, tz: str) -> datetime:
 
 
 def elapsed_time(x: datetime, y: datetime) -> tuple:
-    '''
-    Calculates and returns the elapsed time as a tuple (days, hours, minutes, seconds).
-     Parameters:
-        x (datetime): The last date.
-        y (datetime): The first date. Must be greater than or equal to the last date.
-     Returns:
-        tuple: The elapsed time formatted as a tuple (days, hours, minutes, seconds).
-    '''
+    """
+    Calculates the elapsed time between two datetime objects.
+
+    Args:
+        x (datetime): The later datetime object.
+        y (datetime): The earlier datetime object.
+
+    Returns:
+        tuple: A tuple containing (days, hours, minutes, seconds).
+
+    Raises:
+        ValueError: If 'x' is earlier than 'y'.
+
+    Example:
+        >>> from datetime import datetime, timedelta
+        >>> end_time = datetime(2024, 1, 2, 14, 30, 50)
+        >>> start_time = datetime(2024, 1, 1, 12, 0, 0)
+        >>> elapsed_time(end_time, start_time)
+        (1, 2, 30, 50)
+    """
     Logger.debug(f"Starting elapsed_time with x: {x}, y: {y}")
     if x < y:
         Logger.error(f"Invalid input for elapsed_time: x ({x}) must be greater than or equal to y ({y}).")

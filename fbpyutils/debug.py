@@ -7,18 +7,18 @@ from fbpyutils.logging import Logger
 
 
 def debug(func):
-    '''
-    Decorator function used to debug the execution of system functions.
-    Prints all arguments used and the result value of the debugged functions.
-     Usage:
-     @debug
-     def myFunc(x, y, z):
-         pass
-     Parameters:
+    """
+    A decorator that logs the execution of a function.
+
+    This decorator logs the function name, its arguments, and its return value
+    at the DEBUG level.
+
+    Args:
         func: The function to be decorated.
-     Returns:
-        The function decorator.
-    '''
+
+    Returns:
+        The wrapped function with debugging logs.
+    """
     def _debug(*args, **kwargs):
         Logger.debug(f"Calling function: {func.__name__} with args: {args}, kwargs: {kwargs}")
         result = func(*args, **kwargs)
@@ -28,10 +28,20 @@ def debug(func):
     return _debug
 
 
-def debug_info(x: Exception):
-    '''
-    Return extra exception/execution info for debug.
-    '''
+def debug_info(x: Exception) -> str:
+    """
+    Get detailed debug information from an exception object.
+
+    This function extracts the exception message and formats the traceback
+    into a single string for logging or debugging purposes.
+
+    Args:
+        x: The exception object.
+
+    Returns:
+        A formatted string containing the exception message and traceback.
+        Format: "{exception_message}: {traceback_info}."
+    """
     Logger.debug(f"Getting debug info for exception: {x.__str__()}")
     try:
         info = f"{x.__str__()}: {traceback.format_exc()}."

@@ -7,19 +7,18 @@
 
 Francisco Bispo's Utilities for Python. This library provides a comprehensive collection of utility functions for Python applications, designed to simplify common development tasks across multiple domains.
 
-### Core Modules
-
-- **`calendar`**: Advanced calendar manipulation and time dimension creation
-- **`datetime`**: Enhanced date/time utilities with timezone support
-- **`debug`**: Debugging tools and decorators for development
-- **`env`**: Environment configuration and management system
-- **`file`**: Comprehensive file system operations and metadata extraction
-- **`image`**: Image processing and manipulation utilities
-- **`logging`**: Configurable logging system with rotation
-- **`ofx`**: OFX (Open Financial Exchange) file parser
-- **`process`**: Parallel and serial processing with session management
-- **`string`**: Advanced string manipulation and hashing utilities
-- **`xlsx`**: Excel file operations with pandas integration
+It includes modules for:
+- Advanced calendar manipulation (`calendar`)
+- Enhanced date/time utilities (`datetime`)
+- Debugging tools (`debug`)
+- Environment configuration (`env`)
+- File system operations (`file`)
+- Image processing (`image`)
+- Configurable logging (`logging`)
+- OFX file parsing (`ofx`)
+- Parallel and serial processing (`process`)
+- Advanced string manipulation (`string`)
+- Excel file operations (`xlsx`)
 
 ## Installation
 
@@ -29,29 +28,28 @@ pip install fbpyutils
 
 ## Quick Start
 
-```python
-from fbpyutils import setup
+The library must be initialized before use via the `setup()` function.
 
-# Initialize the library
+```python
+from fbpyutils import setup, get_env, get_logger
+
+# Initialize with default configuration
 setup()
 
 # Access global instances
-from fbpyutils import get_env, get_logger
 env = get_env()
 logger = get_logger()
+
+logger.info(f"Application {env.APP.name} started.")
 ```
 
-## Usage Guide
-
 ### Initialization and Configuration
-
-The `fbpyutils` library must be initialized before use via the `setup()` function.
 
 #### `setup(config: Optional[Union[Dict[str, Any], str]] = None) -> None`
 Initializes the global environment and logging system. This function should be called once when your application starts.
 
 **Parameters:**
-- `config`: Configuration source - can be a dictionary, JSON file path, or None for defaults
+- `config`: Configuration source - can be a dictionary, JSON file path, or `None` for defaults.
 
 **Example:**
 ```python
@@ -65,7 +63,7 @@ setup({
         "version": "1.0.0"
     },
     "logging": {
-        "level": "DEBUG"
+        "log_level": "DEBUG"
     }
 })
 
@@ -81,699 +79,365 @@ Returns the singleton `Logger` instance for application-wide logging.
 
 ---
 
-### calendar Module
+## Modules
 
-Advanced calendar operations for time dimension creation and date analysis.
+### 1. calendar
 
-#### Functions
+Functions to manipulate calendars and create time dimensions.
 
-##### `get_calendar(start_date: date, end_date: date) -> List[Dict[str, Any]]`
-Creates a comprehensive calendar between two dates with detailed time attributes.
+#### `get_calendar(x: date, y: date) -> List`
+Builds a calendar to be used as a time dimension.
 
-**Parameters:**
-- `start_date`: Starting date
-- `end_date`: Ending date (must be > start_date)
+- **Args**:
+    - `x (date)`: The initial date for the calendar.
+    - `y (date)`: The final date for the calendar. Must be greater than the initial date.
+- **Returns**: A list of dictionaries, where each dictionary represents a day and contains various date-related attributes.
+- **Raises**: `ValueError` if the end date is not greater than the start date.
 
-**Returns:** List of dictionaries with calendar attributes:
-- `date`: Date object
-- `date_time`: Datetime object
-- `year`: Year as integer
-- `half`: Half of year (1 or 2)
-- `quarter`: Quarter (1-4)
-- `month`: Month (1-12)
-- `day`: Day of month
-- `week_day`: Day of week (0=Monday, 6=Sunday)
-- `week_of_year`: ISO week number
-- `date_iso`: ISO format string
-- `date_str`: Formatted date string
-- `week_day_name`: Full weekday name
-- `week_day_name_short`: Abbreviated weekday
-- `week_month_name`: Full month name
-- `week_month_name_short`: Abbreviated month
-- `year_str`: Year as string
-- `year_half_str`: Year-half string
-- `year_quarter_str`: Year-quarter string
-- `year_month_str`: Year-month string
+#### `add_markers(x: List) -> List`
+Adds temporal markers to a calendar list. This function enriches a calendar list with boolean markers for common time-based analysis.
 
-**Example:**
-```python
-from fbpyutils.calendar import get_calendar
-from datetime import date
+- **Args**:
+    - `x (List)`: A calendar list, typically from `get_calendar`.
+- **Returns**: The input calendar list with added boolean marker fields.
 
-calendar = get_calendar(date(2024, 1, 1), date(2024, 12, 31))
-print(f"Created calendar with {len(calendar)} days")
-```
+#### `calendarize(x: DataFrame, date_column: str, with_markers: bool = False) -> DataFrame`
+Enriches a DataFrame with calendar columns based on a date column.
 
-##### `add_markers(calendar_data: List, reference_date: date = None) -> List`
-Adds temporal markers to calendar data for analysis.
-
-**Markers Added:**
-- `today`: True if date equals reference
-- `current_year`: True if in current year
-- `last_day_of_month`: True if month's last day
-- `last_day_of_quarter`: True if quarter's last day
-- `last_day_of_half`: True if half's last day
-- `last_day_of_year`: True if year's last day
-- `last_24_months`: True if within last 24 months
-- `last_12_months`: True if within last 12 months
-- `last_6_months`: True if within last 6 months
-- `last_3_months`: True if within last 3 months
-
-##### `calendarize(df: DataFrame, date_column: str, with_markers: bool = False, reference_date: date = None) -> DataFrame`
-Adds calendar columns to a pandas DataFrame.
-
-**Example:**
-```python
-import pandas as pd
-from fbpyutils.calendar import calendarize
-
-df = pd.DataFrame({'date': pd.date_range('2024-01-01', periods=100)})
-df = calendarize(df, 'date', with_markers=True)
-```
+- **Args**:
+    - `x (DataFrame)`: The input DataFrame.
+    - `date_column (str)`: The name of the datetime column to be used for joining.
+    - `with_markers (bool)`: If True, adds temporal markers.
+- **Returns**: A new DataFrame with the added calendar columns.
+- **Raises**: `TypeError` if the input is not a Pandas DataFrame, `NameError` if the date column is not found.
 
 ---
 
-### datetime Module
+### 2. datetime
 
-Enhanced datetime utilities with timezone support and duration calculations.
+Utility functions to manipulate date and time.
 
-#### Functions
+#### `delta(x: datetime, y: datetime, delta: str = 'months') -> int`
+Calculates the time delta between two dates in months or years.
 
-##### `apply_timezone(dt: datetime, tz: str) -> datetime`
-Applies timezone information to a datetime object.
+- **Args**:
+    - `x (datetime)`: The later datetime object.
+    - `y (datetime)`: The earlier datetime object.
+    - `delta (str)`: The unit for the delta ('months' or 'years').
+- **Returns**: The total number of months or years between the two dates.
+
+#### `apply_timezone(x: datetime, tz: str) -> datetime`
+Applies a specified timezone to a naive datetime object.
+
+- **Args**:
+    - `x (datetime)`: The naive datetime object.
+    - `tz (str)`: The string name of the timezone (e.g., 'America/Sao_Paulo').
+- **Returns**: A new datetime object with the specified timezone.
 
 **Example:**
 ```python
+from datetime import datetime
 from fbpyutils.datetime import apply_timezone
-from datetime import datetime
 
-dt = datetime.now()
-tz_dt = apply_timezone(dt, 'America/Sao_Paulo')
+naive_dt = datetime(2023, 10, 27, 10, 0, 0)
+sp_dt = apply_timezone(naive_dt, 'America/Sao_Paulo')
+print(sp_dt)
+# Output: 2023-10-27 10:00:00-03:00
 ```
 
-##### `delta(start: datetime, end: datetime, unit: str = 'months') -> int`
-Calculates time difference between two dates.
+#### `elapsed_time(x: datetime, y: datetime) -> tuple`
+Calculates the elapsed time between two datetime objects.
 
-**Units:**
-- `months`: Number of months
-- `years`: Number of years
+- **Args**:
+    - `x (datetime)`: The later datetime object.
+    - `y (datetime)`: The earlier datetime object.
+- **Returns**: A tuple containing (days, hours, minutes, seconds).
+
+---
+
+### 3. debug
+
+Functions to support code debugging.
+
+#### `debug(func)`
+A decorator that logs the execution of a function, its arguments, and its return value. The output includes function name, arguments, keyword arguments, execution time, and the result.
+
+#### `debug_info(x: Exception) -> str`
+Get detailed debug information from an exception object, including the traceback. The returned string contains the exception type, message, file name, line number, and function name.
+
+---
+
+### 4. env
+
+Configuration class for the application environment. This class is a singleton and is immutable after initialization.
+
+#### `class Env`
+Manages application configuration. It loads settings from a JSON file or dictionary and provides access to environment-specific variables.
+
+- **Key Attributes**:
+    - `APP`: Application-specific configuration (`AppConfig`).
+    - `LOG_LEVEL`, `LOG_FORMAT`, `LOG_FILE`: Logging settings.
+    - `USER_FOLDER`, `USER_APP_FOLDER`: User-specific paths.
 
 **Example:**
 ```python
-from fbpyutils.datetime import delta
-from datetime import datetime
+from fbpyutils import setup, get_env
 
-months_diff = delta(datetime(2024, 1, 1), datetime(2024, 12, 31))
-```
-
-##### `elapsed_time(start: datetime, end: datetime) -> tuple`
-Calculates elapsed time as (days, hours, minutes, seconds).
-
----
-
-### debug Module
-
-Development debugging utilities.
-
-#### Functions
-
-##### `debug(func)`
-Decorator for automatic function debugging.
-
-**Usage:**
-```python
-from fbpyutils.debug import debug
-
-@debug
-def calculate_total(items):
-    return sum(items)
-
-# Automatically logs inputs and outputs
-result = calculate_total([1, 2, 3, 4, 5])
-```
-
-##### `debug_info(exception: Exception) -> str`
-Returns formatted exception information for debugging.
-
----
-
-### env Module
-
-Environment configuration management system.
-
-#### Classes
-
-##### `Env`
-Singleton configuration manager with automatic file loading.
-
-**Features:**
-- Automatic configuration from JSON files
-- Environment variable integration
-- Nested configuration access
-- Hot-reload support
-
-**Usage:**
-```python
-from fbpyutils import get_env
-
+# Load from a dictionary
+setup({"app": {"name": "MyTestApp"}, "custom_key": "custom_value"})
 env = get_env()
-app_name = env.config.app.name
-log_level = env.config.logging.level
+
+print(env.APP.name)  # Output: MyTestApp
+print(env.custom_key) # Output: custom_value
 ```
+
+#### `Env.load_config_from(app_conf_file: str) -> 'Env'`
+Loads configuration from a specified JSON file and returns a new `Env` instance.
 
 ---
 
-### file Module
+### 5. file
 
-Comprehensive file system operations with metadata extraction.
+Functions to read and/or process files and directories.
 
-#### Functions
+#### `find(x: str, mask: str = "*.*", recurse: bool = True, parallel: bool = False) -> list`
+Finds files in a source folder using a specific mask. For large directories, `parallel=True` can significantly improve performance by using multiple CPU cores.
 
-##### `find(directory: str, mask: str = '*.*') -> List[str]`
-Recursively finds files matching a pattern.
+#### `creation_date(x: str) -> datetime`
+Retrieves the creation datetime of a file.
 
-**Example:**
-```python
-from fbpyutils.file import find
+#### `load_from_json(x: str, encoding="utf-8") -> Dict`
+Loads data from a JSON file.
 
-# Find all Python files
-py_files = find('/project', '*.py')
+#### `write_to_json(x: Dict, path_to_file: str, prettify=True)`
+Writes a dictionary to a JSON file.
 
-# Find all images
-images = find('/photos', '*.jpg')
-```
+#### `contents(x: str) -> bytearray`
+Reads a file and returns its contents as a byte array.
 
-##### `describe_file(file_path: str) -> Dict[str, Any]`
-Extracts comprehensive file metadata.
+#### `mime_type(x: str) -> str`
+Guesses the mime type of a file.
 
-**Returns:**
-- `complete_filename`: Full filename
-- `filename_no_ext`: Name without extension
-- `extension`: File extension
-- `size_bytes`: File size in bytes
-- `creation_date`: Creation date (ISO format)
-- `mime_type_code`: MIME type
-- `mime_type_description`: Human-readable MIME type
-- `first_256_bytes_sha256_hex`: SHA256 of first 256 bytes
-- `md5sum`: MD5 hash of entire file
+#### `describe_file(file_path: str) -> Dict`
+Describes a file, returning a dictionary with its properties (size, hashes, etc.).
 
-**Example:**
-```python
-from fbpyutils.file import describe_file
-
-info = describe_file('document.pdf')
-print(f"File: {info['complete_filename']}")
-print(f"Size: {info['size_bytes']} bytes")
-print(f"MD5: {info['md5sum']}")
-```
-
-##### `get_file_head_content(file_path: str, num_bytes: int = 256, output_format: str = 'text', encoding: str = 'utf-8') -> Union[str, bytes, None]`
-Reads file header content in various formats.
-
-**Output Formats:**
-- `text`: UTF-8 decoded string
-- `bytes`: Raw bytes
-- `base64`: Base64 encoded string
-
-**Example:**
-```python
-# Get first 100 bytes as text
-header = get_file_head_content('data.csv', 100, 'text')
-
-# Get raw bytes for binary analysis
-raw_bytes = get_file_head_content('image.jpg', 512, 'bytes')
-```
-
-##### `get_base64_data_from(file_uri: str, timeout: int = 300) -> str`
-Converts file content to base64 string from local path or URL.
-
-**Example:**
-```python
-# Local file
-b64_data = get_base64_data_from('/path/to/file.pdf')
-
-# Remote file
-b64_data = get_base64_data_from('https://example.com/file.jpg')
-```
-
-##### File I/O Utilities
-- `load_from_json(path: str, encoding: str = 'utf-8') -> Dict`
-- `write_to_json(data: Dict, path: str, prettify: bool = True)`
-- `contents(path: str) -> bytearray`
-- `creation_date(path: str) -> datetime`
-- `mime_type(path: str) -> str`
-- `absolute_path(path: str) -> str`
-- `build_platform_path(winroot: str, otherroot: str, pathparts: List[str]) -> str`
+#### `get_base64_data_from(file_uri: str, timeout: int = 300) -> str`
+Converts file content from a local path or URL to a base64 string.
 
 ---
 
-### image Module
+### 6. image
 
-Image processing utilities with OCR enhancement support.
+Image processing utilities.
 
-#### Functions
+#### `get_image_info(image_source: Union[str, bytes]) -> dict`
+Extracts detailed information from an image, including EXIF metadata and geolocation.
 
-##### `get_image_info(image_source: Union[str, bytes]) -> Dict[str, Any]`
-Extracts comprehensive image metadata.
-
-**Returns:**
-- `filename`: Original filename
-- `format`: Image format (JPEG, PNG, etc.)
-- `mode`: Color mode (RGB, RGBA, etc.)
-- `size`: (width, height) tuple
-- `width`: Image width
-- `height`: Image height
-- `file_size_bytes`: File size
-- `dpi`: Dots per inch
-- `gps_info`: GPS coordinates if available
-- `has_transparency`: Boolean
-- `is_animated`: Boolean
-- `frame_count`: Number of frames
-
-**Example:**
-```python
-from fbpyutils.image import get_image_info
-
-info = get_image_info('photo.jpg')
-print(f"Image: {info['width']}x{info['height']} pixels")
-print(f"Format: {info['format']}")
-```
-
-##### `resize_image(image_source: Union[str, bytes], width: int, height: int, maintain_aspect: bool = True) -> bytes`
-Resizes images while maintaining quality.
+#### `resize_image(image_source: Union[str, bytes], width: int, height: int, maintain_aspect_ratio: bool = True, quality: int = 85) -> bytes`
+Resizes an image to specified dimensions.
 
 **Example:**
 ```python
 from fbpyutils.image import resize_image
 
-# Resize to specific dimensions
-resized = resize_image('large.jpg', 800, 600)
+with open('my_image.jpg', 'rb') as f:
+    image_bytes = f.read()
 
-# Resize with aspect ratio maintained
-thumbnail = resize_image('photo.jpg', 200, 200)
+# Resize to a width of 800px, maintaining aspect ratio
+resized_bytes = resize_image(image_bytes, width=800, height=0)
+
+with open('resized_image.jpg', 'wb') as f:
+    f.write(resized_bytes)
 ```
 
-##### `enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: float = 2.0, threshold: int = 128) -> bytes`
-Optimizes images for OCR processing.
-
-**Example:**
-```python
-from fbpyutils.image import enhance_image_for_ocr
-
-# Enhance for better OCR results
-enhanced = enhance_image_for_ocr('scanned_document.jpg')
-```
+#### `enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: float = 2.0, threshold: int = 128) -> bytes`
+Enhances an image for better OCR accuracy by converting to grayscale, increasing contrast, and applying a binary threshold.
 
 ---
 
-### logging Module
+### 7. logging
 
-Advanced logging system with rotation and configuration.
+A singleton logging class that provides a static interface to the logging module.
 
-#### Classes
+#### `class Logger`
+Manages logging for the application. It must be configured via `fbpyutils.setup()`. It supports different log levels (`DEBUG`, `INFO`, `WARNING`, `ERROR`) and can be configured to log to a file and/or the console.
 
-##### `Logger`
-Singleton logging system with file rotation.
+- **Methods**:
+    - `debug(message: str, ...)`
+    - `info(message: str, ...)`
+    - `warning(message: str, ...)`
+    - `error(message: str, ...)`
+    - `log(log_type: int, log_text: str, ...)`
 
-**Features:**
-- Automatic log rotation (256KB max, 5 backups)
-- Thread-safe concurrent logging
-- Configurable log levels
-- Structured JSON logging support
-
-**Usage:**
+**Configuration via `setup()`:**
 ```python
-from fbpyutils import get_logger
-
-logger = get_logger()
-logger.info("Application started")
-logger.debug("Debug information")
-logger.error("Error occurred", extra={"error_code": 500})
-```
-
----
-
-### ofx Module
-
-OFX (Open Financial Exchange) file parser for financial data.
-
-#### Functions
-
-##### `read_from_path(file_path: str, native_date: bool = True) -> Dict[str, Any]`
-Reads OFX file and returns structured financial data.
-
-**Returns:**
-- `header`: OFX header information
-- `signon`: Signon response
-- `transactions`: List of transactions
-- `balances`: Account balances
-- `status`: Processing status
-
-**Example:**
-```python
-from fbpyutils.ofx import read_from_path
-
-data = read_from_path('bank_statement.ofx')
-transactions = data.get('transactions', [])
-for tx in transactions:
-    print(f"{tx['date']}: {tx['amount']} - {tx['memo']}")
-```
-
-##### `read(ofx_content: str, native_date: bool = True) -> Dict[str, Any]`
-Parses OFX content string directly.
-
----
-
-### process Module
-
-Advanced processing framework with parallel execution support.
-
-#### Classes
-
-##### `Process`
-Base class for parallel/serial processing.
-
-**Features:**
-- Automatic CPU core detection
-- Thread/process pool management
-- Progress tracking
-- Error handling and retry logic
-
-**Example:**
-```python
-from fbpyutils.process import Process
-
-def process_item(item_id, data):
-    # Process single item
-    return f"Processed {item_id}"
-
-# Create processor
-processor = Process(process_item, parallelize=True, workers=4)
-
-# Process multiple items
-params = [(1, "data1"), (2, "data2"), (3, "data3")]
-results = processor.run(params)
-```
-
-##### `FileProcess`
-File-based processing with timestamp control.
-
-**Features:**
-- Prevents duplicate processing
-- Timestamp-based file filtering
-- Batch processing support
-
-**Example:**
-```python
-from fbpyutils.process import FileProcess
-import os
-
-def process_file(file_path, output_dir):
-    # Process file
-    return f"Processed {os.path.basename(file_path)}"
-
-processor = FileProcess(process_file)
-files_to_process = [("file1.txt", "/output"), ("file2.txt", "/output")]
-results = processor.run(files_to_process, controlled=True)
-```
-
-##### `SessionProcess`
-Session-based processing with resume capability.
-
-**Features:**
-- Session persistence
-- Resume interrupted processes
-- Task-level retry logic
-- Progress tracking
-
-**Example:**
-```python
-from fbpyutils.process import SessionProcess
-
-def long_running_task(task_id, data):
-    # Simulate long process
-    return f"Completed task {task_id}"
-
-processor = SessionProcess(long_running_task)
-params = [(1, "large_dataset1"), (2, "large_dataset2")]
-
-# Start with session control
-results = processor.run(params, session_id="batch_001", controlled=True)
-```
-
----
-
-### string Module
-
-Advanced string manipulation and hashing utilities.
-
-#### Functions
-
-##### `similarity(str1: str, str2: str, ignore_case: bool = True, compress_spaces: bool = True) -> float`
-Calculates string similarity ratio (0.0 to 1.0).
-
-**Example:**
-```python
-from fbpyutils.string import similarity
-
-ratio = similarity("hello world", "hello  world!")
-print(f"Similarity: {ratio:.2%}")
-```
-
-##### `normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]`
-Normalizes strings for consistent naming.
-
-**Features:**
-- Lowercase conversion
-- Space/slash to underscore
-- Special character translation
-- Unicode normalization
-
-**Example:**
-```python
-from fbpyutils.string import normalize_names
-
-names = ["Hello World!", "Café/Bar", "Test-Case"]
-normalized = normalize_names(names)
-# Result: ["hello_world", "cafe_bar", "test_case"]
-```
-
-##### `random_string(length: int = 32, include_digits: bool = True, include_special: bool = False) -> str`
-Generates cryptographically secure random strings.
-
-**Example:**
-```python
-from fbpyutils.string import random_string
-
-# Simple random string
-token = random_string(16)
-
-# Complex password
-password = random_string(24, include_digits=True, include_special=True)
-```
-
-##### Hashing Functions
-- `hash_string(text: str) -> str`: MD5 hash
-- `hash_json(data: Dict) -> str`: JSON-stable MD5 hash
-- `uuid() -> str`: UUID4 generation
-
-##### String Utilities
-- `json_string(data: Dict) -> str`: JSON to string
-- `normalize_value(value: float, size: int = 4, decimals: int = 2) -> str`: Zero-padded numbers
-- `translate_special_chars(text: str) -> str`: Accent removal
-- `split_by_lengths(text: str, lengths: List[int]) -> List[str]`: Fixed-width splitting
-
----
-
-### xlsx Module
-
-Excel file operations with pandas integration.
-
-#### Classes
-
-##### `ExcelWorkbook`
-High-level Excel workbook interface.
-
-**Features:**
-- XLS/XLSX support
-- Sheet enumeration
-- Data extraction
-- Memory-efficient reading
-
-**Example:**
-```python
-from fbpyutils.xlsx import ExcelWorkbook
-
-# Load workbook
-wb = ExcelWorkbook('data.xlsx')
-
-# Get sheet names
-sheets = wb.sheet_names
-print(f"Available sheets: {sheets}")
-
-# Read specific sheet
-data = wb.read_sheet('SalesData')
-for row in data:
-    print(row)
-```
-
-#### Functions
-
-##### `get_all_sheets(file_path: Union[str, bytes]) -> Dict[str, Tuple]`
-Reads all sheets into a dictionary.
-
-**Example:**
-```python
-from fbpyutils.xlsx import get_all_sheets
-
-all_data = get_all_sheets('report.xlsx')
-for sheet_name, data in all_data.items():
-    print(f"Sheet: {sheet_name}, Rows: {len(data)}")
-```
-
-##### `write_to_sheet(df: pd.DataFrame, file_path: str, sheet_name: str) -> None`
-Writes pandas DataFrame to Excel sheet.
-
-**Features:**
-- Creates new files or appends to existing
-- Automatic sheet naming for duplicates
-- Format preservation
-
-**Example:**
-```python
-import pandas as pd
-from fbpyutils.xlsx import write_to_sheet
-
-df = pd.DataFrame({'A': [1, 2, 3], 'B': ['x', 'y', 'z']})
-write_to_sheet(df, 'output.xlsx', 'MyData')
-```
-
----
-
-## Best Practices
-
-### Error Handling
-All functions include comprehensive error handling. Always wrap operations in try-catch blocks:
-
-```python
-from fbpyutils import get_logger
-
-logger = get_logger()
-
-try:
-    result = some_fbpyutils_function()
-except Exception as e:
-    logger.error(f"Operation failed: {e}")
-```
-
-### Performance Optimization
-- Use parallel processing for CPU-intensive tasks
-- Leverage file timestamp control to avoid reprocessing
-- Implement session-based processing for long-running tasks
-
-### Configuration Management
-Store configuration in JSON files:
-
-```json
-{
-  "app": {
-    "name": "MyApplication",
-    "version": "1.0.0"
-  },
-  "logging": {
-    "level": "INFO",
-    "file": "app.log"
-  }
-}
-```
-
-### Testing
-The library includes comprehensive test coverage. Run tests with:
-
-```bash
-# Run all tests
-uv run pytest tests/
-
-# Run specific module tests
-uv run pytest tests/test_file_file.py
-
-# Run with coverage
-uv run pytest --cov=fbpyutils tests/
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**Import Errors**
-```python
-# Ensure proper initialization
-from fbpyutils import setup
-setup()  # Must be called before using other modules
-```
-
-**File Not Found Errors**
-```python
-from fbpyutils.file import absolute_path
-
-# Get absolute path for relative files
-full_path = absolute_path('data/file.txt')
-```
-
-**Memory Issues with Large Files**
-```python
-from fbpyutils.file import get_file_head_content
-
-# Process files in chunks
-header = get_file_head_content('large_file.dat', 1024)
-```
-
-### Debug Mode
-Enable debug logging for troubleshooting:
-
-```python
-from fbpyutils import setup
-
 setup({
     "logging": {
-        "level": "DEBUG"
+        "log_level": "INFO",
+        "log_file": "logs/app.log",
+        "log_format": "%(asctime)s - %(levelname)s - %(message)s"
     }
 })
 ```
 
 ---
 
-## Contributing
+### 8. ofx
 
-Contributions are welcome! Please see the [contributing guidelines](CONTRIBUTING.md) for more information.
+Reads and processes OFX (Open Financial Exchange) files and data.
 
-### Development Setup
+#### Constants
+- `account_types`: A list of known account types: `['UNKNOWN', 'BANK', 'CREDIT_CARD', 'INVESTMENT']`.
 
-1. Clone the repository
-2. Create virtual environment: `uv venv`
-3. Install dependencies: `uv sync`
-4. Run tests: `uv run pytest`
+#### `format_date(x: datetime, native: bool = True) -> Union[datetime, str]`
+Formats a datetime object into a native `datetime` or an ISO-formatted string.
 
-### Code Style
-- Follow PEP 8 guidelines
-- Use type hints for all functions
-- Include comprehensive docstrings
-- Maintain test coverage above 90%
+#### `read(x: str, native_date: bool = True) -> Dict`
+Parses OFX data from a string into a dictionary.
+
+- **Args**:
+    - `x (str)`: A string containing the OFX data.
+    - `native_date (bool)`: If True, dates are returned as native `datetime` objects.
+- **Returns**: A dictionary containing the parsed OFX data.
+
+#### `read_from_path(x: str, native_date: bool = True) -> Dict`
+Reads and parses an OFX file from a given path.
+
+**Programmatic Example:**
+```python
+from fbpyutils.ofx import read_from_path
+
+data = read_from_path('bank_statement.ofx')
+if data:
+    print(f"Account ID: {data.get('id')}")
+    print(f"Account Type: {data.get('type')}")
+    for tx in data.get('statement', {}).get('transactions', []):
+        print(f"  - Date: {tx['date']}, Amount: {tx['amount']}, Memo: {tx['memo']}")
+```
+
+#### `main(argv)`
+Main function to handle command-line execution for printing OFX file content as JSON.
+
+**CLI Example**:
+```bash
+python -m fbpyutils.ofx --print /path/to/your/file.ofx
+```
 
 ---
 
-## Support
+### 9. process
 
-For support, please:
-1. Check the [troubleshooting section](#troubleshooting)
-2. Search existing [issues](https://github.com/franciscobispo/fbpyutils/issues)
-3. Create a new issue with:
-   - Minimal reproduction example
-   - Expected vs actual behavior
-   - Environment details (Python version, OS)
+Module for parallel or serial process execution with control mechanisms.
 
-## License
+#### `class Process`
+Base class for executing functions in parallel or serial.
 
-[MIT](LICENSE) - See LICENSE file for details.
+- **`run(params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]`**: Executes the processing function for each parameter set.
+
+#### `class FileProcess(Process)`
+Extends `Process` to add timestamp-based control for file processing, preventing reprocessing of unmodified files.
+
+#### `class SessionProcess(Process)`
+Extends `Process` to provide session-based control, allowing resumption of processing sessions.
+
+**Example:**
+```python
+from fbpyutils.process import SessionProcess
+import time
+
+def my_task(item_id, duration):
+    print(f"Processing item {item_id}...")
+    time.sleep(duration)
+    return f"Item {item_id} done."
+
+# Parameters for the tasks
+params = [(1, 2), (2, 3), (3, 1), (4, 2)]
+
+# Initialize SessionProcess
+# It will create a .session file to track progress
+session_runner = SessionProcess(
+    id='my_session',
+    function=my_task,
+    parallel=True,
+    max_workers=2
+)
+
+# Run the process
+results = session_runner.run(params)
+print(results)
+
+# If you run it again, it will skip the completed tasks.
+```
+
+---
+
+### 10. string
+
+Functions to manipulate and process strings.
+
+#### `uuid() -> str`
+Generate a standard UUID4 string.
+
+#### `similarity(x: str, y: str, ignore_case: bool = True, compress_spaces: bool = True) -> float`
+Calculate the similarity ratio between two strings (0.0 to 1.0) using `difflib.SequenceMatcher`. Useful for fuzzy string matching and validation.
+
+#### `random_string(x: int = 32, include_digits: bool = True, include_special: bool = False) -> str`
+Generate a random string.
+
+#### `json_string(x: Dict) -> str`
+Convert a dictionary to a JSON string.
+
+#### `hash_string(x: str) -> str`
+Generate an MD5 hash from a string. Useful for creating consistent identifiers from string content.
+
+#### `hash_json(x: Dict) -> str`
+Generate an MD5 hash from a dictionary.
+
+#### `normalize_value(x: float, size: int = 4, decimal_places: int = 2) -> str`
+Convert a float to a zero-padded string.
+
+#### `translate_special_chars(x: str) -> str`
+Translate special (accented) characters to their basic counterparts (e.g., 'á' -> 'a').
+
+#### `normalize_names(names: List[str], normalize_specials: bool = True) -> List[str]`
+Normalize a list of strings to a consistent format (lowercase, underscores).
+
+#### `split_by_lengths(string: str, lengths: List[int]) -> List[str]`
+Split a string into substrings of specified lengths.
+
+---
+
+### 11. xlsx
+
+Functions to read and write MS Excel Spreadsheet files.
+
+#### `class ExcelWorkbook`
+Represents an Excel workbook, supporting both `.xls` and `.xlsx` formats.
+
+- **`__init__(self, xl_file: Union[str, bytes])`**: Initializes from a file path or bytes.
+- **`read_sheet(self, sheet_name: str = None) -> tuple`**: Reads a sheet by name.
+- **`read_sheet_by_index(self, index: int = 0) -> tuple`**: Reads a sheet by index.
+
+#### `get_sheet_names(xl_file: Union[str, bytes]) -> list[str]`
+Retrieves the names of all sheets from an Excel file.
+
+#### `get_sheet_by_name(xl_file: Union[str, bytes], sheet_name: str) -> tuple`
+Reads a specific sheet from an Excel file by its name.
+
+#### `get_all_sheets(xl_file: Union[str, bytes]) -> Dict[str, tuple]`
+Reads all sheets from an Excel file into a dictionary.
+
+**Example:**
+```python
+from fbpyutils.xlsx import get_all_sheets
+import pandas as pd
+
+# Assuming 'my_workbook.xlsx' has sheets 'Sales' and 'Customers'
+all_data = get_all_sheets('my_workbook.xlsx')
+
+sales_df = pd.DataFrame(all_data['Sales'][1:], columns=all_data['Sales'][0])
+print(sales_df.head())
+```
+
+#### `write_to_sheet(df: pd.DataFrame, workbook_path: str, sheet_name: str) -> None`
+Writes a pandas DataFrame to a specified sheet in an Excel file.
