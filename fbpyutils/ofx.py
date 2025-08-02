@@ -49,15 +49,13 @@ import json
 import sys
 import getopt
 
-from fbpyutils import string as strt
-from fbpyutils import logging
-
+from fbpyutils import get_logger, string as strt
 from typing import Dict, Union
-
 from datetime import datetime
-
 import codecs
 
+
+_logger = get_logger()
 
 account_types = ['UNKNOWN', 'BANK', 'CREDIT_CARD', 'INVESTMENT']
 """
@@ -100,12 +98,12 @@ def read(x: str, native_date: bool = True) -> Dict:
         Dict: A dictionary containing the parsed OFX data, or an empty
               dictionary if parsing fails.
     """
-    logging.Logger.debug(f"Starting read OFX data. native_date: {native_date}")
+    _logger.debug(f"Starting read OFX data. native_date: {native_date}")
     try:
         ofx = OfxParser.parse(x)
-        logging.Logger.info("OFX data parsed successfully.")
+        _logger.info("OFX data parsed successfully.")
     except Exception as e:
-        logging.Logger.error(f"Error parsing OFX data: {e}")
+        _logger.error(f"Error parsing OFX data: {e}")
         return {}
     else:
         acct = ofx.account
@@ -160,7 +158,7 @@ def read(x: str, native_date: bool = True) -> Dict:
                         ofx_data['statement']['transactions'].append(trn)
                         i = i + 1
 
-        logging.Logger.debug("Finished read OFX data successfully.")
+        _logger.debug("Finished read OFX data successfully.")
         return ofx_data
 
 
@@ -177,20 +175,20 @@ def read_from_path(x: str, native_date: bool = True) -> Dict:
         Dict: A dictionary with the parsed OFX data, or an empty dictionary
               if the file is not found or an error occurs.
     """
-    logging.Logger.debug(f"Starting read_from_path for file: {x}, native_date: {native_date}")
+    _logger.debug(f"Starting read_from_path for file: {x}, native_date: {native_date}")
     try:
         with codecs.open(x, 'r') as f:
             ofx_data = read(f.read(), native_date)
-        logging.Logger.info(f"Successfully read OFX data from file: {x}")
+        _logger.info(f"Successfully read OFX data from file: {x}")
         return ofx_data
     except FileNotFoundError:
-        logging.Logger.error(f"OFX file not found: {x}")
+        _logger.error(f"OFX file not found: {x}")
         return {}
     except OSError as e:
-        logging.Logger.error(f"OS error when reading OFX file {x}: {e}")
+        _logger.error(f"OS error when reading OFX file {x}: {e}")
         return {}
     except Exception as e:
-        logging.Logger.error(f"An unexpected error occurred while reading OFX file {x}: {e}")
+        _logger.error(f"An unexpected error occurred while reading OFX file {x}: {e}")
         raise
 
 # ----
@@ -209,7 +207,7 @@ def main(argv):
         python -m fbpyutils.ofx --print <file_path>
         python -m fbpyutils.ofx --help
     """
-    logging.Logger.info("OFX module main function started.")
+    _logger.info("OFX module main function started.")
     helper_msg = 'Use: python -m fbpyutils.ofx --print <file_path>'
     source_path = ''
 
@@ -217,47 +215,47 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, '', ['print=', 'help'])
     except getopt.GetoptError:
-        logging.Logger.error(f"Invalid command line option. {helper_msg}")
+        _logger.error(f"Invalid command line option. {helper_msg}")
         print(helper_msg)
         sys.exit(2)
 
     if not opts:
-        logging.Logger.warning("No options provided. Displaying helper message and exiting.")
+        _logger.warning("No options provided. Displaying helper message and exiting.")
         print(helper_msg)
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '--help':
-            logging.Logger.info("Help option requested. Displaying helper message and exiting.")
+            _logger.info("Help option requested. Displaying helper message and exiting.")
             print(helper_msg)
             sys.exit(0)
         elif opt == '--print':
             source_path = arg
-            logging.Logger.debug(f"Print option selected. Source path: {source_path}")
+            _logger.debug(f"Print option selected. Source path: {source_path}")
 
     if not source_path and not any(opt[0] == '--help' for opt in opts):
-        logging.Logger.error(f"No source path provided for --print option. {helper_msg}")
+        _logger.error(f"No source path provided for --print option. {helper_msg}")
         print(helper_msg)
         sys.exit(2)
 
     if source_path:
         if path.exists(source_path):
-            logging.Logger.info(f"Processing OFX file: {source_path}")
+            _logger.info(f"Processing OFX file: {source_path}")
             try:
                 ofx_data = read_from_path(source_path, native_date=False)
                 print(json.dumps(ofx_data, sort_keys=True, indent=4))
-                logging.Logger.info(f"Successfully processed and printed OFX data from {source_path}.")
+                _logger.info(f"Successfully processed and printed OFX data from {source_path}.")
                 sys.exit(0)
             except Exception as e:
                 error_msg = 'Invalid or corrupted file: %s' % (source_path.split(path.sep)[-1])
-                logging.Logger.error(f"{error_msg}. Exception: {e}")
+                _logger.error(f"{error_msg}. Exception: {e}")
                 print(error_msg)
                 sys.exit(2)
         else:
-            logging.Logger.error(f"File not found: {source_path}")
+            _logger.error(f"File not found: {source_path}")
             print('File not found.')
             sys.exit(2)
-    logging.Logger.info("OFX module main function finished.")
+    _logger.info("OFX module main function finished.")
 
 
 if __name__ == '__main__':

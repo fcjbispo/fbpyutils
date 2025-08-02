@@ -101,30 +101,6 @@ class Env:
             cls._instance = None  # Reset singleton to allow re-initialization
             return cls(config=config)
         except FileNotFoundError:
-            logging.error(f"Configuration file '{app_conf_file}' not found. Cannot create Env instance.")
-            raise
+            raise FileNotFoundError(f"Configuration file '{app_conf_file}' not found. Cannot create Env instance.")
         except json.JSONDecodeError:
-            logging.error(f"Error decoding JSON from '{app_conf_file}'.")
-            raise
-
-def load_config(file_name: str = 'app.json') -> Dict[str, Any]:
-    """
-    DEPRECATED: This function is obsolete and will be removed in a future version.
-    Use Env.load_config_from(path) or pass a config dict to the Env constructor instead.
-    """
-    warnings.warn(
-        "load_config is deprecated. Use fbpyutils.setup() instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    current_dir = os.path.dirname(__file__)
-    file_path = os.path.join(current_dir, file_name)
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logging.warning(f"Configuration file '{file_path}' not found. Using default settings.")
-        return {}
-    except json.JSONDecodeError:
-        logging.error(f"Error decoding JSON from '{file_path}'. Using default settings.")
-        return {}
+            raise json.JSONDecodeError(f"Error decoding JSON from '{app_conf_file}'.")            

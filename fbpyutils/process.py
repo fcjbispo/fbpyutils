@@ -25,11 +25,11 @@ import concurrent.futures
 from typing import Any, Callable, List, Tuple, Dict, Optional, TypeVar, Protocol, Union
 from datetime import datetime
 
-from fbpyutils.env import Env # Import Env from its new module
-from fbpyutils.logging import Logger
+from fbpyutils import get_env, get_logger
 from fbpyutils.string import hash_string
 
-
+_env = get_env()
+_logger = get_logger()
 
 # Type variable for generic processing function
 T = TypeVar('T')
@@ -133,10 +133,10 @@ class Process:
         """
         try:
             cpu_count = multiprocessing.cpu_count()
-            Logger.debug(f"Detected CPU count: {cpu_count}")
+            _logger.debug(f"Detected CPU count: {cpu_count}")
             return cpu_count
         except NotImplementedError:
-            Logger.info("CPU count not supported, falling back to single worker")
+            _logger.info("CPU count not supported, falling back to single worker")
             return 1
 
     @staticmethod
@@ -161,16 +161,16 @@ class Process:
         if parallel_type == 'processes':
             try:
                 import multiprocessing  # Import here to avoid global namespace pollution
-                Logger.info("Multiprocessing parallelization available")
+                _logger.info("Multiprocessing parallelization available")
                 return True
             except ImportError:
-                Logger.error(f"Multiprocessing not available: {__file__}:{inspect.currentframe().f_lineno}")
+                _logger.error(f"Multiprocessing not available: {__file__}:{inspect.currentframe().f_lineno}")
                 return False
         elif parallel_type == 'threads':
-            Logger.info("Default multi-threads parallelization available")
+            _logger.info("Default multi-threads parallelization available")
             return True
         else:
-            Logger.warning(f"Unknown parallel type: {parallel_type}. Assuming not parallelizable.")
+            _logger.warning(f"Unknown parallel type: {parallel_type}. Assuming not parallelizable.")
             return False
 
     @staticmethod
@@ -236,16 +236,16 @@ class Process:
             raise ValueError(f'Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.')
         self._process: Callable = process
         self._parallel_type: str = parallel_type
-        Logger.debug(f"Initializing Process with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}, parallel_type={parallel_type}")
+        _logger.debug(f"Initializing Process with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}, parallel_type={parallel_type}")
         if parallel_type not in ('threads', 'processes'): # Corrected typo 'process' to 'processes'
-            Logger.error(f"Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.")
+            _logger.error(f"Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.")
             raise ValueError(f'Invalid parallel processing type: {parallel_type}. Valid types are: threads or processes.')
         self._process: Callable = process
         self._parallel_type: str = parallel_type
         self._parallelize: bool = parallelize and Process.is_parallelizable(parallel_type=self._parallel_type)
         self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
         self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
-        Logger.info(f"Process initialized: parallel={self._parallelize}, type={self._parallel_type}, workers={self._workers}")
+        _logger.info(f"Process initialized: parallel={self._parallelize}, type={self._parallel_type}, workers={self._workers}")
 
     def run(self, params: List[Tuple[Any, ...]]) -> List[Tuple[bool, Optional[str], Any]]:
         """
@@ -271,28 +271,28 @@ class Process:
             When running in parallel mode, the order of results may not match the order of input parameters
             due to the nature of concurrent execution.
         """
-        Logger.info(f"Starting execution with {len(params)} parameter sets.")
+        _logger.info(f"Starting execution with {len(params)} parameter sets.")
         responses: List[Tuple[bool, Optional[str], Any]] = []
         if not self._parallelize:
-            Logger.info("Running in serial mode (parallelization disabled)")
+            _logger.info("Running in serial mode (parallelization disabled)")
             for i, param in enumerate(params):
-                Logger.debug(f"Processing item {i+1}/{len(params)} in serial mode.")
+                _logger.debug(f"Processing item {i+1}/{len(params)} in serial mode.")
                 try:
                     responses.append(self._process(*param))
                 except Exception as e:
-                    Logger.error(f"Error processing item {i+1} in serial mode: {e}")
+                    _logger.error(f"Error processing item {i+1} in serial mode: {e}")
                     responses.append((False, str(e), None)) # Ensure consistent return format
                 if self.sleeptime > 0:
                     time.sleep(self.sleeptime)
-            Logger.info("Finished serial execution.")
+            _logger.info("Finished serial execution.")
             return responses
 
         max_workers = self._workers or Process.get_available_cpu_count()
         if (max_workers < 1 or max_workers > Process.get_available_cpu_count()):
-            Logger.warning(f"Requested workers ({max_workers}) out of bounds. Adjusting to available CPU count: {Process.get_available_cpu_count()}")
+            _logger.warning(f"Requested workers ({max_workers}) out of bounds. Adjusting to available CPU count: {Process.get_available_cpu_count()}")
             max_workers = Process.get_available_cpu_count()
 
-        Logger.info(f"Starting parallel execution with {max_workers} workers using {self._parallel_type}.")
+        _logger.info(f"Starting parallel execution with {max_workers} workers using {self._parallel_type}.")
         executor_class = concurrent.futures.ProcessPoolExecutor if self._parallel_type == 'processes' else concurrent.futures.ThreadPoolExecutor
         try:
             with executor_class(max_workers=max_workers) as executor:
@@ -300,10 +300,10 @@ class Process:
                     responses = list(executor.map(Process._process_wrapper, [(self._process, p) for p in params]))
                 else:
                     responses = list(executor.map(lambda x: self._process(*x), params))
-            Logger.info(f"Processed {len(responses)} items successfully in parallel.")
+            _logger.info(f"Processed {len(responses)} items successfully in parallel.")
             return responses
         except Exception as e:
-            Logger.error(f"Error during parallel process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.error(f"Error during parallel process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
 
@@ -355,28 +355,28 @@ class FileProcess(Process):
             and a hash of the file path as the control file name.
         """
         from fbpyutils.file import creation_date
-        Logger.debug(f"Starting _controlled_run with args: {args}")
+        _logger.debug(f"Starting _controlled_run with args: {args}")
         try:
             if len(args) < 2:
-                Logger.error("Not enough arguments for _controlled_run. Expected at least (process_function, file_path).")
+                _logger.error("Not enough arguments for _controlled_run. Expected at least (process_function, file_path).")
                 raise ValueError('Not enough arguments to run')
 
             process: Callable = args[0] # Added type hint
             process_file: str = args[1] # Added type hint
 
             if not os.path.exists(process_file):
-                Logger.error(f"Process file not found: {process_file}")
+                _logger.error(f"Process file not found: {process_file}")
                 raise FileNotFoundError(f"Process file {process_file} does not exist")
 
             # Create control folder
-            control_folder: str = os.path.sep.join([Env.USER_APP_FOLDER,
+            control_folder: str = os.path.sep.join([_env.USER_APP_FOLDER,
                                              f"p_{hash_string(Process.get_function_info(process)['full_ref'])}.control"])
             if not os.path.exists(control_folder):
-                Logger.info(f"Creating control folder: {control_folder}")
+                _logger.info(f"Creating control folder: {control_folder}")
                 try:
                     os.makedirs(control_folder)
                 except FileExistsError:
-                    Logger.warning(f"{control_folder} already exists, probably created by concurrent process. Skipping.")
+                    _logger.warning(f"{control_folder} already exists, probably created by concurrent process. Skipping.")
 
             # Define control file path
             control_file: str = os.path.sep.join([control_folder, f"f_{hash_string(process_file)}.reg"])
@@ -386,29 +386,29 @@ class FileProcess(Process):
 
             # Check if control file exists and read last timestamp
             control_exists: bool = os.path.exists(control_file)
-            Logger.debug(f"Control file exists for {process_file}: {control_exists}")
+            _logger.debug(f"Control file exists for {process_file}: {control_exists}")
             if control_exists:
                 try:
                     with open(control_file, 'rb') as cf:
                         last_timestamp: float = pickle.load(cf) # Added type hint
                 except Exception as e:
-                    Logger.warning(f"Could not read control file {control_file}: {e}. Treating as if control file does not exist.")
+                    _logger.warning(f"Could not read control file {control_file}: {e}. Treating as if control file does not exist.")
                     last_timestamp = -1 # Treat as if no previous timestamp
 
                 # If file has not been modified since last processing, skip processing
                 if last_timestamp >= current_timestamp:
-                    Logger.debug(f"Control file timestamp: {last_timestamp}, File timestamp: {current_timestamp}. Elapsed time: {round(abs(last_timestamp - current_timestamp), 4)}")
-                    Logger.info(f"Skipping unmodified file: {process_file}.")
+                    _logger.debug(f"Control file timestamp: {last_timestamp}, File timestamp: {current_timestamp}. Elapsed time: {round(abs(last_timestamp - current_timestamp), 4)}")
+                    _logger.info(f"Skipping unmodified file: {process_file}.")
                     return (process_file, True, "Skipped", None)
 
-            Logger.info(f"Processing file: {process_file}")
+            _logger.info(f"Processing file: {process_file}")
             # Execute processing function
             try:
                 result = process(process_file)  # Call with file path for file processing functions
                 
                 # Handle various return value formats from the process function
                 if len(result) < 3:
-                    Logger.error(f"Unexpected result length from process function: {len(result)}. Result: {result}")
+                    _logger.error(f"Unexpected result length from process function: {len(result)}. Result: {result}")
                     return (process_file, False, "Unexpected result length", None)
                 
                 # Extract components based on ProcessingFilesFunction protocol
@@ -423,7 +423,7 @@ class FileProcess(Process):
                     message = result[1]
                     proc_result = result[2]
             except Exception as e:
-                Logger.error(f"Error processing file {process_file}: {str(e)}")
+                _logger.error(f"Error processing file {process_file}: {str(e)}")
                 return (process_file, False, str(e), None)
 
             # Update control file if processing was successful
@@ -431,22 +431,22 @@ class FileProcess(Process):
                 try:
                     with open(control_file, 'wb') as cf:
                         pickle.dump(current_timestamp, cf)
-                    Logger.info(f"Updated control file: {control_file}")
+                    _logger.info(f"Updated control file: {control_file}")
                 except Exception as e:
-                    Logger.error(f"Error writing control file {control_file}: {e}")
+                    _logger.error(f"Error writing control file {control_file}: {e}")
             # Remove control file if it was created but an error occurred
             elif not control_exists and os.path.exists(control_file):
                 try:
                     os.remove(control_file)
-                    Logger.info(f"Removed control file due to error: {control_file}")
+                    _logger.info(f"Removed control file due to error: {control_file}")
                 except Exception as e:
-                    Logger.error(f"Error removing control file {control_file}: {e}")
+                    _logger.error(f"Error removing control file {control_file}: {e}")
 
             # For ProcessingFilesFunction, return consistent format (file_path, success, message, result)
-            Logger.debug(f"Finished _controlled_run for {process_file}. Success: {success}")
+            _logger.debug(f"Finished _controlled_run for {process_file}. Success: {success}")
             return (process_file, success, message, proc_result)
         except Exception as e:
-            Logger.critical(f"Critical error in controlled run for {process_file}: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.critical(f"Critical error in controlled run for {process_file}: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
     def __init__(self, process: Callable[..., ProcessingFilesFunction], parallelize: bool = True,
@@ -465,13 +465,13 @@ class FileProcess(Process):
         """
         super().__init__(process, parallelize, workers, sleeptime) # Pass process to super().__init__
         self._process: Callable = process # Added type hint
-        Logger.debug(f"Initializing FileProcess with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}")
+        _logger.debug(f"Initializing FileProcess with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}")
         super().__init__(process, parallelize, workers, sleeptime) # Pass process to super().__init__
         self._process: Callable = process # Added type hint
         self._parallelize: bool = parallelize and Process.is_parallelizable()
         self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
         self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
-        logging.info(f"FileProcess initialized: parallel={self._parallelize}, workers={self._workers}")
+        _logger.info(f"FileProcess initialized: parallel={self._parallelize}, workers={self._workers}")
 
     def run(self, params: List[Tuple[Any, ...]], controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
         """
@@ -494,10 +494,10 @@ class FileProcess(Process):
                 - error_message (Optional[str]): Error message if processing failed, None otherwise.
                 - result (Any): Function result if successful, None otherwise.
         """
-        logging.info(f"Starting FileProcess run with {len(params)} items, controlled: {controlled}")
+        _logger.info(f"Starting FileProcess run with {len(params)} items, controlled: {controlled}")
         try:
             if controlled:
-                logging.info("Starting controlled execution for FileProcess.")
+                _logger.info("Starting controlled execution for FileProcess.")
                 # Save the original process function
                 original_process: Callable = self._process # Added type hint
                 # Temporarily replace with _controlled_run method
@@ -507,19 +507,19 @@ class FileProcess(Process):
                     _params: List[Tuple[Any, ...]] = [(original_process,) + p for p in params] # Added type hint
                     # Execute using the base class infrastructure
                     results = super().run(_params)
-                    logging.info("Finished controlled execution for FileProcess.")
+                    _logger.info("Finished controlled execution for FileProcess.")
                     return results
                 finally:
                     # Restore the original function
                     self._process = original_process
             else:
-                logging.info("Starting normal execution for FileProcess.")
+                _logger.info("Starting normal execution for FileProcess.")
                 # If controlled=False, use the default behavior of the base class
                 results = super().run(params)
-                logging.info("Finished normal execution for FileProcess.")
+                _logger.info("Finished normal execution for FileProcess.")
                 return results
         except Exception as e:
-            logging.critical(f"Critical error in FileProcess run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.critical(f"Critical error in FileProcess run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
 
@@ -574,7 +574,7 @@ class SessionProcess(Process):
         >>> # Expected: task1 is skipped, task2 and task3 are processed successfully.
         >>>
         >>> # Clean up control files
-        >>> control_folder = os.path.join(Env.USER_APP_FOLDER, f"s_{session_id}.session")
+        >>> control_folder = os.path.join(_env.USER_APP_FOLDER, f"s_{session_id}.session")
         >>> if os.path.exists(control_folder):
         ...     shutil.rmtree(control_folder)
 
@@ -590,7 +590,7 @@ class SessionProcess(Process):
         Returns:
             str: A unique session ID (UUID4).
         """
-        Logger.debug("Generating new session ID.")
+        _logger.debug("Generating new session ID.")
         return str(uuid.uuid4())
 
     @staticmethod
@@ -607,7 +607,7 @@ class SessionProcess(Process):
         Returns:
             str: A hash string representing the unique task ID.
         """
-        Logger.debug(f"Generating task ID for parameters: {params}")
+        _logger.debug(f"Generating task ID for parameters: {params}")
         return hash_string(str(params))
 
     def _controlled_run(self, *args: Any) -> Tuple[str, bool, Optional[str], Any]:
@@ -637,10 +637,10 @@ class SessionProcess(Process):
             Session and task control files are stored in a dedicated folder under the
             application's user data directory.
         """
-        logging.debug(f"Starting SessionProcess _controlled_run with args: {args}")
+        _logger.debug(f"Starting SessionProcess _controlled_run with args: {args}")
         try:
             if len(args) < 3:
-                logging.error("Not enough arguments for SessionProcess _controlled_run. Expected at least (process_function, session_id, task_id).")
+                _logger.error("Not enough arguments for SessionProcess _controlled_run. Expected at least (process_function, session_id, task_id).")
                 raise ValueError('Not enough arguments to run')
 
             process: Callable = args[0]
@@ -649,14 +649,14 @@ class SessionProcess(Process):
             process_params: Tuple[Any, ...] = args[3:]
 
             # Create session control folder
-            session_control_folder: str = os.path.sep.join([Env.USER_APP_FOLDER,
+            session_control_folder: str = os.path.sep.join([_env.USER_APP_FOLDER,
                                                      f"s_{session_id}.session"])
             if not os.path.exists(session_control_folder):
-                logging.info(f"Creating session control folder: {session_control_folder}")
+                _logger.info(f"Creating session control folder: {session_control_folder}")
                 try:
                     os.makedirs(session_control_folder)
                 except FileExistsError:
-                    logging.warning(f"{session_control_folder} already exists, probably created by concurrent process. Skipping.")
+                    _logger.warning(f"{session_control_folder} already exists, probably created by concurrent process. Skipping.")
 
             # Define task control file path
             task_control_file: str = os.path.sep.join([session_control_folder, f"t_{task_id}.task"])
@@ -667,19 +667,19 @@ class SessionProcess(Process):
                     with open(task_control_file, 'rb') as tcf:
                         task_status = pickle.load(tcf)
                     if task_status.get('status') == 'completed':
-                        logging.info(f"Skipping already completed task: {task_id} in session {session_id}.")
+                        _logger.info(f"Skipping already completed task: {task_id} in session {session_id}.")
                         return (task_id, True, "Skipped (completed)", task_status.get('result'))
                 except Exception as e:
-                    logging.warning(f"Could not read task control file {task_control_file}: {e}. Re-processing task.")
+                    _logger.warning(f"Could not read task control file {task_control_file}: {e}. Re-processing task.")
 
-            logging.info(f"Processing task: {task_id} in session {session_id}.")
+            _logger.info(f"Processing task: {task_id} in session {session_id}.")
             # Execute processing function
             try:
                 result = process(*process_params)
                 
                 # Handle various return value formats from the process function
                 if len(result) < 3:
-                    logging.error(f"Unexpected result length from process function: {len(result)}. Result: {result}")
+                    _logger.error(f"Unexpected result length from process function: {len(result)}. Result: {result}")
                     success = False
                     message = "Unexpected result length"
                     proc_result = None
@@ -688,7 +688,7 @@ class SessionProcess(Process):
                     message = result[1]
                     proc_result = result[2]
             except Exception as e:
-                logging.error(f"Error processing task {task_id} in session {session_id}: {str(e)}")
+                _logger.error(f"Error processing task {task_id} in session {session_id}: {str(e)}")
                 success = False
                 message = str(e)
                 proc_result = None
@@ -703,14 +703,14 @@ class SessionProcess(Process):
             try:
                 with open(task_control_file, 'wb') as tcf:
                     pickle.dump(task_status, tcf)
-                logging.info(f"Updated task control file for {task_id} in session {session_id}. Status: {task_status['status']}")
+                _logger.info(f"Updated task control file for {task_id} in session {session_id}. Status: {task_status['status']}")
             except Exception as e:
-                logging.error(f"Error writing task control file {task_control_file}: {e}")
+                _logger.error(f"Error writing task control file {task_control_file}: {e}")
 
-            logging.debug(f"Finished SessionProcess _controlled_run for task {task_id}. Success: {success}")
+            _logger.debug(f"Finished SessionProcess _controlled_run for task {task_id}. Success: {success}")
             return (task_id, success, message, proc_result)
         except Exception as e:
-            logging.critical(f"Critical error in SessionProcess controlled run for session {session_id}, task {task_id}: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.critical(f"Critical error in SessionProcess controlled run for session {session_id}, task {task_id}: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
     def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
@@ -727,13 +727,13 @@ class SessionProcess(Process):
                                      Defaults to Process._MAX_WORKERS (CPU count).
             sleeptime (float): Wait time in seconds between executions in serial mode. Defaults to 0.
         """
-        logging.debug(f"Initializing SessionProcess with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}")
+        _logger.debug(f"Initializing SessionProcess with parallelize={parallelize}, workers={workers}, sleeptime={sleeptime}")
         super().__init__(process, parallelize, workers, sleeptime)
         self._process: Callable = process
         self._parallelize: bool = parallelize and Process.is_parallelizable()
         self._workers: int = workers or Process._MAX_WORKERS
         self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
-        logging.info(f"SessionProcess initialized: parallel={self._parallelize}, workers={self._workers}")
+        _logger.info(f"SessionProcess initialized: parallel={self._parallelize}, workers={self._workers}")
 
     def run(self, params: List[Tuple[Any, ...]], session_id: Optional[str] = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
         """
@@ -758,11 +758,11 @@ class SessionProcess(Process):
                 - error_message (Optional[str]): Error message if processing failed, None otherwise.
                 - result (Any): Function result if successful, None otherwise.
         """
-        logging.info(f"Starting SessionProcess run with {len(params)} tasks, session_id: {session_id}, controlled: {controlled}")
+        _logger.info(f"Starting SessionProcess run with {len(params)} tasks, session_id: {session_id}, controlled: {controlled}")
         try:
             if controlled:
                 _session_id = session_id if session_id else SessionProcess.generate_session_id()
-                logging.info(f"Starting session controlled execution for SessionProcess with session ID: {_session_id}.")
+                _logger.info(f"Starting session controlled execution for SessionProcess with session ID: {_session_id}.")
                 # Save the original process function
                 original_process: Callable = self._process
                 # Temporarily replace with _controlled_run method
@@ -773,13 +773,13 @@ class SessionProcess(Process):
                         for p in params
                     ]
                     results = super().run(_params)
-                    logging.info(f"Finished session controlled execution for SessionProcess with session ID: {_session_id}.")
+                    _logger.info(f"Finished session controlled execution for SessionProcess with session ID: {_session_id}.")
                     return results
                 finally:
                     # Restore the original function
                     self._process = original_process
             else:
-                logging.info("Starting normal execution for SessionProcess.")
+                _logger.info("Starting normal execution for SessionProcess.")
                 # If controlled=False, use the default behavior of the base class
                 # For consistency, we still generate task IDs, but they won't be persisted
                 _params_with_task_ids = [
@@ -813,10 +813,10 @@ class SessionProcess(Process):
                     success, message, proc_result = self._process(*p)
                     results.append((task_id, success, message, proc_result))
                 
-                logging.info("Finished normal execution for SessionProcess.")
+                _logger.info("Finished normal execution for SessionProcess.")
                 return results
         except Exception as e:
-            logging.critical(f"Critical error in SessionProcess run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.critical(f"Critical error in SessionProcess run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
     @staticmethod
@@ -882,27 +882,27 @@ class SessionProcess(Process):
             task_id: str = SessionProcess.generate_task_id(params) # Added type hint
 
             # Create session control folder
-            session_control_folder: str = os.path.sep.join([Env.USER_APP_FOLDER,
+            session_control_folder: str = os.path.sep.join([_env.USER_APP_FOLDER,
                                                      f"session_control",
                                                      f"s_{hash_string(session_id)}"])
             if not os.path.exists(session_control_folder):
-                Logger.info(f"Creating session control folder: {session_control_folder}")
+                _logger.info(f"Creating session control folder: {session_control_folder}")
                 try:
                     os.makedirs(session_control_folder)
                 except FileExistsError:
-                    Logger.warning(f"{session_control_folder} already exists, probably created by concurrent process. Skipping.")
+                    _logger.warning(f"{session_control_folder} already exists, probably created by concurrent process. Skipping.")
 
             # Define task control file path
             task_control_file: str = os.path.sep.join([session_control_folder, f"t_{hash_string(task_id)}.reg"])
 
             # Check if task control file exists
             task_control_exists: bool = os.path.exists(task_control_file)
-            Logger.info(f"Task control file exists: {task_control_exists} for task_id: {task_id}")
+            _logger.info(f"Task control file exists: {task_control_exists} for task_id: {task_id}")
             if task_control_exists:
-                Logger.info(f"Skipping already processed task: {task_id}")
+                _logger.info(f"Skipping already processed task: {task_id}")
                 return (task_id, True, "Skipped", None)
 
-            Logger.info(f"Processing task: {task_id} in session: {session_id}")
+            _logger.info(f"Processing task: {task_id} in session: {session_id}")
             # Execute processing function
             try:
                 # For session process function, we pass the actual parameters
@@ -910,7 +910,7 @@ class SessionProcess(Process):
 
                 # Handle various return value formats from the process function
                 if len(result) < 2:
-                    Logger.error(f"Unexpected result length: {len(result)}. Result: {result}")
+                    _logger.error(f"Unexpected result length: {len(result)}. Result: {result}")
                     return (task_id, False, "Unexpected result length", None)
                 
                 # Extract components from result
@@ -919,24 +919,24 @@ class SessionProcess(Process):
                 message = result[1] if len(result) > 1 else None
                 proc_result = result[2] if len(result) > 2 else None
             except Exception as e:
-                Logger.error(f"Error processing task: {str(e)}")
+                _logger.error(f"Error processing task: {str(e)}")
                 return (task_id, False, str(e), None)
 
             # Update task control file if processing was successful
             if success:  # success
                 with open(task_control_file, 'wb') as cf:
                     pickle.dump(True, cf) # just mark that the task was successfully executed
-                Logger.info(f"Updated task control file: {task_control_file}")
+                _logger.info(f"Updated task control file: {task_control_file}")
             # Remove task control file if it was created but an error occurred
             elif not task_control_exists and os.path.exists(task_control_file):
                 os.remove(task_control_file)
-                Logger.info(f"Removed task control file due to error: {task_control_file}")
+                _logger.info(f"Removed task control file due to error: {task_control_file}")
 
             # For the session process, return a standardized format
             # Return structure: (task_id, success, message, result)
             return (task_id, success, message, proc_result)
         except Exception as e:
-            Logger.error(f"Error in session controlled run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.error(f"Error in session controlled run: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise
 
     def __init__(self, process: Callable[..., ProcessingFunction], parallelize: bool = True,
@@ -960,7 +960,7 @@ class SessionProcess(Process):
         self._parallelize: bool = parallelize and Process.is_parallelizable(parallel_type=self._parallel_type)
         self._workers: int = workers or Process._MAX_WORKERS # Ensured _workers is always int
         self.sleeptime: float = 0 if sleeptime < 0 else sleeptime
-        Logger.info(f"SessionProcess initialized: parallel={self._parallelize}, workers={self._workers}, type={self._parallel_type}")
+        _logger.info(f"SessionProcess initialized: parallel={self._parallelize}, workers={self._workers}, type={self._parallel_type}")
 
     def run(self, params: List[Tuple[Any, ...]], session_id: Optional[str] = None, controlled: bool = False) -> List[Tuple[str, bool, Optional[str], Any]]:
         """
@@ -988,9 +988,9 @@ class SessionProcess(Process):
         """
         try:
             if controlled:
-                Logger.info("Starting session controlled execution")
+                _logger.info("Starting session controlled execution")
                 _session_id: str = session_id or SessionProcess.generate_session_id() # Added type hint
-                Logger.info(f"Session ID: {_session_id}")
+                _logger.info(f"Session ID: {_session_id}")
                 # Save the original process function
                 original_process: Callable = self._process # Added type hint
                 # Temporarily replace with _controlled_run method
@@ -1005,9 +1005,9 @@ class SessionProcess(Process):
                     # Restore the original function
                     self._process = original_process
             else:
-                Logger.info("Starting normal execution")
+                _logger.info("Starting normal execution")
                 # If controlled=False, use the default behavior of the base class
                 return super().run(params)
         except Exception as e:
-            Logger.error(f"Error in session process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
+            _logger.error(f"Error in session process execution: {str(e)} at {__file__}:{inspect.currentframe().f_lineno}")
             raise

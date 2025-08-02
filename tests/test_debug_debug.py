@@ -3,7 +3,7 @@ from fbpyutils import debug
 
 
 def test_debug_decorator(mocker):
-    mock_logger_debug = mocker.patch('fbpyutils.debug.Logger.debug')
+    mock_logger_debug = mocker.patch('fbpyutils.debug._logger.debug')
 
     @debug.debug
     def example_function(a, b):

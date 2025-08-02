@@ -6,9 +6,10 @@ import pytz
 from datetime import datetime
 from dateutil import relativedelta
 
-from typing import Dict
+from fbpyutils import get_logger
 
-from fbpyutils.logging import Logger
+
+_logger = get_logger()
 
 def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
     """
@@ -32,16 +33,16 @@ def delta(x: datetime, y: datetime, delta: str = 'months') -> int:
         >>> delta(date2, date1, 'years')
         1
     """
-    Logger.debug(f"Starting delta with x: {x}, y: {y}, delta: {delta}")
+    _logger.debug(f"Starting delta with x: {x}, y: {y}, delta: {delta}")
     d = relativedelta.relativedelta(x, y)
     if delta == 'months':
-        Logger.debug(f"Calculated delta in months: {d.years * 12 + d.months}")
+        _logger.debug(f"Calculated delta in months: {d.years * 12 + d.months}")
         return d.years * 12 + d.months
     elif delta == 'years':
-        Logger.debug(f"Calculated delta in years: {d.years}")
+        _logger.debug(f"Calculated delta in years: {d.years}")
         return d.years
     else:
-        Logger.error(f"Invalid option for delta: {delta}. Use 'months' or 'years'.")
+        _logger.error(f"Invalid option for delta: {delta}. Use 'months' or 'years'.")
         raise Exception('Invalid option. Use months or years')
 
 
@@ -65,11 +66,11 @@ def apply_timezone(x: datetime, tz: str) -> datetime:
         >>> apply_timezone(naive_dt, 'America/New_York')
         datetime.datetime(2024, 7, 19, 12, 0, tzinfo=<DstTzInfo 'America/New_York' EDT-1 day, 20:00:00 DST>)
     """
-    Logger.debug(f"Starting apply_timezone with datetime: {x}, timezone: {tz}")
+    _logger.debug(f"Starting apply_timezone with datetime: {x}, timezone: {tz}")
     try:
         timezone = pytz.timezone(tz)
     except pytz.UnknownTimeZoneError as e:
-        Logger.error(f"Unknown timezone '{tz}': {e}")
+        _logger.error(f"Unknown timezone '{tz}': {e}")
         raise e
 
     date_time_obj = x
@@ -78,7 +79,7 @@ def apply_timezone(x: datetime, tz: str) -> datetime:
         date_time_obj.year, date_time_obj.month, date_time_obj.day,
         hour=date_time_obj.hour, minute=date_time_obj.minute, second=date_time_obj.second,
         microsecond=date_time_obj.microsecond, tzinfo=timezone)
-    Logger.debug(f"Finished apply_timezone successfully. Result: {result}")
+    _logger.debug(f"Finished apply_timezone successfully. Result: {result}")
     return result
 
 
@@ -103,9 +104,9 @@ def elapsed_time(x: datetime, y: datetime) -> tuple:
         >>> elapsed_time(end_time, start_time)
         (1, 2, 30, 50)
     """
-    Logger.debug(f"Starting elapsed_time with x: {x}, y: {y}")
+    _logger.debug(f"Starting elapsed_time with x: {x}, y: {y}")
     if x < y:
-        Logger.error(f"Invalid input for elapsed_time: x ({x}) must be greater than or equal to y ({y}).")
+        _logger.error(f"Invalid input for elapsed_time: x ({x}) must be greater than or equal to y ({y}).")
         raise ValueError("x parameter must be greater than or equal to y parameter")
 
     delta = x - y
@@ -115,5 +116,5 @@ def elapsed_time(x: datetime, y: datetime) -> tuple:
     minutes = (delta.seconds//60)%60
     seconds = delta.seconds%60
 
-    Logger.debug(f"Finished elapsed_time successfully. Result: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds.")
+    _logger.debug(f"Finished elapsed_time successfully. Result: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds.")
     return days, hours, minutes, seconds

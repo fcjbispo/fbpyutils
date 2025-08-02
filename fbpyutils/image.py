@@ -1,13 +1,15 @@
 import os
 import io
-import logging
-from typing import Union, Optional, Tuple
+from typing import Union, Tuple
 from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ExifTags import TAGS, GPSTAGS
 from datetime import datetime
 
-# Configure logging
-logger = logging.getLogger(__name__)
+from fbpyutils import get_logger
+
+
+_logger = get_logger()
+
 
 def _load_image_from_source(image_source: Union[str, bytes]) -> Tuple[Image.Image, str, int]:
     """
@@ -326,7 +328,7 @@ def resize_image(image_source: Union[str, bytes], width: int, height: int,
     Raises:
         ValueError: If dimensions are invalid or image cannot be processed
     """
-    logger.info(f"Resizing image to {width}x{height} (maintain_ratio: {maintain_aspect_ratio})")
+    _logger.info(f"Resizing image to {width}x{height} (maintain_ratio: {maintain_aspect_ratio})")
     
     try:
         # Validate dimensions
@@ -341,7 +343,7 @@ def resize_image(image_source: Union[str, bytes], width: int, height: int,
         
         with img:
             original_width, original_height = img.size
-            logger.debug(f"Original dimensions: {original_width}x{original_height}")
+            _logger.debug(f"Original dimensions: {original_width}x{original_height}")
             
             if maintain_aspect_ratio:
                 # Calculate aspect ratios
@@ -359,7 +361,7 @@ def resize_image(image_source: Union[str, bytes], width: int, height: int,
             else:
                 new_width, new_height = width, height
             
-            logger.debug(f"New dimensions: {new_width}x{new_height}")
+            _logger.debug(f"New dimensions: {new_width}x{new_height}")
             
             # Resize image using high-quality resampling
             resized_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
@@ -378,11 +380,11 @@ def resize_image(image_source: Union[str, bytes], width: int, height: int,
             resized_img.save(output_buffer, format='JPEG', quality=quality, optimize=True)
             image_bytes = output_buffer.getvalue()
             
-            logger.info(f"Image resized successfully. New size: {len(image_bytes)} bytes")
+            _logger.info(f"Image resized successfully. New size: {len(image_bytes)} bytes")
             return image_bytes
             
     except Exception as e:
-        logger.error(f"Error resizing image: {str(e)}")
+        _logger.error(f"Error resizing image: {str(e)}")
         raise ValueError(f"Error resizing image: {str(e)}")
 
 def enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: float = 2.0, threshold: int = 128) -> bytes:
@@ -400,7 +402,7 @@ def enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: floa
     Raises:
         ValueError: If image cannot be processed or parameters are invalid
     """
-    logger.info("Enhancing image for OCR processing")
+    _logger.info("Enhancing image for OCR processing")
     
     try:
         # Validate parameters
@@ -414,7 +416,7 @@ def enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: floa
         img, filename, file_size = _load_image_from_source(image_source)
         
         with img:
-            logger.debug(f"Original image: {img.size[0]}x{img.size[1]}, mode: {img.mode}")
+            _logger.debug(f"Original image: {img.size[0]}x{img.size[1]}, mode: {img.mode}")
             
             # Convert to RGB if necessary
             if img.mode != 'RGB':
@@ -422,33 +424,33 @@ def enhance_image_for_ocr(image_source: Union[str, bytes], contrast_factor: floa
             
             # Step 1: Convert to grayscale
             grayscale = img.convert('L')
-            logger.debug("Converted to grayscale")
+            _logger.debug("Converted to grayscale")
             
             # Step 2: Enhance contrast
             enhancer = ImageEnhance.Contrast(grayscale)
             enhanced = enhancer.enhance(contrast_factor)
-            logger.debug(f"Enhanced contrast with factor {contrast_factor}")
+            _logger.debug(f"Enhanced contrast with factor {contrast_factor}")
             
             # Step 3: Sharpen the image
             sharpened = enhanced.filter(ImageFilter.SHARPEN)
-            logger.debug("Applied sharpening")
+            _logger.debug("Applied sharpening")
             
             # Step 4: Apply median filter to reduce noise
             denoised = sharpened.filter(ImageFilter.MedianFilter(size=3))
-            logger.debug("Applied noise reduction")
+            _logger.debug("Applied noise reduction")
             
             # Step 5: Apply threshold/binarization
             enhanced = denoised.point(lambda x: 0 if x < threshold else 255, mode='1')
-            logger.debug(f"Applied binarization with threshold {threshold}")
+            _logger.debug(f"Applied binarization with threshold {threshold}")
 
             # Save to bytes
             output_buffer = io.BytesIO()
             enhanced.save(output_buffer, format='PNG', optimize=True)
             image_bytes = output_buffer.getvalue()
             
-            logger.info(f"Image enhanced successfully for OCR. New size: {len(image_bytes)} bytes")
+            _logger.info(f"Image enhanced successfully for OCR. New size: {len(image_bytes)} bytes")
             return image_bytes
             
     except Exception as e:
-        logger.error(f"Error enhancing image for OCR: {str(e)}")
+        _logger.error(f"Error enhancing image for OCR: {str(e)}")
         raise ValueError(f"Error enhancing image for OCR: {str(e)}")

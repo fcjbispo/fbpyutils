@@ -93,7 +93,7 @@ This document tracks the implementation status of features defined in SPEC.md co
 - **Test File**: tests/test_image_resize.py
 
 ### 🔄 Next Steps
-- [ ] Increase overall test coverage to 90%+ (currently at 63.74%)
+- [ ] Increase overall test coverage to 90%+ (currently at 63.74%) - Postponed to next release
 - [ ] Add integration tests for module interactions
 - [ ] Add performance benchmarks
 - [ ] Add more edge case tests for file.py module

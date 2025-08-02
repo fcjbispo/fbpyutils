@@ -10,7 +10,10 @@ from datetime import datetime
 import pandas as pd
 from typing import Union, Dict
 import warnings
-from fbpyutils.logging import Logger
+from fbpyutils import get_logger
+
+
+_logger = get_logger()
 
 XLS, XLSX = 0, 1
 
@@ -50,7 +53,7 @@ class ExcelWorkbook:
             ...     file_bytes = f.read()
             >>> workbook = ExcelWorkbook(file_bytes)
         """
-        Logger.debug(f"Initializing ExcelWorkbook with file: {xl_file}")
+        _logger.debug(f"Initializing ExcelWorkbook with file: {xl_file}")
         data = None
 
         if isinstance(xl_file, str):
@@ -58,18 +61,18 @@ class ExcelWorkbook:
                 try:
                     with open(xl_file, 'rb') as f:
                         data = f.read()
-                    Logger.info(f"Successfully read Excel file from path: {xl_file}")
+                    _logger.info(f"Successfully read Excel file from path: {xl_file}")
                 except (OSError, IOError) as e:
-                    Logger.error(f"Error reading the Excel file {xl_file}: {e}")
+                    _logger.error(f"Error reading the Excel file {xl_file}: {e}")
                     raise
             else:
-                Logger.error(f"Excel file not found: {xl_file}")
+                _logger.error(f"Excel file not found: {xl_file}")
                 raise FileNotFoundError(f'File {xl_file} does not exist.')
         elif isinstance(xl_file, bytes):
             data = xl_file
-            Logger.info("Received Excel file as bytes.")
+            _logger.info("Received Excel file as bytes.")
         else:
-            Logger.error(f"Invalid file reference type: {type(xl_file)}. Must be a file path (str) or bytes.")
+            _logger.error(f"Invalid file reference type: {type(xl_file)}. Must be a file path (str) or bytes.")
             raise TypeError('Invalid file reference. Must be a file path or array of bytes.')
 
         self.workbook = None
@@ -81,21 +84,21 @@ class ExcelWorkbook:
             warnings.simplefilter("ignore")
             self.workbook = openpyxl.open(xl_data, data_only=True)
             self.sheet_names = self.workbook.sheetnames
-            Logger.debug("Workbook opened successfully with openpyxl (XLSX format).")
+            _logger.debug("Workbook opened successfully with openpyxl (XLSX format).")
         except Exception as e_xlsx:
-            Logger.warning(f"Failed to open with openpyxl, trying xlrd. Error: {e_xlsx}")
+            _logger.warning(f"Failed to open with openpyxl, trying xlrd. Error: {e_xlsx}")
             try:
                 xl_data.seek(0)
                 self.workbook = xlrd.open_workbook(file_contents=xl_data.read())
                 self.sheet_names = self.workbook.sheet_names()
                 self.kind = XLS
-                Logger.debug("Workbook opened successfully with xlrd (XLS format).")
+                _logger.debug("Workbook opened successfully with xlrd (XLS format).")
             except Exception as e_xls:
-                Logger.error(f"Failed to open workbook with both openpyxl and xlrd. XLSX error: {e_xlsx}, XLS error: {e_xls}")
+                _logger.error(f"Failed to open workbook with both openpyxl and xlrd. XLSX error: {e_xlsx}, XLS error: {e_xls}")
                 raise ValueError("Could not open workbook. Invalid file format or corrupted file.") from e_xls
         finally:
             warnings.simplefilter("default")
-        Logger.info("ExcelWorkbook initialized.")
+        _logger.info("ExcelWorkbook initialized.")
 
     def read_sheet(self, sheet_name: str = None) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
         """
@@ -120,10 +123,10 @@ class ExcelWorkbook:
             >>> data_sheet2 = workbook.read_sheet('Sheet2')
         """
         sheet_name = sheet_name or self.sheet_names[0]
-        Logger.debug(f"Reading sheet: {sheet_name}")
+        _logger.debug(f"Reading sheet: {sheet_name}")
 
         if sheet_name not in self.sheet_names:
-            Logger.error(f"Invalid or nonexistent sheet name: {sheet_name}. Available sheets: {self.sheet_names}")
+            _logger.error(f"Invalid or nonexistent sheet name: {sheet_name}. Available sheets: {self.sheet_names}")
             raise NameError('Invalid/Nonexistent sheet.')
 
         try:
@@ -133,10 +136,10 @@ class ExcelWorkbook:
             else:  # XLS
                 sh = self.workbook.sheet_by_name(sheet_name)
                 rows = tuple(tuple(sh.cell_value(r, c) for c in range(sh.ncols)) for r in range(sh.nrows))
-            Logger.info(f"Successfully read sheet '{sheet_name}'. Rows read: {len(rows)}")
+            _logger.info(f"Successfully read sheet '{sheet_name}'. Rows read: {len(rows)}")
             return rows
         except Exception as e:
-            Logger.error(f"Error reading sheet '{sheet_name}': {e}")
+            _logger.error(f"Error reading sheet '{sheet_name}': {e}")
             raise
 
     def read_sheet_by_index(self, index: int = 0) -> tuple[tuple[Union[str, float, int, bool, datetime, None], ...], ...]:
@@ -159,10 +162,10 @@ class ExcelWorkbook:
             >>> # Read the second sheet (index 1)
             >>> data_sheet2 = workbook.read_sheet_by_index(1)
         """
-        Logger.debug(f"Reading sheet by index: {index}")
+        _logger.debug(f"Reading sheet by index: {index}")
 
         if not 0 <= index < len(self.sheet_names):
-            Logger.error(f"Invalid or nonexistent sheet index: {index}. Total sheets: {len(self.sheet_names)}")
+            _logger.error(f"Invalid or nonexistent sheet index: {index}. Total sheets: {len(self.sheet_names)}")
             raise IndexError('Sheet index out of range.')
 
         return self.read_sheet(self.sheet_names[index])
@@ -185,13 +188,13 @@ def get_sheet_names(xl_file: Union[str, bytes]) -> list[str]:
         >>> print(names)
         ['Sheet1', 'Sheet2']
     """
-    Logger.debug(f"Getting sheet names for file: {xl_file}")
+    _logger.debug(f"Getting sheet names for file: {xl_file}")
     try:
         xl = ExcelWorkbook(xl_file)
-        Logger.info(f"Retrieved sheet names: {xl.sheet_names}")
+        _logger.info(f"Retrieved sheet names: {xl.sheet_names}")
         return xl.sheet_names
     except Exception as e:
-        Logger.error(f"Error getting sheet names from {xl_file}: {e}")
+        _logger.error(f"Error getting sheet names from {xl_file}: {e}")
         raise
 
 
@@ -213,14 +216,14 @@ def get_sheet_by_name(
     Example:
         >>> data = get_sheet_by_name('tests/test_xlsx_file.xlsx', 'Sheet1')
     """
-    Logger.debug(f"Getting sheet by name '{sheet_name}' from file: {xl_file}")
+    _logger.debug(f"Getting sheet by name '{sheet_name}' from file: {xl_file}")
     try:
         xl = ExcelWorkbook(xl_file)
         sheet_content = xl.read_sheet(sheet_name)
-        Logger.info(f"Successfully retrieved sheet '{sheet_name}'.")
+        _logger.info(f"Successfully retrieved sheet '{sheet_name}'.")
         return sheet_content
     except Exception as e:
-        Logger.error(f"Error getting sheet by name '{sheet_name}' from {xl_file}: {e}")
+        _logger.error(f"Error getting sheet by name '{sheet_name}' from {xl_file}: {e}")
         raise
 
 
@@ -243,17 +246,17 @@ def get_all_sheets(
         >>> print(all_data.keys())
         dict_keys(['Sheet1', 'Sheet2'])
     """
-    Logger.debug(f"Getting all sheets from file: {xl_file}")
+    _logger.debug(f"Getting all sheets from file: {xl_file}")
     try:
         xl = ExcelWorkbook(xl_file)
         sheet_names = xl.sheet_names
         all_sheets_content = {
             sheet_name: tuple(xl.read_sheet(sheet_name)) for sheet_name in sheet_names
         }
-        Logger.info(f"Successfully retrieved all sheets from {xl_file}.")
+        _logger.info(f"Successfully retrieved all sheets from {xl_file}.")
         return all_sheets_content
     except Exception as e:
-        Logger.error(f"Error getting all sheets from {xl_file}: {e}")
+        _logger.error(f"Error getting all sheets from {xl_file}: {e}")
         raise
 
 
@@ -287,10 +290,10 @@ def write_to_sheet(
         >>> # Add a sheet with a name that already exists
         >>> write_to_sheet(df, 'output.xlsx', 'MyData') # Creates 'MyData1'
     """
-    Logger.debug(f"Writing DataFrame to Excel sheet '{sheet_name}' in workbook: {workbook_path}")
+    _logger.debug(f"Writing DataFrame to Excel sheet '{sheet_name}' in workbook: {workbook_path}")
     try:
         if not os.path.exists(workbook_path):
-            Logger.info(f"Workbook does not exist, creating new file: {workbook_path}")
+            _logger.info(f"Workbook does not exist, creating new file: {workbook_path}")
             df.to_excel(
                 workbook_path,
                 sheet_name=sheet_name,
@@ -298,9 +301,9 @@ def write_to_sheet(
                 freeze_panes=(1, 0),
                 header=True,
             )
-            Logger.info(f"Successfully created new workbook and wrote sheet '{sheet_name}'.")
+            _logger.info(f"Successfully created new workbook and wrote sheet '{sheet_name}'.")
         else:
-            Logger.info(f"Workbook exists, appending to: {workbook_path}")
+            _logger.info(f"Workbook exists, appending to: {workbook_path}")
             warnings.simplefilter("ignore")
             try:
                 # Use 'a' mode to append and 'if_sheet_exists' to handle conflicts.
@@ -319,7 +322,7 @@ def write_to_sheet(
                         index += 1
                         final_sheet_name = f"{sheet_name}{index}"
                     
-                    Logger.debug(f"Final sheet name determined: {final_sheet_name}")
+                    _logger.debug(f"Final sheet name determined: {final_sheet_name}")
                     df.to_excel(
                         writer,
                         sheet_name=final_sheet_name,
@@ -327,12 +330,12 @@ def write_to_sheet(
                         freeze_panes=(1, 0),
                         header=True,
                     )
-                Logger.info(f"Successfully wrote DataFrame to sheet '{final_sheet_name}' in existing workbook.")
+                _logger.info(f"Successfully wrote DataFrame to sheet '{final_sheet_name}' in existing workbook.")
             except Exception as e:
-                Logger.error(f"Error writing to existing Excel workbook {workbook_path}: {e}")
+                _logger.error(f"Error writing to existing Excel workbook {workbook_path}: {e}")
                 raise
             finally:
                 warnings.simplefilter("default")
     except Exception as e:
-        Logger.error(f"Critical error in write_to_sheet: {e}")
+        _logger.error(f"Critical error in write_to_sheet: {e}")
         raise

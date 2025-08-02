@@ -19,7 +19,7 @@ This document outlines the detailed steps required to implement the "Next Steps"
 
 ## 2. Consider adding modules to `__init__.py` for easier import.
 
-*   **Objective:** Facilitate the import of `fbpyutils` modules by making them directly accessible from the main package, simplifying client code (e.g., `from fbpyutils import calendar` instead of `import fbpyutils.calendar`).
+*   **Objective:** Facilitate the import of `fbpyutils` modules by making them directly accessible from the main package, simplifying client code (e.g., `from fbpyutils import calendar` instead of `from fbpyutils import get_logger.calendar`).
 *   **Suggested Mode:** `CODE`
 *   **Detailed Steps:**
     1.  Open the `fbpyutils/__init__.py` file.

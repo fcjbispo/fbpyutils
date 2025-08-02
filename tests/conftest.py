@@ -1,5 +1,4 @@
 import pytest
-import fbpyutils
 
 @pytest.fixture(autouse=True)
 def setup_fbpyutils():
@@ -9,4 +8,6 @@ def setup_fbpyutils():
     logger are configured, preventing `RuntimeError` for tests that
 -   depend on them.
     """
-    fbpyutils.setup()
+    from fbpyutils import setup
+    
+    setup()

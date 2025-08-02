@@ -136,7 +136,7 @@ tests/results.xml
 .aider**
 poetry.lock
 **/*log.*
+**/*.lock
 
 # Sandbox files
-sandbox.py
-sandbox.ipynb
+**/sandbox*

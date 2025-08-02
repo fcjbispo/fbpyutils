@@ -1,7 +1,7 @@
 import logging
 import os
 from typing import Dict, Any, Optional
-from logging.handlers import RotatingFileHandler
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 # Forward declaration of Env to avoid circular import
 class Env:
@@ -31,6 +31,7 @@ class Logger:
     INFO: int = logging.INFO
     WARNING: int = logging.WARNING
     ERROR: int = logging.ERROR
+    CRITICAL: int = logging.CRITICAL
 
     _logger: logging.Logger = logging.getLogger('fbpyutils')
     _is_configured: bool = False
@@ -86,9 +87,9 @@ class Logger:
                 if log_dir and not os.path.exists(log_dir):
                     os.makedirs(log_dir)
                 
-                file_handler = RotatingFileHandler(
+                file_handler = ConcurrentRotatingFileHandler(
                     log_file_path,
-                    maxBytes=256 * 1024, # 256 KB
+                    maxBytes=256 * 1024,  # 256 KB
                     backupCount=5,
                     encoding='utf-8'
                 )
@@ -129,12 +130,21 @@ class Logger:
         Logger._logger.info("Logging system re-configured from Env.")
 
     @staticmethod
-    def configure(config_dict: Dict[str, Any]) -> None:
+    def configure_from_config_dict(config_dict: Dict[str, Any]) -> None:
         """
         Public method to re-configure the logger at runtime if needed.
         """
         Logger._configure_internal(config_dict)
         Logger._logger.info("Logging system re-configured.")
+
+    @staticmethod
+    def configure(app_name: str, log_level: str, log_format: str = None, log_file_path = None) -> None:
+        Logger.configure_from_config_dict({
+            "log_level": log_level,
+            "log_format": log_format,
+            "log_file_path": log_file_path,
+            "app_name": app_name
+        })
 
     @staticmethod
     def _check_configured():
@@ -170,6 +180,12 @@ class Logger:
         """Logs a message with severity 'ERROR'."""
         Logger._check_configured()
         Logger._logger.error(message, *args, **kwargs)
+
+    @staticmethod
+    def critical(message: str, *args: Any, **kwargs: Any) -> None:
+        """Logs a message with severity 'CRITICAL'."""
+        Logger._check_configured()
+        Logger._logger.critical(message, *args, **kwargs)
 
     @staticmethod
     def log(log_type: int, log_text: str, *args: Any, **kwargs: Any) -> None:

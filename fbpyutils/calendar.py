@@ -8,12 +8,12 @@ import pandas as pd
 import numpy as np
 import calendar as xcalendar
 
-
 from typing import List
 
-from fbpyutils import datetime as dutl
-from fbpyutils.logging import Logger
+from fbpyutils import get_logger, datetime as dutl
 
+
+_logger = get_logger()
 
 def get_calendar(x: date, y: date) -> List:
     """Builds a calendar to be used as a time dimension.
@@ -30,10 +30,10 @@ def get_calendar(x: date, y: date) -> List:
     Raises:
         ValueError: If the end date is not greater than the start date.
     """
-    Logger.debug(f"Starting get_calendar with start_date: {x}, end_date: {y}")
+    _logger.debug(f"Starting get_calendar with start_date: {x}, end_date: {y}")
     start_date, end_date = x, y
     if end_date <= start_date:
-        Logger.error(f"Invalid end date: {end_date}. Must be greater than start date: {start_date}.")
+        _logger.error(f"Invalid end date: {end_date}. Must be greater than start date: {start_date}.")
         raise ValueError("Invalid end date. Must be greater than start date.")
 
     cal = None
@@ -64,9 +64,9 @@ def get_calendar(x: date, y: date) -> List:
             for d in dates
         ]
     except ValueError as e:
-        Logger.error(f"Error building calendar: {e}")
+        _logger.error(f"Error building calendar: {e}")
         raise e
-    Logger.debug("Finished get_calendar successfully.")
+    _logger.debug("Finished get_calendar successfully.")
 
     return cal
 
@@ -88,7 +88,7 @@ def add_markers(x: List) -> List:
     Returns:
         List: The input calendar list with added boolean marker fields.
     """
-    Logger.debug("Starting add_markers.")
+    _logger.debug("Starting add_markers.")
     cal = x
     today = datetime.now().date()
 
@@ -152,7 +152,7 @@ def add_markers(x: List) -> List:
                 "last_3_months": d <= today and dutl.delta(today, d, "months") <= 3,
             }
         )
-    Logger.debug("Finished add_markers successfully.")
+    _logger.debug("Finished add_markers successfully.")
     return cal
 
 
@@ -178,15 +178,15 @@ def calendarize(
         NameError: If the specified date_column is not found or is not a
                    datetime type.
     """
-    Logger.debug(f"Starting calendarize with date_column: {date_column}, with_markers: {with_markers}.")
+    _logger.debug(f"Starting calendarize with date_column: {date_column}, with_markers: {with_markers}.")
     if not isinstance(x, pd.DataFrame):
-        Logger.error(f"Invalid object type for calendarize. Expected Pandas DataFrame, got {type(x)}.")
+        _logger.error(f"Invalid object type for calendarize. Expected Pandas DataFrame, got {type(x)}.")
         raise TypeError(f"Invalid object type. Expected Pandas DataFrame.")
 
     df = x.copy()
 
     if date_column not in df.columns or not np.issubdtype(df[date_column], np.datetime64):
-        Logger.error(f"DateTime column not found or invalid: {date_column}.")
+        _logger.error(f"DateTime column not found or invalid: {date_column}.")
         raise NameError(f"DateTime column not found or invalid: {date_column}.")
 
     mind, maxd = min(df[date_column]), max(df[date_column])
@@ -201,5 +201,5 @@ def calendarize(
     calendar.columns = columns
     df[date_column] = df[date_column].dt.date
 
-    Logger.debug("Finished calendarize successfully.")
+    _logger.debug("Finished calendarize successfully.")
     return df.merge(calendar, left_on=date_column, right_on="calendar_date")

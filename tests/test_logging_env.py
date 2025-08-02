@@ -4,10 +4,7 @@ import json
 import logging
 from unittest.mock import patch, mock_open, MagicMock
 from pathlib import Path
-
-# Temporarily adjust sys.path to import modules from fbpyutils
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 from fbpyutils.env import Env
 from fbpyutils.logging import Logger
@@ -112,21 +109,19 @@ def test_env_initialization_with_config(mock_file_operations, mock_makedirs, moc
     _directory_paths.discard(user_app_folder) # Ensure it's not in mocked directories
     _existing_paths.discard(user_app_folder) # Ensure it's not in mocked existing paths
 
-    # Simulate loading config from fbpyutils/app.json
-    with patch('fbpyutils.env.load_config', return_value=temp_app_json_content):
-        # Re-initialize Env to pick up the mocked config
-        Env._instance = None # Reset singleton instance
-        env = Env(temp_app_json_content)
-
-        assert env.APP.name == "TestApp"
-        assert env.APP.appcode == "TEST"
-        assert env.APP.year == 2024
-        assert env.LOG_LEVEL == "DEBUG"
-        assert os.path.normpath(env.LOG_FILE) == os.path.normpath("test_logs/test_app.log")
-        assert os.path.normpath(env.USER_FOLDER) == os.path.normpath("/mock/home/user")
-        assert os.path.normpath(env.USER_APP_FOLDER) == os.path.normpath(os.path.join("/mock/home/user", ".testapp"))
-        mock_makedirs.assert_called_with(env.USER_APP_FOLDER)
-
+    # Re-initialize Env to pick up the mocked config
+    Env._instance = None # Reset singleton instance
+    env = Env(temp_app_json_content)
+    
+    assert env.APP.name == "TestApp"
+    assert env.APP.appcode == "TEST"
+    assert env.APP.year == 2024
+    assert env.LOG_LEVEL == "DEBUG"
+    assert os.path.normpath(env.LOG_FILE) == os.path.normpath("test_logs/test_app.log")
+    assert os.path.normpath(env.USER_FOLDER) == os.path.normpath("/mock/home/user")
+    assert os.path.normpath(env.USER_APP_FOLDER) == os.path.normpath(os.path.join("/mock/home/user", ".testapp"))
+    mock_makedirs.assert_called_with(env.USER_APP_FOLDER)
+        
 def test_env_precedence_environment_variable_over_config(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, temp_app_json_content):
     mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
     user_app_folder = os.path.normpath(os.path.join('/mock/home/user', '.testapp'))
@@ -134,12 +129,11 @@ def test_env_precedence_environment_variable_over_config(mock_file_operations, m
     _existing_paths.add(user_app_folder)
 
     with patch.dict(os.environ, {'LOG_LEVEL': 'WARNING', 'LOG_TEXT_SIZE': '512'}):
-        with patch('fbpyutils.env.load_config', return_value=temp_app_json_content):
-            Env._instance = None
-            env = Env(temp_app_json_content)
-
-            assert env.LOG_LEVEL == "WARNING"
-            assert env.LOG_TEXT_SIZE == 512
+        Env._instance = None
+        env = Env(temp_app_json_content)
+    
+    assert env.LOG_LEVEL == "WARNING"
+    assert env.LOG_TEXT_SIZE == 512
 
 def test_env_precedence_default_if_not_in_config_or_env(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir):
     mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
@@ -149,15 +143,14 @@ def test_env_precedence_default_if_not_in_config_or_env(mock_file_operations, mo
 
     # Simulate empty config and no env vars
     with patch.dict(os.environ, {}, clear=True):
-        with patch('fbpyutils.env.load_config', return_value={}):
-            Env._instance = None
-            env = Env({})
-
-            assert env.APP.appcode == "FBPYUTILS" # Default
-            assert env.LOG_LEVEL == "INFO" # Default
-            assert env.LOG_TEXT_SIZE == 256 # Default
-            # LOG_FILE should use USER_APP_FOLDER default if not in config
-            assert os.path.normpath(env.LOG_FILE) == os.path.normpath(os.path.join(env.USER_APP_FOLDER, 'fbpyutils.log'))
+        Env._instance = None
+        env = Env({})
+    
+    assert env.APP.appcode == "FBPYUTILS" # Default
+    assert env.LOG_LEVEL == "INFO" # Default
+    assert env.LOG_TEXT_SIZE == 256 # Default
+    # LOG_FILE should use USER_APP_FOLDER default if not in config
+    assert os.path.normpath(env.LOG_FILE) == os.path.normpath(os.path.join(env.USER_APP_FOLDER, 'fbpyutils.log'))
 
 # Test Logger configuration
 def test_logger_configure_with_config(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, temp_app_json_content, caplog):
@@ -169,7 +162,7 @@ def test_logger_configure_with_config(mock_file_operations, mock_makedirs, mock_
     _existing_paths.add(log_file_dir)
 
     caplog.set_level(logging.DEBUG)
-    Logger.configure(config_dict=temp_app_json_content["logging"])
+    Logger.configure_from_config_dict(config_dict=temp_app_json_content["logging"])
 
     assert Logger._is_configured is True
     assert Logger._logger.level == logging.DEBUG
@@ -180,7 +173,7 @@ def test_logger_configure_with_config(mock_file_operations, mock_makedirs, mock_
     assert console_handler.formatter._fmt == "TEST_FORMAT - %(message)s"
 
     # Check file handler path and format
-    file_handler = next(h for h in Logger._logger.handlers if isinstance(h, logging.handlers.RotatingFileHandler))
+    file_handler = next(h for h in Logger._logger.handlers if isinstance(h, ConcurrentRotatingFileHandler))
     assert os.path.normpath(file_handler.baseFilename).endswith(os.path.normpath("test_logs/test_app.log"))
     assert file_handler.formatter._fmt == "TEST_FORMAT - %(message)s"
 
@@ -195,7 +188,7 @@ def test_logger_configure_with_defaults(mock_file_operations, mock_makedirs, moc
     _existing_paths.add(user_app_folder)
 
     caplog.set_level(logging.INFO)
-    Logger.configure(config_dict={}) # Configure with empty dict to force defaults
+    Logger.configure_from_config_dict(config_dict={}) # Configure with empty dict to force defaults
 
     assert Logger._is_configured is True
     assert Logger._logger.level == logging.INFO
@@ -223,13 +216,13 @@ def test_logger_file_path_creation_failure(mock_print, mock_makedirs, mock_path_
         "log_format": "%(message)s",
         "log_file_path": "/no/permission/logs/app.log"
     }
-    Logger.configure(config_dict=config)
+    Logger.configure_from_config_dict(config_dict=config)
 
     mock_print.assert_called_with("Error setting up file logger at /no/permission/logs/app.log: Permission denied")
     # Should still have console handler
     assert any(isinstance(h, logging.StreamHandler) for h in Logger._logger.handlers)
     # Should not have file handler
-    assert not any(isinstance(h, logging.handlers.RotatingFileHandler) for h in Logger._logger.handlers)
+    assert not any(isinstance(h, ConcurrentRotatingFileHandler) for h in Logger._logger.handlers)
 
 def test_logger_no_duplicate_handlers_on_reconfigure(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, temp_app_json_content):
     mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
@@ -240,7 +233,7 @@ def test_logger_no_duplicate_handlers_on_reconfigure(mock_file_operations, mock_
     _existing_paths.add(initial_log_dir)
 
     # First configuration
-    Logger.configure(config_dict=temp_app_json_content["logging"])
+    Logger.configure_from_config_dict(config_dict=temp_app_json_content["logging"])
     initial_handlers_count = len(Logger._logger.handlers)
     assert initial_handlers_count == 2 # Console and File handler
 
@@ -256,7 +249,7 @@ def test_logger_no_duplicate_handlers_on_reconfigure(mock_file_operations, mock_
         "log_file_path": "new_logs/new_app.log"
     }
     Logger._is_configured = False # Reset flag to allow re-configuration
-    Logger.configure(config_dict=new_config)
+    Logger.configure_from_config_dict(config_dict=new_config)
     
     # The number of handlers should be the same as initial, not doubled
     assert len(Logger._logger.handlers) == initial_handlers_count
@@ -266,5 +259,62 @@ def test_logger_no_duplicate_handlers_on_reconfigure(mock_file_operations, mock_
     console_handler = next(h for h in Logger._logger.handlers if isinstance(h, logging.StreamHandler))
     assert console_handler.formatter._fmt == "NEW_FORMAT - %(message)s"
 
-    file_handler = next(h for h in Logger._logger.handlers if isinstance(h, logging.handlers.RotatingFileHandler))
+    file_handler = next(h for h in Logger._logger.handlers if isinstance(h, ConcurrentRotatingFileHandler))
     assert os.path.normpath(file_handler.baseFilename).endswith(os.path.normpath("new_logs/new_app.log"))
+
+
+def test_logger_concurrent_writing_and_rotation(tmp_path):
+    """
+    Tests that the logger can handle concurrent writes from multiple threads
+    and perform file rotation without raising PermissionError.
+    """
+    log_file = tmp_path / "concurrent_test.log"
+    
+    # Configure logger for this specific test
+    config = {
+        "log_level": "DEBUG",
+        "log_format": "%(asctime)s - %(threadName)s - %(message)s",
+        "log_file_path": str(log_file),
+        "app_name": "concurrent_test"
+    }
+    
+    # Use a small maxBytes to force rotation quickly
+    with patch('fbpyutils.logging.ConcurrentRotatingFileHandler', 
+               lambda path, maxBytes, backupCount, encoding: ConcurrentRotatingFileHandler(
+                   path, maxBytes=1024, backupCount=2, encoding=encoding
+               )):
+        Logger.configure_from_config_dict(config_dict=config)
+
+    assert Logger._is_configured
+
+    import threading
+    import time
+
+    log_errors = []
+
+    def log_writer(thread_name):
+        """Function to be executed by each thread."""
+        try:
+            for i in range(200):
+                Logger.debug(f"Message {i} from {thread_name}")
+                time.sleep(0.001)  # Small sleep to increase chance of collision
+        except Exception as e:
+            log_errors.append(e)
+
+    # Create and start threads
+    threads = []
+    for i in range(5):
+        thread = threading.Thread(target=log_writer, name=f"Thread-{i+1}", args=(f"Thread-{i+1}",))
+        threads.append(thread)
+        thread.start()
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+
+    # Assert that no exceptions were raised in the threads
+    assert not log_errors, f"Logging errors occurred in threads: {log_errors}"
+
+    # Verify that log files were created and rotated
+    log_files = list(tmp_path.glob("concurrent_test.log*"))
+    assert len(log_files) > 1, "Log file rotation did not occur."
