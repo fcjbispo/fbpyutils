@@ -84,6 +84,9 @@ class Env:
         else:
             default_log_path = os.getenv('LOG_PATH', self.USER_APP_FOLDER)
             self.LOG_FILE = os.path.join(default_log_path, 'fbpyutils.log')
+        
+        # Set the configuration dictionary
+        self.CONFIG = parsed_config.config
 
         # Ensure USER_APP_FOLDER exists
         if not os.path.exists(self.USER_APP_FOLDER):
