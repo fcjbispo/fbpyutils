@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 # Pydantic models for configuration validation
 class AppConfig(BaseModel):
     name: str = "fbpyutils"
-    version: str = "1.6.6"
+    version: str = "1.6.10"
     environment: str = "dev"
     appcode: str = "FBPYUTILS"
     year: int = 2025
@@ -23,6 +23,7 @@ class LoggingConfig(BaseModel):
 class RootConfig(BaseModel):
     app: AppConfig = Field(default_factory=AppConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    config: Dict[str, Any] = Field(default_factory=dict)
 
 
 class Env:
@@ -39,6 +40,7 @@ class Env:
     LOG_FORMAT: str
     LOG_FILE: str
     LOG_TEXT_SIZE: int
+    CONFIG: Dict[str, Any]
 
     def __new__(cls, config: Optional[Dict[str, Any]] = None):
         if cls._instance is None:
@@ -82,6 +84,9 @@ class Env:
         else:
             default_log_path = os.getenv('LOG_PATH', self.USER_APP_FOLDER)
             self.LOG_FILE = os.path.join(default_log_path, 'fbpyutils.log')
+        
+        # Set the configuration dictionary
+        self.CONFIG = parsed_config.config
 
         # Ensure USER_APP_FOLDER exists
         if not os.path.exists(self.USER_APP_FOLDER):

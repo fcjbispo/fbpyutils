@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "FBPyUtils",
-    "version": "1.6.9",
+    "version": "1.6.10",
     "environment": "dev",
     "appcode": "FBPYUTILS",
     "year": 2025
@@ -10,5 +10,9 @@
     "log_level": "INFO",
     "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     "log_file_path": "logs/app.log"
+  },
+  "config": {
+    "example_key": "example_value",
+    "another_key": 12345
   }
 }
