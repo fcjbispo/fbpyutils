@@ -62,8 +62,17 @@ class Logger:
 
         log_level_str = config_dict.get("log_level", "INFO").upper()
         log_format = config_dict.get("log_format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        log_file_path = config_dict.get("log_file_path")
-
+        
+        # Only use file logging if explicitly configured
+        if config_dict:
+            log_file_path = config_dict.get("log_file_path", os.path.sep.join(["~", ".fbpyutils", "logs", "app.log"]))
+            log_file_path = os.path.expanduser(log_file_path)
+            log_handlers = config_dict.get("log_handlers", ["console", "file"])
+        else:
+            # When config_dict is empty, use only console handler
+            log_file_path = None
+            log_handlers = ["console"]
+        
         numeric_level = getattr(logging, log_level_str, logging.INFO)
         Logger._logger.setLevel(numeric_level)
 
@@ -76,27 +85,33 @@ class Logger:
         formatter = logging.Formatter(log_format)
 
         # Console Handler
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        Logger._logger.addHandler(console_handler)
+        if "console" in log_handlers:
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            Logger._logger.addHandler(console_handler)
 
         # File Handler
-        if log_file_path:
-            try:
-                log_dir = os.path.dirname(log_file_path)
-                if log_dir and not os.path.exists(log_dir):
-                    os.makedirs(log_dir)
-                
-                file_handler = ConcurrentRotatingFileHandler(
-                    log_file_path,
-                    maxBytes=256 * 1024,  # 256 KB
-                    backupCount=5,
-                    encoding='utf-8'
-                )
-                file_handler.setFormatter(formatter)
-                Logger._logger.addHandler(file_handler)
-            except Exception as e:
-                print(f"Error setting up file logger at {log_file_path}: {e}")
+        if "file" in log_handlers:
+            if log_file_path:
+                try:
+                    log_dir = os.path.dirname(log_file_path)
+                    if log_dir and not os.path.exists(log_dir):
+                        os.makedirs(log_dir)
+                    
+                    file_handler = ConcurrentRotatingFileHandler(
+                        log_file_path,
+                        maxBytes=256 * 1024,  # 256 KB
+                        backupCount=5,
+                        encoding='utf-8'
+                    )
+                    file_handler.setFormatter(formatter)
+                    Logger._logger.addHandler(file_handler)
+                except Exception as e:
+                    print(f"Error setting up file logger at {log_file_path}: {e}")
+
+        # check if at least one handler is added
+        if not Logger._logger.hasHandlers():
+            raise ValueError("No valid log handlers configured. Please check 'log_handlers' in the configuration. Valid options are 'console' and 'file'.")
         
         Logger._is_configured = True
 

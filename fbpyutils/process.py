@@ -22,7 +22,7 @@ import multiprocessing
 import uuid
 import concurrent.futures
 
-from typing import Any, Callable, List, Tuple, Dict, Optional, TypeVar, Protocol, Union
+from typing import Any, Callable, List, Tuple, Dict, Optional, TypeVar, Protocol
 from datetime import datetime
 
 from fbpyutils import get_env, get_logger
@@ -883,7 +883,7 @@ class SessionProcess(Process):
 
             # Create session control folder
             session_control_folder: str = os.path.sep.join([_env.USER_APP_FOLDER,
-                                                     f"session_control",
+                                                     "session_control",
                                                      f"s_{hash_string(session_id)}"])
             if not os.path.exists(session_control_folder):
                 _logger.info(f"Creating session control folder: {session_control_folder}")

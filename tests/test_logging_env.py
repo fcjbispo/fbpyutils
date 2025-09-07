@@ -39,7 +39,12 @@ def reset_logger_config():
 # Mock os.path.expanduser for consistent user folder paths
 @pytest.fixture(autouse=True)
 def mock_expanduser():
-    with patch('os.path.expanduser', return_value='/mock/home/user'):
+    def mock_expanduser_func(path):
+        if path.startswith('~'):
+            return '/mock/home/user'
+        return path
+    
+    with patch('os.path.expanduser', side_effect=mock_expanduser_func):
         yield
 
 # Mock os.makedirs to prevent actual directory creation
@@ -101,6 +106,9 @@ def mock_file_operations(temp_app_json_content):
 
 # Test Env class initialization and property precedence
 def test_env_initialization_with_config(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, temp_app_json_content):
+    os.environ.pop('FBPY_LOG_LEVEL', None)
+    os.environ.pop('FBPY_LOG_TEXT_SIZE', None)
+    os.environ.pop('FBPY_LOG_PATH', None)
     # Unpack the mock_path_exists_and_isdir fixture
     mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
 
@@ -128,7 +136,11 @@ def test_env_precedence_environment_variable_over_config(mock_file_operations, m
     _directory_paths.add(user_app_folder)
     _existing_paths.add(user_app_folder)
 
-    with patch.dict(os.environ, {'LOG_LEVEL': 'WARNING', 'LOG_TEXT_SIZE': '512'}):
+    os.environ.pop('FBPY_LOG_LEVEL', None)
+    os.environ.pop('FBPY_LOG_TEXT_SIZE', None)
+    os.environ.pop('FBPY_LOG_PATH', None)
+
+    with patch.dict(os.environ, {'FBPY_LOG_LEVEL': 'WARNING', 'FBPY_LOG_TEXT_SIZE': '512'}):
         Env._instance = None
         env = Env(temp_app_json_content)
     

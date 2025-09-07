@@ -1,7 +1,5 @@
 import os
 import json
-import logging
-import warnings
 from typing import Dict, Any, Optional
 
 from pydantic import BaseModel, Field
@@ -74,15 +72,15 @@ class Env:
         self.USER_APP_FOLDER = os.path.join(self.USER_FOLDER, f".{self.APP.name.lower()}")
 
         # Configure logging properties with precedence: environment variable -> config file -> default
-        self.LOG_LEVEL = os.getenv('LOG_LEVEL', parsed_config.logging.log_level)
+        self.LOG_LEVEL = os.getenv('FBPY_LOG_LEVEL', parsed_config.logging.log_level)
         self.LOG_FORMAT = parsed_config.logging.log_format
-        self.LOG_TEXT_SIZE = int(os.getenv('LOG_TEXT_SIZE', parsed_config.logging.log_text_size))
+        self.LOG_TEXT_SIZE = int(os.getenv('FBPY_LOG_TEXT_SIZE', parsed_config.logging.log_text_size))
         
         log_file_from_config = parsed_config.logging.log_file_path
         if log_file_from_config:
             self.LOG_FILE = log_file_from_config
         else:
-            default_log_path = os.getenv('LOG_PATH', self.USER_APP_FOLDER)
+            default_log_path = os.getenv('FBPY_LOG_PATH', self.USER_APP_FOLDER)
             self.LOG_FILE = os.path.join(default_log_path, 'fbpyutils.log')
         
         # Set the configuration dictionary

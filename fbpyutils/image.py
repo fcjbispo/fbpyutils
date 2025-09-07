@@ -277,7 +277,7 @@ def _extract_gps_info(gps_data):
         if 'GPSAreaInformation' in gps_dict:
             gps_info["location_name"] = str(gps_dict['GPSAreaInformation'])
         
-    except Exception as e:
+    except Exception:
         # If there's an error processing GPS, return empty dict
         pass
     

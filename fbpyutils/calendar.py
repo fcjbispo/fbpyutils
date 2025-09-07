@@ -181,7 +181,7 @@ def calendarize(
     _logger.debug(f"Starting calendarize with date_column: {date_column}, with_markers: {with_markers}.")
     if not isinstance(x, pd.DataFrame):
         _logger.error(f"Invalid object type for calendarize. Expected Pandas DataFrame, got {type(x)}.")
-        raise TypeError(f"Invalid object type. Expected Pandas DataFrame.")
+        raise TypeError("Invalid object type. Expected Pandas DataFrame.")
 
     df = x.copy()
 

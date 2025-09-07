@@ -9,7 +9,8 @@
   "logging": {
     "log_level": "INFO",
     "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    "log_file_path": "logs/app.log"
+    "log_file_path": "~/.fbpyutils/logs/app.log",
+    "log_handlers": ["console", "file"]
   },
   "config": {
     "example_key": "example_value",

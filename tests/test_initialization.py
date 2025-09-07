@@ -16,6 +16,10 @@ class TestInitialization(unittest.TestCase):
         Logger._instance = None
         Logger._is_configured = False
 
+        os.environ.pop('FBPY_LOG_LEVEL', None)
+        os.environ.pop('FBPY_LOG_PATH', None)
+        os.environ.pop('FBPY_LOG_TEXT_SIZE', None)
+
     def test_setup_with_defaults(self):
         """Test setup() using the default app.json."""
         fbpyutils.setup()
