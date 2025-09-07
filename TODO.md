@@ -6,3 +6,9 @@ This document tracks the implementation status of features defined in SPEC.md co
 - Refactor SPEC using HIGH LEVEL SPECIFICATION
 - Refactor README
 - Refactor DOC or create other document to use unified format suitable to used as resource in MCP server (context7)
+- **logger**
+  - Remove output log on console
+  - Increase coverage tests
+  - Implement functional tests
+  - Overwrite log level, log dir with env vars FBPY_LOG_LEVEL, etc.
+  - Add suport to write logs to databases, queues..
