@@ -125,6 +125,7 @@ class Logger:
             "log_level": env.LOG_LEVEL,
             "log_format": env.LOG_FORMAT,
             "log_file_path": env.LOG_FILE,
+            "log_handlers": env.LOG_HANDLERS,
             "app_name": getattr(env.APP, 'appcode', None)
         }
         cls._configure_internal(config)
@@ -139,6 +140,7 @@ class Logger:
             "log_level": env.LOG_LEVEL,
             "log_format": env.LOG_FORMAT,
             "log_file_path": env.LOG_FILE,
+            "log_handlers": env.LOG_HANDLERS,
             "app_name": getattr(env.APP, 'appcode', None)
         }
         Logger._configure_internal(config_dict)
@@ -158,6 +160,7 @@ class Logger:
             "log_level": log_level,
             "log_format": log_format,
             "log_file_path": log_file_path,
+            "log_handlers": ["file"],
             "app_name": app_name
         })
 

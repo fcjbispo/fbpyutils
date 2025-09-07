@@ -8,6 +8,13 @@ from typing import Dict, Any, Optional, Union
 from .env import Env
 from .logging import Logger
 
+from dotenv import load_dotenv
+
+_ = load_dotenv()  # take environment variables from .env.
+
+_ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+_APP_CONFIG_FILE = os.path.sep.join([_ROOT_DIR, "app.json"])
+
 # Variáveis globais para armazenar as instâncias singleton
 _env_instance: Optional[Env] = None
 _logger_instance: Optional[Logger] = None
@@ -40,7 +47,7 @@ def setup(config: Optional[Union[Dict[str, Any], str]] = None) -> None:
 
     # Configura o logger usando a instância do Env
     _logger_instance = Logger.get_from_env(_env_instance)
-    _logger_instance.info("fbpyutils setup completed.")
+    _logger_instance.info("setup completed.")
 
 def get_env() -> Env:
     """Returns the singleton Env instance."""
@@ -54,4 +61,4 @@ def get_logger() -> Logger:
         raise RuntimeError("fbpyutils is not initialized. Call fbpyutils.setup() first.")
     return _logger_instance
 
-setup()
+setup(_APP_CONFIG_FILE)

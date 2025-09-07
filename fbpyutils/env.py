@@ -17,7 +17,7 @@ class LoggingConfig(BaseModel):
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     log_file_path: Optional[str] = None
     log_text_size: int = 256
-
+    log_handlers: Optional[list] = Field(default_factory=lambda: ["file"])
 class RootConfig(BaseModel):
     app: AppConfig = Field(default_factory=AppConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
@@ -38,6 +38,7 @@ class Env:
     LOG_FORMAT: str
     LOG_FILE: str
     LOG_TEXT_SIZE: int
+    LOG_HANDLERS: Optional[list] = None
     CONFIG: Dict[str, Any]
 
     def __new__(cls, config: Optional[Dict[str, Any]] = None):
@@ -82,7 +83,9 @@ class Env:
         else:
             default_log_path = os.getenv('FBPY_LOG_PATH', self.USER_APP_FOLDER)
             self.LOG_FILE = os.path.join(default_log_path, 'fbpyutils.log')
-        
+
+        self.LOG_HANDLERS = parsed_config.logging.log_handlers
+
         # Set the configuration dictionary
         self.CONFIG = parsed_config.config
 
