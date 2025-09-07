@@ -60,5 +60,3 @@ def get_logger() -> Logger:
     if _logger_instance is None:
         raise RuntimeError("fbpyutils is not initialized. Call fbpyutils.setup() first.")
     return _logger_instance
-
-setup(_APP_CONFIG_FILE)
