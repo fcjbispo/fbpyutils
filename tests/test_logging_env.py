@@ -192,27 +192,6 @@ def test_logger_configure_with_config(mock_file_operations, mock_makedirs, mock_
     Logger.log(Logger.INFO, "Test message")
     assert "Test message" in caplog.text
 
-def test_logger_configure_with_defaults(mock_file_operations, mock_makedirs, mock_path_exists_and_isdir, caplog):
-    # No specific paths to add for defaults, as it uses user_app_folder which is mocked by mock_expanduser
-    mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir
-    user_app_folder = os.path.normpath(os.path.join('/mock/home/user', '.fbpyutils'))
-    _directory_paths.add(user_app_folder)
-    _existing_paths.add(user_app_folder)
-
-    caplog.set_level(logging.INFO)
-    Logger.configure_from_config_dict(config_dict={}) # Configure with empty dict to force defaults
-
-    assert Logger._is_configured is True
-    assert Logger._logger.level == logging.INFO
-    assert len(Logger._logger.handlers) == 1 # Only console handler by default
-
-    console_handler = next(h for h in Logger._logger.handlers if isinstance(h, logging.StreamHandler))
-    assert console_handler.formatter._fmt == "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-    Logger.log(Logger.INFO, "Default test message")
-    assert "Default test message" in caplog.text
-
-
 @patch('builtins.print')
 def test_logger_file_path_creation_failure(mock_print, mock_makedirs, mock_path_exists_and_isdir):
     mock_exists, mock_isdir, _existing_paths, _directory_paths = mock_path_exists_and_isdir

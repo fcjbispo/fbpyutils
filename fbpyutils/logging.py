@@ -67,12 +67,12 @@ class Logger:
         if config_dict:
             log_file_path = config_dict.get("log_file_path", os.path.sep.join(["~", ".fbpyutils", "logs", "app.log"]))
             log_file_path = os.path.expanduser(log_file_path)
-            log_handlers = config_dict.get("log_handlers", ["console", "file"])
+            log_handlers = config_dict.get("log_handlers", ["file", "console"])
         else:
-            # When config_dict is empty, use only console handler
+            # When config_dict is empty, use only file handler
             log_file_path = None
-            log_handlers = ["console"]
-        
+            log_handlers = ["file"]
+
         numeric_level = getattr(logging, log_level_str, logging.INFO)
         Logger._logger.setLevel(numeric_level)
 
@@ -83,12 +83,6 @@ class Logger:
                 Logger._logger.removeHandler(handler)
 
         formatter = logging.Formatter(log_format)
-
-        # Console Handler
-        if "console" in log_handlers:
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(formatter)
-            Logger._logger.addHandler(console_handler)
 
         # File Handler
         if "file" in log_handlers:
@@ -108,6 +102,12 @@ class Logger:
                     Logger._logger.addHandler(file_handler)
                 except Exception as e:
                     print(f"Error setting up file logger at {log_file_path}: {e}")
+
+        # Console Handler
+        if "console" in log_handlers:
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            Logger._logger.addHandler(console_handler)
 
         # check if at least one handler is added
         if not Logger._logger.hasHandlers():
